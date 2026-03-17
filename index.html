@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dräger WorkLog Sync</title>
+    <title>Dräger WorkLog Sync Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -25,16 +25,18 @@
         .input-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85em; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
-        .checkbox-group { display: flex; align-items: center; justify-content: flex-start; gap: 15px; background: var(--draeger-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--draeger-border); margin-bottom: 15px; cursor: pointer; width: 100%; box-sizing: border-box; }
-        .checkbox-group input { width: 22px; height: 22px; margin: 0; }
-        .checkbox-group.active { background: #fff4e5; border-width: 2px; }
+        .checkbox-group { display: flex; align-items: center; gap: 15px; background: var(--draeger-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--draeger-border); margin-bottom: 15px; cursor: pointer; width: 100%; box-sizing: border-box; }
+        .checkbox-group input { width: 22px; height: 22px; }
         .summary-box { display: flex; gap: 10px; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px; }
         .summary-item { flex: 1; background: #f8f9fa; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
-        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; table-layout: fixed; }
         th, td { border: 1px solid #eee; padding: 8px 4px; text-align: center; }
-        .col-date { width: 60px; }
-        .weekend { background: #f9f9f9; color: #bbb; }
+        tr.total-row { background: #eee; font-weight: bold; border-top: 2px solid #333; }
+        .weekend { background: #fdfdfd; color: #ccc; }
+        .holiday-row { background: #eef7ff; font-weight: 600; color: #005596; }
+        .counter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 1px solid #ddd; }
+        #conge-alert { display: none; background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.85em; font-weight: bold; text-align: center; border: 1px solid #f87171; }
     </style>
 </head>
 <body>
@@ -51,7 +53,7 @@
 
 <div class="container" id="mainContainer">
     <div class="lang-switch">
-        <div style="font-size: 0.65em; color: #27ae60; font-weight: bold; margin-right: auto;">● Sync On</div>
+        <div style="font-size: 0.65em; color: #27ae60; font-weight: bold; margin-right: auto;">● Sync Connecté</div>
         <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
         <button class="lang-btn" id="btn-nl" onclick="setLanguage('nl')">NL</button>
     </div>
@@ -66,14 +68,15 @@
     </div>
 
     <div id="saisie" class="content active">
-        <div class="input-group"><label id="label-date">Date</label><input type="date" id="date"></div>
+        <div class="input-group"><label>Date</label><input type="date" id="date"></div>
         <div class="input-group">
-            <label id="label-location">Lieu</label>
+            <label>Lieu / Type</label>
             <select id="location">
                 <option value="Wemmel">Wemmel (45m)</option>
                 <option value="Esso">Esso (30m)</option>
                 <option value="INEOS">INEOS (30m)</option>
                 <option value="Autre">Autre / Overig (30m)</option>
+                <option value="CONGE">🌴 Congé / Férié / Maladie</option>
             </select>
         </div>
         
@@ -86,15 +89,20 @@
         </div>
 
         <div style="display: flex; gap: 10px;">
-            <div class="input-group" style="flex:1;"><label id="labelStart">Début</label><input type="time" id="startTime"></div>
-            <div class="input-group" style="flex:1;"><label id="labelEnd">Fin</label><input type="time" id="endTime"></div>
+            <div class="input-group" style="flex:1;"><label id="labelStart">Début</label><input type="time" id="startTime" value="08:00"></div>
+            <div class="input-group" style="flex:1;"><label id="labelEnd">Fin</label><input type="time" id="endTime" value="16:30"></div>
         </div>
         
-        <button class="btn-main" id="btn-save" onclick="addEntry()">Enregistrer</button>
+        <button class="btn-main" id="btn-save" onclick="addEntry()">Enregistrer & Synchroniser</button>
         <div class="summary-box" id="weeklySummary"></div>
     </div>
 
     <div id="historique" class="content">
+        <div id="conge-alert">⚠️ Alerte : Quota de congés dépassé !</div>
+        <div class="counter-grid">
+            <div>🌴 Congés (Légaux): <b id="stat-legal">0/20</b></div>
+            <div>⏳ ADV (39h): <b id="stat-adv">0</b></div>
+        </div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
             <select id="selectMonth" style="flex: 2;" onchange="renderMonthlyTable()"></select>
             <select id="selectYear" style="flex: 1;" onchange="renderMonthlyTable()"></select>
@@ -102,9 +110,10 @@
         <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr><th class="col-date" id="th-date">Date</th><th id="th-hours">Horaires</th><th id="th-pres">Total</th><th id="th-supp">Diff</th><th style="width:30px;"></th></tr>
+                    <tr><th style="width:60px;">Date</th><th>Heures</th><th>Total</th><th>Overtime</th><th style="width:30px;"></th></tr>
                 </thead>
                 <tbody id="monthlyTableBody"></tbody>
+                <tfoot id="monthlyFooter"></tfoot>
             </table>
         </div>
     </div>
@@ -123,32 +132,10 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const USER_DB = { "burtonse": { pass: "0514", name: "Sean Burton" } };
     let entries = [];
     let currentUserId = "";
     let currentLang = localStorage.getItem('userLang') || 'fr';
-
-    const i18n = {
-        fr: {
-            tabs: ["Saisie", "Tableau"], labelDate: "Date", labelLoc: "Lieu",
-            clientTitle: "🚗 Déplacement Client", clientSub: "(-1h trajet maison)",
-            start: "Début", end: "Fin", startClient: "Départ Maison", endClient: "Retour Maison",
-            saveBtn: "Enregistrer & Synchroniser", adv: "Fait (Semaine)", rem: "Reste / 39h",
-            th: ["Date", "Heures", "Total", "Diff"],
-            months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
-            days: ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"]
-        },
-        nl: {
-            tabs: ["Invoer", "Tabel"], labelDate: "Datum", labelLoc: "Locatie",
-            clientTitle: "🚗 Klantverplaatsing", clientSub: "(-1u reistijd thuis)",
-            start: "Start", end: "Einde", startClient: "Vertrek Thuis", endClient: "Terugkomst Thuis",
-            saveBtn: "Opslaan & Sync", adv: "Gedaan (Week)", rem: "Over / 39u",
-            th: ["Datum", "Uren", "Totaal", "Diff"],
-            months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
-            days: ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"]
-        }
-    };
 
     function checkLogin() {
         const u = document.getElementById('loginUser').value.toLowerCase();
@@ -166,9 +153,9 @@
     function loadData() {
         db.ref('users/' + currentUserId + '/entries').on('value', (snapshot) => {
             const data = snapshot.val();
-            // On transforme l'objet Firebase en liste propre pour le code
             entries = data ? Object.values(data) : [];
             updateWeeklyStatus();
+            calculateHolidayStats();
             renderMonthlyTable();
         });
     }
@@ -180,24 +167,26 @@
         const l = document.getElementById('location').value;
         const c = document.getElementById('isClient').checked;
         if (!d || !s || !e) return;
-
         let diff = (new Date(`${d}T${e}`) - new Date(`${d}T${s}`)) / 60000;
-        if (c) diff -= 60; // -1h si déplacement client
-        diff -= (l === "Wemmel") ? 45 : 30; // -trajet fixe
-
+        if (l === "CONGE") { diff = 468; } else { if (c) diff -= 60; diff -= (l === "Wemmel") ? 45 : 30; }
         const entry = { date: d, location: l, minutes: diff, start: s, end: e, isClient: c };
-        
-        // Enregistrement avec la date comme clé unique
-        db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).set(entry)
-        .then(() => {
-            alert("✅ Données synchronisées !");
+        db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).set(entry).then(() => {
+            const btn = document.getElementById('btn-save');
+            btn.style.background = "#27ae60"; btn.innerText = "✅ Synchronisé !";
+            setTimeout(() => { btn.style.background = ""; setLanguage(currentLang); }, 2000);
         });
     }
 
-    function deleteEntry(d) {
-        if(confirm("Supprimer cette ligne ?")) {
-            db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove();
-        }
+    function calculateHolidayStats() {
+        const curY = new Date().getFullYear();
+        const yearConge = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE").length;
+        const activeMonths = new Set(entries.filter(e => e.location !== "CONGE" && e.date.startsWith(curY)).map(e => e.date.substring(0, 7))).size;
+        const advEarned = Math.floor(activeMonths / 2);
+        const totalQuota = 20 + advEarned;
+        
+        document.getElementById('stat-legal').innerText = `${yearConge}/20`;
+        document.getElementById('stat-adv').innerText = advEarned;
+        document.getElementById('conge-alert').style.display = (yearConge > totalQuota) ? "block" : "none";
     }
 
     function formatTime(min) {
@@ -207,96 +196,76 @@
     }
 
     function updateWeeklyStatus() {
-        const t = i18n[currentLang];
         const now = new Date();
-        const day = now.getDay() || 7;
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - day + 1);
-        startOfWeek.setHours(0,0,0,0);
-        
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23,59,59,999);
-        
-        const weeklyMinutes = entries.reduce((sum, e) => {
+        const start = new Date(now);
+        start.setDate(now.getDate() - (now.getDay() || 7) + 1);
+        start.setHours(0,0,0,0);
+        const weeklyMin = entries.reduce((sum, e) => {
             const ed = new Date(e.date);
-            return (ed >= startOfWeek && ed <= endOfWeek) ? sum + (e.minutes || 0) : sum;
+            return (ed >= start && ed <= new Date(start).setDate(start.getDate()+6)) ? sum + (e.minutes || 0) : sum;
         }, 0);
-
-        const target = 39 * 60;
-        const rem = target - weeklyMinutes;
-
+        const rem = (39 * 60) - weeklyMin;
         document.getElementById('weeklySummary').innerHTML = `
-            <div class="summary-item"><span style="font-size:0.75em; color:#666;">${t.adv}</span><br><b>${formatTime(weeklyMinutes)}</b></div>
-            <div class="summary-item"><span style="font-size:0.75em; color:#666;">${t.rem}</span><br><b style="color:${rem > 0 ? '#f39c12' : '#27ae60'}">${rem > 0 ? formatTime(rem) : 'OK'}</b></div>
-        `;
+            <div class="summary-item"><span style="font-size:0.75em;">Fait (Sem)</span><br><b>${formatTime(weeklyMin)}</b></div>
+            <div class="summary-item"><span style="font-size:0.75em;">Reste / 39h</span><br><b style="color:${rem > 0 ? '#f39c12' : '#27ae60'}">${rem > 0 ? formatTime(rem) : 'OK'}</b></div>`;
     }
 
     function renderMonthlyTable() {
-        const t = i18n[currentLang];
         const m = parseInt(document.getElementById('selectMonth').value);
         const y = parseInt(document.getElementById('selectYear').value);
         const tbody = document.getElementById('monthlyTableBody');
+        const tfoot = document.getElementById('monthlyFooter');
         tbody.innerHTML = '';
-        
+        let totalMin = 0; let totalSupp = 0;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const daysFr = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
+
         for (let i = 1; i <= daysInMonth; i++) {
-            const dateObj = new Date(y, m, i);
             const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             const entry = entries.find(e => e.date === dateStr);
-            const dNum = dateObj.getDay();
-            
+            const dObj = new Date(y, m, i);
+            const dNum = dObj.getDay();
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
-            let supp = entry ? entry.minutes - goal : 0;
             
-            tbody.innerHTML += `<tr class="${(dNum === 0 || dNum === 6) ? 'weekend' : ''}">
-                <td style="font-size:0.85em;">${t.days[dNum]} ${i}</td>
-                <td>${entry ? entry.start + '-' + entry.end : '-'}</td>
-                <td style="font-weight:bold;">${entry ? formatTime(entry.minutes) : '-'}</td>
-                <td style="color:${supp > 0 ? 'green' : (supp < 0 ? 'red' : 'black')}">${entry ? formatTime(supp) : '-'}</td>
+            if(entry) {
+                totalMin += entry.minutes;
+                totalSupp += (entry.minutes - goal);
+            }
+
+            let rowClass = (dNum === 0 || dNum === 6) ? 'weekend' : (entry && entry.location === 'CONGE' ? 'holiday-row' : '');
+            tbody.innerHTML += `<tr class="${rowClass}">
+                <td>${daysFr[dNum]} ${i}</td>
+                <td>${entry ? (entry.location === 'CONGE' ? '🌴 CONGÉ' : entry.start + '-' + entry.end) : '-'}</td>
+                <td>${entry ? formatTime(entry.minutes) : '-'}</td>
+                <td style="color:${(entry && (entry.minutes-goal)>0) ? 'green' : ((entry && (entry.minutes-goal)<0) ? 'red' : 'black')}">${entry ? formatTime(entry.minutes - goal) : '-'}</td>
                 <td><span onclick="deleteEntry('${dateStr}')" style="cursor:pointer; color:red;">✕</span></td>
             </tr>`;
         }
+
+        tfoot.innerHTML = `<tr class="total-row">
+            <td colspan="2">TOTAL MENSUEL</td>
+            <td>${formatTime(totalMin)}</td>
+            <td style="color:${totalSupp >= 0 ? 'green' : 'red'}">${formatTime(totalSupp)}</td>
+            <td></td>
+        </tr>`;
     }
 
-    function setLanguage(lang) {
-        currentLang = lang;
-        localStorage.setItem('userLang', lang);
-        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${lang}`).classList.add('active');
-        updateLabels();
-        updateWeeklyStatus();
+    function setLanguage(l) {
+        currentLang = l;
+        const t = { fr: { cl: "🚗 Déplacement Client", sb: "(-1h trajet)", sv: "Enregistrer & Synchroniser" }, nl: { cl: "🚗 Klantverplaatsing", sb: "(-1u reistijd)", sv: "Opslaan & Sync" } };
+        document.getElementById('label-isclient').innerText = t[l].cl;
+        document.getElementById('label-isclient-sub').innerText = t[l].sb;
+        document.getElementById('btn-save').innerText = t[l].sv;
         renderMonthlyTable();
     }
 
-    function updateLabels() {
-        const t = i18n[currentLang];
-        document.getElementById('tab-saisie').innerText = t.tabs[0];
-        document.getElementById('tab-historique').innerText = t.tabs[1];
-        document.getElementById('label-date').innerText = t.labelDate;
-        document.getElementById('label-location').innerText = t.labelLoc;
-        document.getElementById('label-isclient').innerText = t.clientTitle;
-        document.getElementById('label-isclient-sub').innerText = t.clientSub;
-        document.getElementById('btn-save').innerText = t.saveBtn;
-        document.getElementById('th-date').innerText = t.th[0];
-        document.getElementById('th-hours').innerText = t.th[1];
-        document.getElementById('th-pres').innerText = t.th[2];
-        document.getElementById('th-supp').innerText = t.th[3];
-        
-        const isClient = document.getElementById('isClient').checked;
-        document.getElementById('labelStart').innerText = isClient ? t.startClient : t.start;
-        document.getElementById('labelEnd').innerText = isClient ? t.endClient : t.end;
-
-        const mSel = document.getElementById('selectMonth');
-        if(!mSel.innerHTML) {
-            t.months.forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
-        }
-    }
-
-    function toggleCheckbox() { document.getElementById('isClient').checked = !document.getElementById('isClient').checked; handleCheckboxStyle(); updateLabels(); }
+    function deleteEntry(d) { if(confirm("Supprimer ?")) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
+    function toggleCheckbox() { document.getElementById('isClient').checked = !document.getElementById('isClient').checked; handleCheckboxStyle(); }
     function handleCheckboxStyle() { const c = document.getElementById('clientContainer'); document.getElementById('isClient').checked ? c.classList.add('active') : c.classList.remove('active'); }
-    function openTab(id) { document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function openTab(id) { document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); event.currentTarget.classList.add('active'); }
 
+    const mSel = document.getElementById('selectMonth');
+    ["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"].forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
     const ySel = document.getElementById('selectYear');
     [2025, 2026].forEach(y => ySel.innerHTML += `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`);
     document.getElementById('date').valueAsDate = new Date();

@@ -25,16 +25,26 @@
         .input-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85em; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
-        .checkbox-group { display: flex; align-items: center; gap: 12px; background: var(--draeger-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--draeger-border); margin-bottom: 15px; cursor: pointer; width: 100%; box-sizing: border-box; }
+        
+        /* CORRECTION ALIGNEMENT CHECKBOX */
+        .checkbox-group { display: flex; align-items: center; justify-content: flex-start; gap: 15px; background: var(--draeger-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--draeger-border); margin-bottom: 15px; cursor: pointer; width: 100%; box-sizing: border-box; }
+        .checkbox-group input { width: 22px; height: 22px; margin: 0; cursor: pointer; }
+        .checkbox-text { display: flex; flex-direction: column; justify-content: center; }
         .checkbox-group.active { background: #fff4e5; border-width: 2px; }
+
         .summary-box { display: flex; gap: 10px; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px; }
         .summary-item { flex: 1; background: #f8f9fa; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-print, .btn-excel { width: 100%; color: white; padding: 12px; border: none; border-radius: 8px; margin-top: 10px; font-weight: bold; cursor: pointer; }
         .btn-print { background: var(--draeger-blue); }
         .btn-excel { background: #27ae60; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 8px; text-align: center; }
+        
+        /* TABLEAU OPTIMISÉ */
+        table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; table-layout: fixed; }
+        th, td { border: 1px solid #eee; padding: 8px 4px; text-align: center; overflow: hidden; }
+        th { background: #f8f9fa; }
+        .col-date { width: 55px; }
+        .col-hours { width: 90px; }
         .weekend { background: #f9f9f9; color: #bbb; }
         #sync-label { font-size: 0.65em; color: #27ae60; font-weight: bold; margin-right: auto; }
     </style>
@@ -81,8 +91,8 @@
         
         <div class="checkbox-group" id="clientContainer" onclick="toggleCheckbox()">
             <input type="checkbox" id="isClient" onchange="updateLabels(); handleCheckboxStyle();" onclick="event.stopPropagation()">
-            <div style="text-align: left;">
-                <span id="label-isclient" style="font-weight: bold; font-size: 0.9em;"></span><br>
+            <div class="checkbox-text">
+                <span id="label-isclient" style="font-weight: bold; font-size: 0.95em;"></span>
                 <span id="label-isclient-sub" style="font-size: 0.75em; color: #666;"></span>
             </div>
         </div>
@@ -93,7 +103,6 @@
         </div>
         
         <button class="btn-main" id="btn-save" onclick="addEntry()"></button>
-        
         <div class="summary-box" id="weeklySummary"></div>
     </div>
 
@@ -105,7 +114,13 @@
         <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr><th id="th-date"></th><th id="th-hours"></th><th id="th-pres"></th><th id="th-supp"></th><th class="delete-col"></th></tr>
+                    <tr>
+                        <th id="th-date" class="col-date"></th>
+                        <th id="th-hours" class="col-hours"></th>
+                        <th id="th-pres"></th>
+                        <th id="th-supp"></th>
+                        <th style="width: 30px;"></th>
+                    </tr>
                 </thead>
                 <tbody id="monthlyTableBody"></tbody>
             </table>
@@ -116,15 +131,15 @@
 </div>
 
 <script>
- firebaseConfig = {
-  apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw",
-  authDomain: "worklog-fc54b.firebaseapp.com",
-  projectId: "worklog-fc54b",
-  storageBucket: "worklog-fc54b.firebasestorage.app",
-  messagingSenderId: "1031734193051",
-  appId: "1:1031734193051:web:6a8df0f57aa4d63796cf3e",
-  measurementId: "G-CV7LE8YMTD"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw",
+        authDomain: "worklog-fc54b.firebaseapp.com",
+        projectId: "worklog-fc54b",
+        storageBucket: "worklog-fc54b.firebasestorage.app",
+        messagingSenderId: "1031734193051",
+        appId: "1:1031734193051:web:6a8df0f57aa4d63796cf3e",
+        measurementId: "G-CV7LE8YMTD"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -139,19 +154,19 @@
             tabs: ["Saisie", "Tableau"], labelDate: "Date", labelLoc: "Lieu",
             clientTitle: "🚗 Déplacement Client", clientSub: "(Déduit 1h trajet)",
             start: "Début", end: "Fin", startClient: "Départ Maison", endClient: "Retour Maison",
-            saveBtn: "Enregistrer & Synchroniser", adv: "Fait (Semaine)", rem: "Reste",
-            th: ["Date", "Horaires", "Prestation", "Overtime"],
-            printBtn: "Imprimer PDF", excelBtn: "Exporter vers Excel",
+            saveBtn: "Enregistrer & Synchroniser", adv: "Fait (Sem)", rem: "Reste",
+            th: ["Date", "Horaires", "Total", "Overtime"],
+            printBtn: "Imprimer PDF", excelBtn: "Excel",
             months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
             days: ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"]
         },
         nl: {
             tabs: ["Invoer", "Tabel"], labelDate: "Datum", labelLoc: "Locatie",
             clientTitle: "🚗 Klantverplaatsing", clientSub: "(1u reistijd eraf)",
-            start: "Startuur", end: "Einduur", startClient: "Vertrek Thuis", endClient: "Terugkomst Thuis",
-            saveBtn: "Opslaan & Synchroniseren", adv: "Gedaan (Week)", rem: "Resterend",
-            th: ["Datum", "Uren", "Prestatie", "Overtime"],
-            printBtn: "PDF Printen", excelBtn: "Excel Export",
+            start: "Start", end: "Einde", startClient: "Vertrek Thuis", endClient: "Terugkomst Thuis",
+            saveBtn: "Opslaan", adv: "Gedaan (Week)", rem: "Resterend",
+            th: ["Datum", "Uren", "Totaal", "Overtime"],
+            printBtn: "PDF Printen", excelBtn: "Excel",
             months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
             days: ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"]
         }
@@ -186,20 +201,16 @@
         const l = document.getElementById('location').value;
         const c = document.getElementById('isClient').checked;
         if (!d || !s || !e) return;
-
         let diff = (new Date(`${d}T${e}`) - new Date(`${d}T${s}`)) / 60000;
         if (c) diff -= 60;
         diff -= (l === "Wemmel") ? 45 : 30;
-
         const entry = { date: d, location: l, minutes: diff, start: s, end: e, isClient: c };
         db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).set(entry);
-        alert("Enregistré et Synchronisé !");
+        alert("Synchronisé !");
     }
 
     function deleteEntry(d) {
-        if(confirm("Supprimer ?")) {
-            db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove();
-        }
+        if(confirm("Supprimer ?")) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove();
     }
 
     function formatTime(min) {
@@ -215,19 +226,15 @@
         startOfWeek.setHours(0,0,0,0);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
         const weeklyMinutes = entries.reduce((sum, e) => {
             const ed = new Date(e.date);
             return (ed >= startOfWeek && ed <= endOfWeek) ? sum + e.minutes : sum;
         }, 0);
-
         const target = 39 * 60;
         const rem = target - weeklyMinutes;
-
         document.getElementById('weeklySummary').innerHTML = `
-            <div class="summary-item"><span style="font-size:0.7em; color:#666;">${t.adv}</span><br><b>${formatTime(weeklyMinutes)}</b></div>
-            <div class="summary-item"><span style="font-size:0.7em; color:#666;">${t.rem}</span><br><b style="color:${rem > 0 ? '#f39c12' : '#27ae60'}">${rem > 0 ? formatTime(rem) : 'OK'}</b></div>
-        `;
+            <div class="summary-item"><span style="font-size:0.7em;">${t.adv}</span><br><b>${formatTime(weeklyMinutes)}</b></div>
+            <div class="summary-item"><span style="font-size:0.7em;">${t.rem}</span><br><b style="color:${rem > 0 ? '#f39c12' : '#27ae60'}">${rem > 0 ? formatTime(rem) : 'OK'}</b></div>`;
     }
 
     function renderMonthlyTable() {
@@ -236,21 +243,21 @@
         const y = parseInt(document.getElementById('selectYear').value);
         const tbody = document.getElementById('monthlyTableBody');
         tbody.innerHTML = '';
-        
         const daysInMonth = new Date(y, m + 1, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
+            const dateObj = new Date(y, m, i);
             const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             const entry = entries.find(e => e.date === dateStr);
-            const dNum = new Date(y, m, i).getDay();
+            const dNum = dateObj.getDay();
+            const dayLabel = t.days[dNum];
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
             let supp = entry ? entry.minutes - goal : 0;
-            
             tbody.innerHTML += `<tr class="${(dNum === 0 || dNum === 6) ? 'weekend' : ''}">
-                <td>${i}</td>
+                <td>${dayLabel} ${i}</td>
                 <td>${entry ? entry.start + '-' + entry.end : '-'}</td>
                 <td>${entry ? formatTime(entry.minutes) : '-'}</td>
                 <td style="color:${supp > 0 ? 'green' : (supp < 0 ? 'red' : 'black')}">${entry ? formatTime(supp) : '-'}</td>
-                <td class="delete-col"><span onclick="deleteEntry('${dateStr}')" style="cursor:pointer; color:red;">✕</span></td>
+                <td><span onclick="deleteEntry('${dateStr}')" style="cursor:pointer; color:red;">✕</span></td>
             </tr>`;
         }
     }
@@ -284,9 +291,7 @@
         document.getElementById('labelStart').innerText = isClient ? t.startClient : t.start;
         document.getElementById('labelEnd').innerText = isClient ? t.endClient : t.end;
         const mSel = document.getElementById('selectMonth');
-        if(!mSel.innerHTML) {
-            t.months.forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
-        }
+        if(!mSel.innerHTML) t.months.forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
     }
 
     function toggleCheckbox() { document.getElementById('isClient').checked = !document.getElementById('isClient').checked; handleCheckboxStyle(); updateLabels(); }
@@ -294,7 +299,7 @@
     function openTab(id) { document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
     const ySel = document.getElementById('selectYear');
-    [2025, 2026].forEach(y => ySel.innerHTML += `<option value="${y}" ${y === 2026 ? 'selected' : ''}>${y}</option>`);
+    [2025, 2026].forEach(y => ySel.innerHTML += `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`);
     document.getElementById('date').valueAsDate = new Date();
 </script>
 </body>

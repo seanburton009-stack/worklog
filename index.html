@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V48</title>
+    <title>Dräger WorkLog V50</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -11,9 +11,11 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; color: #333; }
         
+        /* AUTH */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
         
+        /* LAYOUT */
         .container { padding: 10px 15px 140px 15px; max-width: 800px; margin: auto; display: none; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
@@ -25,11 +27,11 @@
         .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
         .info-week b { font-size: 2em; color: var(--primary); display: block; }
 
+        /* TABS */
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; position: relative; }
         .tab.active { color: var(--secondary); }
         .tab-icon { font-size: 20px; display: block; margin-bottom: 3px; }
-
         .badge { position: absolute; top: -5px; right: 25%; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 2px solid white; }
 
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 15px; }
@@ -44,16 +46,17 @@
 
         .lang-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8em; }
 
+        /* PRINT */
         #pdf-header { display: none; }
         @media print {
             body { background: white; padding: 0; }
             .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, .lang-btn, #selectMonth, #selectYear { display: none !important; }
             .container { display: block !important; padding: 0; width: 100%; max-width: 100%; }
             .card { box-shadow: none; border: none; padding: 0; margin: 0; }
-            #pdf-header { display: block !important; margin-bottom: 20px; border-bottom: 2.5px solid black; padding-bottom: 10px; }
+            #pdf-header { display: block !important; margin-bottom: 20px; border-bottom: 2.5px solid black; padding-bottom: 10px; text-align: left; }
             #pdf-header h1 { margin: 0; font-size: 22px; color: #000; }
             table { font-size: 10pt; width: 100%; }
-            th, td { text-align: center !important; }
+            th, td { text-align: center !important; border-bottom: 1px solid #eee; }
         }
     </style>
 </head>
@@ -68,7 +71,7 @@
         <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
-        <h2>Inscriptions</h2>
+        <h2 id="t-reg-title">Inscriptions</h2>
         <input type="text" id="regNom" placeholder="NOM / NAAM">
         <input type="text" id="regPrenom" placeholder="Prénom / Voornaam">
         <input type="text" id="regUser" placeholder="User">
@@ -153,7 +156,7 @@
             <span>+/- : <span id="total-month-diff">0h00</span></span>
         </div>
         <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
-        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 ENVOYER PAR EMAIL</button>
+        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 ENVOYER RÉCAP POUR EXCEL</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
@@ -177,8 +180,8 @@
     let user = null, entries = [], currentLang = 'FR';
 
     const translations = {
-        FR: { rem: "Reste à prester (39h)", save: "ENREGISTRER", date: "Date", arr: "Arrivée", dep: "Départ", loc: "Lieu", vac: "Solde Congés", type: "Type", from: "Du", to: "Au", val: "VALIDER", pt: "POINTAGE", hist: "TABLEAU", adm: "ADMIN" },
-        NL: { rem: "Nog te presteren (39u)", save: "OPSLAAN", date: "Datum", arr: "Aankomst", dep: "Vertrek", loc: "Locatie", vac: "Verlof Saldo", type: "Type", from: "Van", to: "Tot", val: "BEVESTIGEN", pt: "TIJDREG.", hist: "OVERZICHT", adm: "ADMIN" }
+        FR: { rem: "Reste à prester (39h)", save: "ENREGISTRER", date: "Date", arr: "Arrivée", dep: "Départ", loc: "Lieu", vac: "Solde Congés", pt: "POINTAGE", hist: "TABLEAU", adm: "ADMIN" },
+        NL: { rem: "Nog te presteren (39u)", save: "OPSLAAN", date: "Datum", arr: "Aankomst", dep: "Vertrek", loc: "Locatie", vac: "Verlof Saldo", pt: "TIJDREG.", hist: "OVERZICHT", adm: "ADMIN" }
     };
 
     function handleAuth() {
@@ -206,9 +209,9 @@
         const now = new Date();
         const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
         const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
-        const daysCount = new Date(y, m + 1, 0).getDate();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
         
-        for (let i = 1; i <= daysCount; i++) {
+        for (let i = 1; i <= daysInMonth; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
             const e = entries.find(x => x.date === ds);
@@ -235,15 +238,38 @@
     }
 
     function sendEmail() {
-        const month = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
-        const year = document.getElementById('selectYear').value;
-        const subject = encodeURIComponent(`Prestations WorkLog - ${user.nom} ${user.prenom} - ${month} ${year}`);
-        let bodyText = `Bonjour,\n\nVoici le résumé de mes prestations pour ${month} ${year}:\n\n`;
-        bodyText += `Total preste: ${document.getElementById('total-month-work').innerText}\n`;
-        bodyText += `Solde (+/-): ${document.getElementById('total-month-diff').innerText}\n\n`;
-        bodyText += `Envoyé via Dräger WorkLog App.`;
+        const mLabel = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
+        const yVal = document.getElementById('selectYear').value;
+        const mIndex = parseInt(document.getElementById('selectMonth').value);
+        const daysCount = new Date(yVal, mIndex + 1, 0).getDate();
         
-        window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
+        let mailBody = `RECAPITULATIF PRESTATIONS - ${user.nom.toUpperCase()} ${user.prenom}\n`;
+        mailBody += `PERIODE : ${mLabel} ${yVal}\n`;
+        mailBody += `--------------------------------------------------\n`;
+        mailBody += `DATE\tLIEU (HORAIRE)\tREEL\tDIFF\n`;
+
+        for (let i = 1; i <= daysCount; i++) {
+            const ds = `${yVal}-${String(mIndex+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const e = entries.find(x => x.date === ds);
+            const dobj = new Date(yVal, mIndex, i);
+            const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
+
+            if(e) {
+                const formatLoc = `${e.location} ${e.start !== 'N/A' ? '('+e.start+'-'+e.end+')' : ''}`;
+                mailBody += `${i}/${mIndex+1}\t${formatLoc}\t${formatT(e.minutes)}\t${formatT(e.minutes-goal)}\n`;
+            } else if (dobj.getDay() !== 0 && dobj.getDay() !== 6) {
+                mailBody += `${i}/${mIndex+1}\t---\t0h00\t-${formatT(goal)}\n`;
+            }
+        }
+
+        mailBody += `--------------------------------------------------\n`;
+        mailBody += `TOTAL MOIS: ${document.getElementById('total-month-work').innerText}\n`;
+        mailBody += `SOLDE (+/-): ${document.getElementById('total-month-diff').innerText}\n`;
+        mailBody += `--------------------------------------------------\n\n`;
+        mailBody += `ASTUCE : Copiez le texte ci-dessus et collez-le dans Excel.`;
+
+        const subject = encodeURIComponent(`WorkLog ${mLabel} ${yVal} - ${user.nom}`);
+        window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(mailBody)}`;
     }
 
     function syncData() {
@@ -260,7 +286,7 @@
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
         let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, isVacation: false, start: s, end: e });
-        alert("Enregistré !");
+        alert("Sauvegardé !");
     }
 
     async function saveVacation() {
@@ -273,7 +299,7 @@
             }
             curr.setDate(curr.getDate() + 1);
         }
-        alert("Congés enregistrés !");
+        alert("Congés sauvegardés !");
     }
 
     function loadAdminList() {
@@ -305,11 +331,6 @@
         document.getElementById('l-arr').innerText = t.arr;
         document.getElementById('l-dep').innerText = t.dep;
         document.getElementById('l-loc').innerText = t.loc;
-        document.getElementById('t-vac-txt').innerText = t.vac;
-        document.getElementById('l-type').innerText = t.type;
-        document.getElementById('l-from').innerText = t.from;
-        document.getElementById('l-to').innerText = t.to;
-        document.getElementById('b-vac').innerText = t.val;
         document.getElementById('n-point').innerText = t.pt;
         document.getElementById('n-hist').innerText = t.hist;
         document.getElementById('n-adm').innerText = t.adm;
@@ -324,7 +345,6 @@
         document.getElementById('btn-v').classList.toggle('active', t==='vacation');
     }
     function initApp() {
-        db.ref('users/burtonse').update({ nom: "BURTON", prenom: "Sean", pin: "0514", role: "admin", active: true });
         const mSel = document.getElementById('selectMonth');
         ["Jan","Fév","Mar","Avr","Mai","Jui","Juil","Aoû","Sep","Oct","Nov","Déc"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
@@ -334,7 +354,7 @@
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
         db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Demande envoyée."); showAuth('login');
+        alert("Check!"); showAuth('login');
     }
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>

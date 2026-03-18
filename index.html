@@ -3,424 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dräger WorkLog - Expert Plus</title>
+    <title>Dräger WorkLog - Pro Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #003366; --secondary: #3498db; --success: #27ae60; --danger: #e74c3c; --draeger-orange: #ff9a00; --draeger-blue: #005596; --draeger-bg: #fff9f0; }
+        :root { --primary: #003366; --secondary: #3498db; --success: #27ae60; --draeger-orange: #ff9a00; --draeger-blue: #005596; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; display: flex; justify-content: center; }
-        #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { background: white; padding: 30px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .container { background: white; padding: 15px; border-radius: 15px; width: 100%; max-width: 600px; display: none; box-sizing: border-box; position: relative; }
+        #login-overlay, #config-overlay { position: fixed; inset: 0; background: rgba(0,51,102,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .box { background: white; padding: 25px; border-radius: 15px; width: 85%; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .container { background: white; padding: 15px; border-radius: 15px; width: 100%; max-width: 600px; display: none; }
         
-        .lang-switch { position: absolute; top: 10px; right: 15px; display: flex; gap: 5px; z-index: 100; }
-        .lang-btn { background: #eee; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .lang-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
-
-        .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; margin-top: 25px; }
+        .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
         .tab { flex: 1; padding: 12px; text-align: center; border: none; background: none; font-weight: bold; color: #777; cursor: pointer; }
         .tab.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
         .content { display: none; }
         .content.active { display: block; }
-        .input-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85em; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
-        
-        .travel-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .check-card { background: var(--draeger-bg); border: 1px solid #f39c12; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.75em; font-weight: bold; }
-        .check-card input { width: 18px; height: 18px; margin: 0; }
-        .check-card.active { background: #ffeaa7; border: 2px solid #e67e22; }
 
-        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-export { background: var(--draeger-orange); color: white; margin-top: 20px; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-excel { background: #217346; color: white; margin-top: 8px; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.8em; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+        
+        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-config { background: #6c757d; font-size: 0.8em; margin-top: 5px; }
         
         table { width: 100%; border-collapse: collapse; font-size: 0.75em; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 8px 4px; text-align: center; }
-        tr.total-row { background: #eee; font-weight: bold; }
+        th, td { border: 1px solid #eee; padding: 6px 4px; text-align: center; }
         .weekend { background: #f9f9f9; color: #ccc; }
-        .holiday-row { background: #eef7ff; color: #005596; font-weight: bold; }
-        .planned-row { background: #f0faff; color: #3498db; font-style: italic; }
-        .other-conge-row { background: #fdf2e9; color: #e67e22; font-weight: bold; }
-        .counter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 0.85em; }
-        .badge-rem { background: var(--success); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
+        .holiday-row { background: #eef7ff; font-weight: bold; }
 
-        @media print {
-            .tabs, .btn-main, .input-group, .travel-options, select, #login-overlay, .no-print, .btn-export, .btn-excel, .lang-switch { display: none !important; }
-            body { background: white; padding: 0; }
-            .container { display: block !important; width: 100%; max-width: none; border: none; box-shadow: none; }
-            .content { display: block !important; }
-            table { font-size: 10pt; width: 100%; }
-        }
+        .salary-badge { background: #f0faff; border-left: 4px solid var(--secondary); padding: 12px; border-radius: 0 8px 8px 0; margin-top: 15px; }
+        .counter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.75em; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="login-overlay">
-    <div class="login-box">
-        <h2 style="color:var(--primary); margin-top:0;">WorkLog Cloud</h2>
-        <input type="text" id="loginUser" placeholder="ID (burtonse)">
-        <input type="password" id="loginPass" placeholder="PIN" style="margin-top:10px;">
-        <button class="btn-main" id="lbl-login" onclick="checkLogin()">Connexion</button>
+    <div class="box">
+        <h2 style="color:var(--primary); margin:0 0 20px 0;">WorkLog Cloud</h2>
+        <input type="text" id="loginUser" placeholder="Utilisateur (burtonse)">
+        <button class="btn-main" onclick="checkLogin()">Connexion</button>
+    </div>
+</div>
+
+<div id="config-overlay" style="display:none;">
+    <div class="box">
+        <h3 style="margin-top:0;">Paramètres Salaire</h3>
+        <div class="input-group"><label>Net Fixe (Base)</label><input type="number" id="cfgNet" value="2151.21" step="0.01"></div>
+        <div class="input-group"><label>Indemnité / jour (€)</label><input type="number" id="cfgIndem" value="11" step="0.5"></div>
+        <div class="input-group"><label>Taux Horaire Brut</label><input type="number" id="cfgTaux" value="15.3444" step="0.0001"></div>
+        <button class="btn-main" onclick="saveConfig()">Sauvegarder</button>
+        <button class="btn-main btn-config" onclick="toggleConfig(false)">Annuler</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    <div class="lang-switch no-print">
-        <button class="lang-btn" id="btn-fr" onclick="setLang('fr')">FR</button>
-        <button class="lang-btn" id="btn-nl" onclick="setLang('nl')">NL</button>
-    </div>
-
     <div class="tabs no-print">
-        <button class="tab active" id="tab-saisie" onclick="openTab('saisie', this)">Saisie</button>
-        <button class="tab" id="tab-hist" onclick="openTab('historique', this)">Historique</button>
+        <button class="tab active" onclick="openTab('saisie', this)">Saisie</button>
+        <button class="tab" onclick="openTab('historique', this)">Historique</button>
     </div>
 
     <div id="saisie" class="content active">
         <div class="input-group">
-            <label id="lbl-type">Type d'entrée</label>
+            <label>Type d'entrée</label>
             <select id="entryType" onchange="togglePeriod()">
-                <option value="WORK" id="opt-work">Travail</option>
-                <option value="CONGE" id="opt-conge">Congé / Absence</option>
+                <option value="WORK">Travail</option>
+                <option value="CONGE">Congé / Absence</option>
             </select>
         </div>
-
-        <div id="conge-type-group" class="input-group" style="display:none; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-            <label id="lbl-subconge">Précision de l'absence</label>
+        <div id="conge-type-group" class="input-group" style="display:none;">
             <select id="subCongeType">
-                <option value="ANNUEL" id="opt-annuel">🌴 Congé Annuel</option>
-                <option value="FERIE" id="opt-ferie">🇧🇪 Jour Férié</option>
-                <option value="REPORTE" id="opt-reporte">⏳ Congé Reporté/Récup</option>
-                <option value="MALADIE" id="opt-maladie">🤒 Maladie</option>
+                <option value="ANNUEL">🌴 Congé Annuel</option>
+                <option value="FERIE">🇧🇪 Jour Férié</option>
+                <option value="MALADIE">🤒 Maladie</option>
+                <option value="REPORTE">⏳ Récupération</option>
             </select>
         </div>
-
-        <div id="date-single" class="input-group">
-            <label id="lbl-date">Date</label><input type="date" id="date">
-        </div>
-
-        <div id="date-period" class="input-group" style="display:none;">
-            <label id="lbl-from">Du</label><input type="date" id="dateStart">
-            <label id="lbl-to" style="margin-top:10px;">Au</label><input type="date" id="dateEnd">
-        </div>
-
+        <div id="date-single" class="input-group"><label>Date</label><input type="date" id="date"></div>
+        <div id="date-period" class="input-group" style="display:none;"><label>Du</label><input type="date" id="dateStart"><label>Au</label><input type="date" id="dateEnd"></div>
+        
         <div id="work-fields">
-            <label id="lbl-trajet">Trajets (-30m par case)</label>
-            <div class="travel-options">
-                <div class="check-card" id="cardHomeStart" onclick="toggleCheck('homeStart')">
-                    <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
-                    🏠 <span id="lbl-hStart">Départ Maison</span>
-                </div>
-                <div class="check-card" id="cardHomeEnd" onclick="toggleCheck('homeEnd')">
-                    <input type="checkbox" id="homeEnd" onclick="event.stopPropagation()">
-                    🏠 <span id="lbl-hEnd">Retour Maison</span>
-                </div>
+            <div style="display: flex; gap: 10px; margin-bottom:10px;">
+                <div style="flex:1"><label>Début</label><input type="time" id="startTime" value="08:00"></div>
+                <div style="flex:1"><label>Fin</label><input type="time" id="endTime" value="16:30"></div>
             </div>
-
-            <div class="input-group">
-                <label id="lbl-loc">Lieu</label>
-                <select id="location">
-                    <option value="Wemmel">Wemmel (Pause 45m)</option>
-                    <option value="Esso">Esso (Pause 30m)</option>
-                    <option value="INEOS">INEOS (Pause 30m)</option>
-                    <option value="Client">Client (Pause 30m)</option>
-                </select>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <div class="input-group" style="flex:1;"><label id="lbl-start">Début</label><input type="time" id="startTime" value="08:00"></div>
-                <div class="input-group" style="flex:1;"><label id="lbl-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
-            </div>
+            <label>Lieu</label>
+            <select id="location"><option value="Wemmel">Wemmel (45m)</option><option value="Esso">Esso (30m)</option><option value="Client">Client (30m)</option></select>
         </div>
-        <button class="btn-main" id="btn-save" onclick="saveData()">Enregistrer</button>
+        <button class="btn-main" onclick="saveData()">Enregistrer</button>
     </div>
 
     <div id="historique" class="content">
         <div class="counter-grid">
-            <div><span id="lbl-taken">Pris</span>: <b id="stat-taken">0</b></div>
-            <div><span id="lbl-planned">Prévus</span>: <b id="stat-planned">0</b></div>
-            <div style="grid-column: span 2; border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">
-                <span id="lbl-rest">Solde Annuel Reste</span>: <b id="stat-left" class="badge-rem">28</b>
-            </div>
+            <div>Pris: <b id="stat-taken">0</b></div>
+            <div>Prévus: <b id="stat-planned">0</b></div>
+            <div>Solde: <b id="stat-left">28</b></div>
         </div>
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;" class="no-print">
-            <select id="selectMonth" style="flex: 2;" onchange="renderTable()"></select>
-            <select id="selectYear" style="flex: 1;" onchange="renderTable()"></select>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <select id="selectMonth" onchange="renderTable()" style="flex:2;"></select>
+            <select id="selectYear" onchange="renderTable()" style="flex:1;"></select>
         </div>
         <table>
-            <thead>
-                <tr><th id="th-date">Date</th><th id="th-info">Info</th><th id="th-net">Net</th><th id="th-diff">Diff</th><th class="no-print"></th></tr>
-            </thead>
+            <thead><tr><th>Date</th><th>Info</th><th>Net</th><th>Diff</th><th></th></tr></thead>
             <tbody id="tableBody"></tbody>
-            <tfoot id="tableFoot"></tfoot>
         </table>
-        <div class="no-print">
-            <button class="btn-export" id="btn-pdf" onclick="window.print()">EXPORTER PDF</button>
-            <button class="btn-excel" id="btn-excel-lbl" onclick="exportToExcel()">EXPORTER EXCEL (CSV)</button>
-        </div>
+        
+        <div class="salary-badge" id="salaryDisplay">Calcul en cours...</div>
+        <button class="btn-main btn-config no-print" onclick="toggleConfig(true)">⚙️ Paramètres Salaire</button>
     </div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw",
-        authDomain: "worklog-fc54b.firebaseapp.com",
-        databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/",
-        projectId: "worklog-fc54b",
-        storageBucket: "worklog-fc54b.firebasestorage.app",
-        messagingSenderId: "1031734193051",
-        appId: "1:1031734193051:web:6a8df0f57aa4d63796cf3e"
-    };
-
+    const firebaseConfig = { apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", authDomain: "worklog-fc54b.firebaseapp.com", databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "worklog-fc54b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let entries = [];
     let currentUserId = "";
-    let lang = localStorage.getItem('worklog_lang') || 'fr';
 
-    const translations = {
-        fr: {
-            login: "Connexion", tabSaisie: "Saisie", tabHist: "Historique", type: "Type d'entrée", work: "Travail", conge: "Congé / Absence",
-            sub: "Précision de l'absence", annuel: "🌴 Congé Annuel", ferie: "🇧🇪 Jour Férié", reporte: "⏳ Congé Reporté", maladie: "🤒 Maladie",
-            date: "Date", from: "Du", to: "Au", trajet: "Trajets (-30m par case)", hStart: "Départ Maison", hEnd: "Retour Maison",
-            loc: "Lieu", start: "Début", end: "Fin", save: "Enregistrer", sync: "✅ Synchronisé !", taken: "Pris", planned: "Prévus",
-            rest: "Solde Annuel Reste", thDate: "Date", thInfo: "Lieu / Heures", thNet: "Net", thDiff: "Diff", pdf: "EXPORTER PDF", excel: "EXPORTER EXCEL (CSV)",
-            months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
-            days: ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"], total: "TOTAL MOIS", delConfirm: "Supprimer ?"
-        },
-        nl: {
-            login: "Inloggen", tabSaisie: "Invoer", tabHist: "Overzicht", type: "Type invoer", work: "Werkdag", conge: "Verlof / Afwezigheid",
-            sub: "Type afwezigheid", annuel: "🌴 Jaarlijks Verlof", ferie: "🇧🇪 Feestdag", reporte: "⏳ Overgedragen verlof", maladie: "🤒 Ziekte",
-            date: "Datum", from: "Van", to: "Tot", trajet: "Traject opties (-30m per vinkje)", hStart: "Vertrek Thuis", hEnd: "Terug Thuis",
-            loc: "Locatie", start: "Start", end: "Einde", save: "Opslaan", sync: "✅ Gesynchroniseerd!", taken: "Genomen", planned: "Gepland",
-            rest: "Jaarlijks Saldo", thDate: "Datum", thInfo: "Locatie / Uren", thNet: "Netto", thDiff: "Diff", pdf: "EXPORTEREN PDF", excel: "EXPORTEREN EXCEL (CSV)",
-            months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
-            days: ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"], total: "MAAND TOTAAL", delConfirm: "Verwijderen?"
-        }
-    };
-
-    function setLang(l) { lang = l; localStorage.setItem('worklog_lang', l); updateUI(); }
-
-    function updateUI() {
-        const t = translations[lang];
-        document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
-        document.getElementById('btn-nl').classList.toggle('active', lang === 'nl');
-        document.getElementById('lbl-login').innerText = t.login;
-        document.getElementById('tab-saisie').innerText = t.tabSaisie;
-        document.getElementById('tab-hist').innerText = t.tabHist;
-        document.getElementById('lbl-type').innerText = t.type;
-        document.getElementById('opt-work').innerText = t.work;
-        document.getElementById('opt-conge').innerText = t.conge;
-        document.getElementById('lbl-subconge').innerText = t.sub;
-        document.getElementById('opt-annuel').innerText = t.annuel;
-        document.getElementById('opt-ferie').innerText = t.ferie;
-        document.getElementById('opt-reporte').innerText = t.reporte;
-        document.getElementById('opt-maladie').innerText = t.maladie;
-        document.getElementById('lbl-date').innerText = t.date;
-        document.getElementById('lbl-from').innerText = t.from;
-        document.getElementById('lbl-to').innerText = t.to;
-        document.getElementById('lbl-trajet').innerText = t.trajet;
-        document.getElementById('lbl-hStart').innerText = t.hStart;
-        document.getElementById('lbl-hEnd').innerText = t.hEnd;
-        document.getElementById('lbl-loc').innerText = t.loc;
-        document.getElementById('lbl-start').innerText = t.start;
-        document.getElementById('lbl-end').innerText = t.end;
-        document.getElementById('btn-save').innerText = t.save;
-        document.getElementById('lbl-taken').innerText = t.taken;
-        document.getElementById('lbl-planned').innerText = t.planned;
-        document.getElementById('lbl-rest').innerText = t.rest;
-        document.getElementById('th-date').innerText = t.thDate;
-        document.getElementById('th-info').innerText = t.thInfo;
-        document.getElementById('th-net').innerText = t.thNet;
-        document.getElementById('th-diff').innerText = t.thDiff;
-        document.getElementById('btn-pdf').innerText = t.pdf;
-        document.getElementById('btn-excel-lbl').innerText = t.excel;
-
-        const mSel = document.getElementById('selectMonth');
-        const currentM = mSel.value || new Date().getMonth();
-        mSel.innerHTML = '';
-        t.months.forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == currentM ? 'selected' : ''}>${m}</option>`);
-        renderTable();
-    }
+    // Chargement des paramètres locaux ou valeurs par défaut (Fiche Fév 2026)
+    let salaryParams = JSON.parse(localStorage.getItem('salaryParams')) || { netBase: 2151.21, indem: 11.0, taux: 15.3444 };
 
     function checkLogin() {
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
-        if(u === "burtonse") {
-            currentUserId = u;
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-            loadData();
-        }
+        if(u === "burtonse") { currentUserId = u; document.getElementById('login-overlay').style.display='none'; document.getElementById('mainContainer').style.display='block'; loadData(); }
     }
 
     function loadData() {
         db.ref('users/' + currentUserId + '/entries').on('value', (snap) => {
-            const data = snap.val();
-            entries = data ? Object.values(data) : [];
+            entries = snap.val() ? Object.values(snap.val()) : [];
             renderTable();
             updateStats();
         });
     }
 
+    function toggleConfig(show) { document.getElementById('config-overlay').style.display = show ? 'flex' : 'none'; }
+    function saveConfig() {
+        salaryParams = { netBase: parseFloat(document.getElementById('cfgNet').value), indem: parseFloat(document.getElementById('cfgIndem').value), taux: parseFloat(document.getElementById('cfgTaux').value) };
+        localStorage.setItem('salaryParams', JSON.stringify(salaryParams));
+        toggleConfig(false);
+        renderTable();
+    }
+
     async function saveData() {
         const type = document.getElementById('entryType').value;
-        const subType = document.getElementById('subCongeType').value;
-        if (type === "CONGE") {
+        if(type === "CONGE") {
             let start = new Date(document.getElementById('dateStart').value);
             let end = new Date(document.getElementById('dateEnd').value);
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 if (d.getDay() !== 0 && d.getDay() !== 6) {
                     const dStr = d.toISOString().split('T')[0];
-                    await db.ref('users/' + currentUserId + '/entries/' + dStr.replace(/-/g, '')).set({
-                        date: dStr, location: "CONGE", subType: subType, minutes: 0, start: "", end: ""
-                    });
+                    await db.ref('users/'+currentUserId+'/entries/'+dStr.replace(/-/g,'')).set({ date: dStr, location: "CONGE", subType: document.getElementById('subCongeType').value, minutes: 0 });
                 }
             }
         } else {
             const d = document.getElementById('date').value;
-            const s = document.getElementById('startTime').value;
-            const e = document.getElementById('endTime').value;
-            const loc = document.getElementById('location').value;
-            let diff = (new Date(`${d}T${e}`) - new Date(`${d}T${s}`)) / 60000;
-            if (document.getElementById('homeStart').checked) diff -= 30;
-            if (document.getElementById('homeEnd').checked) diff -= 30;
-            diff -= (loc === "Wemmel" ? 45 : 30);
-            await db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).set({
-                date: d, location: loc, minutes: diff, start: s, end: e
-            });
+            let diff = (new Date(`${d}T${document.getElementById('endTime').value}`) - new Date(`${d}T${document.getElementById('startTime').value}`)) / 60000;
+            diff -= (document.getElementById('location').value === "Wemmel" ? 45 : 30);
+            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ date: d, location: document.getElementById('location').value, minutes: diff, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value });
         }
-        const b = document.getElementById('btn-save');
-        b.innerText = translations[lang].sync;
-        setTimeout(() => b.innerText = translations[lang].save, 2000);
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value);
         const y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody');
-        const t = translations[lang];
         tBody.innerHTML = '';
-        let tMin = 0, tSupp = 0;
+        let totalSuppMinutes = 0, joursTravailles = 0;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
+
         for (let i = 1; i <= daysInMonth; i++) {
             const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             const entry = entries.find(e => e.date === dStr);
             const dObj = new Date(y, m, i);
             const dNum = dObj.getDay();
-            
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
-            let diffVal = 0;
-            let netDisplay = "-";
-            let diffDisplay = "-";
-            let rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
-            let info = "-";
-            
+            let diff = 0, info = "-", rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
+
             if (entry) {
-                if (entry.location === 'CONGE') {
-                    // NEUTRE : Diff = 0, Net = Texte du congé
-                    diffVal = 0;
-                    diffDisplay = "0h00";
-                    netDisplay = entry.subType === "ANNUEL" ? "CONGE" : entry.subType;
-                    
-                    const isFuture = dStr >= new Date().toISOString().split('T')[0];
-                    if(entry.subType === "ANNUEL") {
-                        rClass = isFuture ? 'planned-row' : 'holiday-row';
-                    } else { rClass = 'other-conge-row'; }
-                    info = netDisplay;
-                } else {
-                    // TRAVAIL : Calcul normal
-                    diffVal = entry.minutes - goal;
-                    tMin += entry.minutes;
-                    tSupp += diffVal;
-                    netDisplay = formatT(entry.minutes);
-                    diffDisplay = formatT(diffVal);
-                    info = entry.location + ' ' + entry.start + '-' + entry.end;
-                }
+                if (entry.location !== 'CONGE') {
+                    joursTravailles++; diff = entry.minutes - goal; totalSuppMinutes += diff;
+                    info = `${entry.location} ${entry.start}-${entry.end}`;
+                } else { info = entry.subType; rClass = 'holiday-row'; }
             }
-            
-            tBody.innerHTML += `<tr class="${rClass}">
-                <td>${t.days[dNum]} ${i}</td>
-                <td style="text-align:left;">${info}</td>
-                <td>${netDisplay}</td>
-                <td style="color:${diffVal > 0 ? 'green' : (diffVal < 0 ? 'red' : 'black')}">${diffDisplay}</td>
-                <td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer;color:red;">✕</span></td>
-            </tr>`;
+            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td>${entry ? formatT(entry.minutes) : '-'}</td><td>${entry ? formatT(diff) : '-'}</td><td onclick="deleteEntry('${dStr}')">✕</td></tr>`;
         }
-        document.getElementById('tableFoot').innerHTML = `<tr class="total-row"><td colspan="2">${t.total}</td><td>${formatT(tMin)}</td><td>${formatT(tSupp)}</td><td class="no-print"></td></tr>`;
+
+        const bonusSupp = totalSuppMinutes > 0 ? (totalSuppMinutes/60) * salaryParams.taux * 1.5 * 0.75 : 0;
+        const totalIndem = joursTravailles * salaryParams.indem;
+        const totalNet = salaryParams.netBase + totalIndem + bonusSupp;
+
+        document.getElementById('salaryDisplay').innerHTML = `
+            <div style="font-size:1.1em; color:var(--primary);"><b>Est. Salaire Net : ${totalNet.toFixed(2)} €</b></div>
+            <div style="font-size:0.85em; color:#666; margin-top:5px;">
+                Trajet: +${totalIndem.toFixed(2)}€ (${joursTravailles}j) | Heures Sup: +${bonusSupp.toFixed(2)}€
+            </div>
+        `;
     }
 
-    function exportToExcel() {
-        const m = parseInt(document.getElementById('selectMonth').value);
-        const y = parseInt(document.getElementById('selectYear').value);
-        const t = translations[lang];
-        let csvContent = "\uFEFF"; 
-        csvContent += `${t.thDate};${t.thInfo};${t.thNet};${t.thDiff}\n`;
-        const daysInMonth = new Date(y, m + 1, 0).getDate();
-        for (let i = 1; i <= daysInMonth; i++) {
-            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-            const entry = entries.find(e => e.date === dStr);
-            const dObj = new Date(y, m, i);
-            const dNum = dObj.getDay();
-            let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
-            
-            let info = "-";
-            let net = "-";
-            let diff = "-";
-            
-            if(entry) {
-                if(entry.location === 'CONGE') {
-                    info = entry.subType;
-                    net = entry.subType;
-                    diff = "0h00";
-                } else {
-                    info = entry.location + " " + entry.start + "-" + entry.end;
-                    net = formatT(entry.minutes);
-                    diff = formatT(entry.minutes - goal);
-                }
-            }
-            csvContent += `${t.days[dNum]} ${i};${info};${net};${diff}\n`;
-        }
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `WorkLog_${t.months[m]}_${y}.csv`);
-        link.click();
-    }
-
-    function formatT(min) {
-        const h = Math.floor(Math.abs(min) / 60);
-        const m = Math.round(Math.abs(min) % 60);
-        return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`;
-    }
-
-    function updateStats() {
-        const curY = new Date().getFullYear().toString();
-        const today = new Date().toISOString().split('T')[0];
-        const conAnnuels = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE" && e.subType === "ANNUEL");
-        const taken = conAnnuels.filter(e => e.date < today).length;
-        const planned = conAnnuels.filter(e => e.date >= today).length;
-        document.getElementById('stat-taken').innerText = taken;
-        document.getElementById('stat-planned').innerText = planned;
-        document.getElementById('stat-left').innerText = Math.max(0, 28 - (taken + planned));
-    }
-
-    function deleteEntry(d) { if(confirm(translations[lang].delConfirm)) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
+    function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
+    function updateStats() { const curY = new Date().getFullYear().toString(); const annuels = entries.filter(e => e.date.startsWith(curY) && e.subType === "ANNUEL"); document.getElementById('stat-taken').innerText = annuels.filter(e => e.date < new Date().toISOString().split('T')[0]).length; document.getElementById('stat-planned').innerText = annuels.length; document.getElementById('stat-left').innerText = 28 - annuels.length; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); }
-    function toggleCheck(id) { const cb = document.getElementById(id); cb.checked = !cb.checked; document.getElementById('card' + id.charAt(0).toUpperCase() + id.slice(1)).classList.toggle('active', cb.checked); }
-    function togglePeriod() {
-        const isC = document.getElementById('entryType').value === "CONGE";
-        document.getElementById('conge-type-group').style.display = isC ? "block" : "none";
-        document.getElementById('date-single').style.display = isC ? "none" : "block";
-        document.getElementById('date-period').style.display = isC ? "block" : "none";
-        document.getElementById('work-fields').style.display = isC ? "none" : "block";
-    }
+    function togglePeriod() { const isC = document.getElementById('entryType').value === "CONGE"; document.getElementById('conge-type-group').style.display = isC ? "block" : "none"; document.getElementById('date-single').style.display = isC ? "none" : "block"; document.getElementById('date-period').style.display = isC ? "block" : "none"; document.getElementById('work-fields').style.display = isC ? "none" : "block"; }
 
-    [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`);
+    const mNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+    mNames.forEach((n, i) => document.getElementById('selectMonth').innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+    [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y==2026?'selected':''}>${y}</option>`);
     document.getElementById('date').valueAsDate = new Date();
     document.getElementById('dateStart').valueAsDate = new Date();
     document.getElementById('dateEnd').valueAsDate = new Date();
-    updateUI();
 </script>
 </body>
 </html>

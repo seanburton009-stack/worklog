@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V42</title>
+    <title>Dräger WorkLog V43</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -24,8 +24,8 @@
         .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; cursor: pointer; }
         .tab.active { color: var(--secondary); font-weight: 800; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { font-size: 0.7em; padding: 10px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 10px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.85em; }
+        th { font-size: 0.65em; padding: 8px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
+        td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.8em; }
         .weekend { background: #f8fafc !important; }
         .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         @media print {
@@ -108,13 +108,13 @@
     </div>
 
     <div id="historique" class="content" style="display:none;">
-        <div class="card">
+        <div class="card" style="padding: 10px;">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <select id="selectMonth" onchange="renderTable()"></select>
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
             <table>
-                <thead><tr><th>Date</th><th>Lieu</th><th>Réel</th><th>+/-</th><th class="delete-col"></th></tr></thead>
+                <thead><tr><th>Date</th><th>Lieu</th><th>Horaire</th><th>Réel</th><th>+/-</th><th class="delete-col"></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -186,6 +186,7 @@
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
         let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, isVacation: false, start: s, end: e });
+        alert("Enregistré !");
     }
 
     async function saveVacation() {
@@ -195,7 +196,7 @@
             if(curr.getDay() !== 0 && curr.getDay() !== 6) {
                 const ds = curr.toISOString().split('T')[0];
                 const dayType = curr.getDay();
-                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ date: ds, location: document.getElementById('vacCategory').value, minutes: (dayType === 5 ? 420 : 480), isVacation: true });
+                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ date: ds, location: document.getElementById('vacCategory').value, minutes: (dayType === 5 ? 420 : 480), isVacation: true, start: "N/A", end: "N/A" });
             }
             curr.setDate(curr.getDate() + 1);
         }
@@ -227,6 +228,7 @@
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td>${i}/${m+1}</td>
                 <td>${e ? e.location : ''}</td>
+                <td>${(e && e.start && e.start !== "N/A") ? e.start + ' - ' + e.end : ''}</td>
                 <td>${e ? formatT(e.minutes) : '0h00'}</td>
                 <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
                 <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer;">🗑️</span>` : ''}</td>

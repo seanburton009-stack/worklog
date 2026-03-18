@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V24</title>
+    <title>Dräger WorkLog V25</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -30,7 +30,6 @@
         label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.85em; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { width: 100%; padding: 14px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 15px; transition: border 0.3s; }
         
-        /* Sous-onglets Pointer */
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 12px; }
         .sub-tab { flex: 1; padding: 10px; border: none; background: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #64748b; font-size: 0.9em; transition: 0.3s; }
         .sub-tab.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -106,30 +105,21 @@
             <b id="stat-remaining-ptr">--h--</b>
         </div>
         <div id="compteur-conges" class="info-week conges" style="display:none;">
-            <span id="txt-con-label">Congés restants</span>
+            <span id="txt-con-label">Congés légaux restants</span>
             <b id="stat-vac-count">28</b>
         </div>
 
         <div id="form-work" class="card">
             <label id="txt-lbl-date">Date</label>
             <input type="date" id="dateInput">
-            
             <div style="display:flex; gap:15px;">
                 <div style="flex:1;"><label id="txt-lbl-start">Arrivée</label><input type="time" id="startTime" value="08:00"></div>
                 <div style="flex:1;"><label id="txt-lbl-end">Départ</label><input type="time" id="endTime" value="16:30"></div>
             </div>
-
             <div class="check-row">
-                <div class="check-item" onclick="document.getElementById('homeStart').click()">
-                    <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
-                    <label id="txt-lbl-hs">Départ Domicile (+30m)</label>
-                </div>
-                <div class="check-item" onclick="document.getElementById('homeEnd').click()">
-                    <input type="checkbox" id="homeEnd" onclick="event.stopPropagation()">
-                    <label id="txt-lbl-he">Retour Domicile (+30m)</label>
-                </div>
+                <div class="check-item" onclick="document.getElementById('homeStart').click()"><input type="checkbox" id="homeStart" onclick="event.stopPropagation()"><label id="txt-lbl-hs">Départ Domicile (+30m)</label></div>
+                <div class="check-item" onclick="document.getElementById('homeEnd').click()"><input type="checkbox" id="homeEnd" onclick="event.stopPropagation()"><label id="txt-lbl-he">Retour Domicile (+30m)</label></div>
             </div>
-
             <label id="txt-lbl-loc">Lieu d'intervention</label>
             <select id="location">
                 <option value="Wemmel">Wemmel (-45m pause)</option>
@@ -137,17 +127,22 @@
                 <option value="INEOS">INEOS (-30m pause)</option>
                 <option value="Esso">Esso (-30m pause)</option>
             </select>
-            
             <button class="btn-main" id="txt-btn-save" onclick="saveData()">Enregistrer la journée</button>
         </div>
 
         <div id="form-vacation" class="card" style="display:none;">
+            <label id="txt-lbl-vac-cat">Catégorie</label>
+            <select id="vacCategory">
+                <option value="Congés légaux">Congés légaux</option>
+                <option value="Jour férié">Jour férié</option>
+                <option value="Jour reporté">Jour reporté</option>
+                <option value="Malade">Malade</option>
+            </select>
             <label id="txt-lbl-vac-start">Du (Inclus)</label>
             <input type="date" id="vacStart">
             <label id="txt-lbl-vac-end">Au (Inclus)</label>
             <input type="date" id="vacEnd">
-            <p style="font-size:0.8em; color:#64748b; margin-bottom:15px;" id="txt-vac-note">* Seuls les jours ouvrables seront décomptés.</p>
-            <button class="btn-main" id="txt-btn-save-vac" onclick="saveVacation()">Enregistrer les congés</button>
+            <button class="btn-main" id="txt-btn-save-vac" onclick="saveVacation()">Enregistrer</button>
         </div>
     </div>
 
@@ -186,27 +181,29 @@
     const ui = {
         fr: {
             st_work: "Journée de travail", st_vac: "Congés", login_btn: "Se connecter", logout: "Déconnexion", 
-            rem_label: "Reste à prester cette semaine", con_label: "Congés restants", lbl_date: "Date", lbl_start: "Arrivée", 
-            lbl_end: "Départ", lbl_hs: "Départ Domicile (+30m)", lbl_he: "Retour Domicile (+30m)", lbl_loc: "Lieu", 
+            rem_label: "Reste à prester cette semaine", con_label: "Congés légaux restants", 
+            lbl_date: "Date", lbl_start: "Arrivée", lbl_end: "Départ", lbl_hs: "Départ Domicile (+30m)", 
+            lbl_he: "Retour Domicile (+30m)", lbl_loc: "Lieu", lbl_vac_cat: "Catégorie", 
             lbl_vac_start: "Du (Inclus)", lbl_vac_end: "Au (Inclus)", btn_save: "Enregistrer la journée", 
-            btn_save_vac: "Enregistrer les congés", btn_print: "🖨️ Générer le rapport PDF", 
+            btn_save_vac: "Enregistrer", btn_print: "🖨️ Générer le rapport PDF", 
             nav_ptr: "➕ POINTER", nav_cal: "📅 CALENDRIER", 
             table_head: "<th>Date</th><th style='text-align:left;'>Détails</th><th>Réel</th><th>+/-</th><th class='delete-col'></th>",
-            pdf_res: "Résumé des prestations - ", pdf_total: "Total Heures Site", pdf_supp: "Total Overtime",
             save_ok: "Données enregistrées !", del_confirm: "Supprimer ?", confirm_calc: "Total net : {t} - Confirmer ?",
-            vac_confirm: "Confirmer l'ajout de {n} jour(s) de congé ?", months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+            vac_confirm: "Confirmer {n} jour(s) ({cat}) ?", months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
+            cats: ["Congés légaux", "Jour férié", "Jour reporté", "Malade"]
         },
         nl: {
             st_work: "Werkdag", st_vac: "Verlof", login_btn: "Inloggen", logout: "Uitloggen", 
-            rem_label: "Nog te presteren deze week", con_label: "Resterend verlof", lbl_date: "Datum", lbl_start: "Aankomst", 
-            lbl_end: "Vertrek", lbl_hs: "Vertrek Huis (+30m)", lbl_he: "Terug Huis (+30m)", lbl_loc: "Locatie", 
+            rem_label: "Nog te presteren deze week", con_label: "Wettelijke vakantie", 
+            lbl_date: "Datum", lbl_start: "Aankomst", lbl_end: "Vertrek", lbl_hs: "Vertrek Huis (+30m)", 
+            lbl_he: "Terug Huis (+30m)", lbl_loc: "Locatie", lbl_vac_cat: "Categorie", 
             lbl_vac_start: "Van (Inclusief)", lbl_vac_end: "Tot (Inclusief)", btn_save: "Dag opslaan", 
-            btn_save_vac: "Verlof opslaan", btn_print: "🖨️ PDF-rapport genereren", 
+            btn_save_vac: "Opslaan", btn_print: "🖨️ PDF-rapport genereren", 
             nav_ptr: "➕ INVOER", nav_cal: "📅 KALENDER", 
             table_head: "<th>Datum</th><th style='text-align:left;'>Details</th><th>Echt</th><th>+/-</th><th class='delete-col'></th>",
-            pdf_res: "Overzicht van prestaties - ", pdf_total: "Totaal Uren Site", pdf_supp: "Totaal Overtime",
             save_ok: "Gegevens opgeslagen!", del_confirm: "Verwijderen ?", confirm_calc: "Netto totaal : {t} - Bevestigen ?",
-            vac_confirm: "{n} dag(en) verlof bevestigen?", months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"]
+            vac_confirm: "{n} dag(en) bevestigen ({cat})?", months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
+            cats: ["Wettelijke vakantie", "Feestdag", "Overgedragen dag", "Ziek"]
         }
     };
 
@@ -224,6 +221,7 @@
         document.getElementById('txt-lbl-hs').innerText = t.lbl_hs;
         document.getElementById('txt-lbl-he').innerText = t.lbl_he;
         document.getElementById('txt-lbl-loc').innerText = t.lbl_loc;
+        document.getElementById('txt-lbl-vac-cat').innerText = t.lbl_vac_cat;
         document.getElementById('txt-lbl-vac-start').innerText = t.lbl_vac_start;
         document.getElementById('txt-lbl-vac-end').innerText = t.lbl_vac_end;
         document.getElementById('txt-btn-save').innerText = t.btn_save;
@@ -232,6 +230,16 @@
         document.getElementById('txt-nav-ptr').innerText = t.nav_ptr;
         document.getElementById('txt-nav-cal').innerText = t.nav_cal;
         document.getElementById('txt-table-head').innerHTML = t.table_head;
+        
+        const catSel = document.getElementById('vacCategory');
+        const currentVal = catSel.value;
+        catSel.innerHTML = '';
+        t.cats.forEach((c, i) => {
+            const opt = document.createElement('option');
+            opt.value = ui.fr.cats[i]; // On garde la valeur FR en base pour la logique
+            opt.innerText = c;
+            catSel.appendChild(opt);
+        });
         updateMonthAndYearSelectors();
     }
 
@@ -291,6 +299,7 @@
     async function saveVacation() {
         const start = new Date(document.getElementById('vacStart').value);
         const end = new Date(document.getElementById('vacEnd').value);
+        const cat = document.getElementById('vacCategory').value;
         if(!start || !end || start > end) return;
 
         let workDays = [];
@@ -301,11 +310,15 @@
             curr.setDate(curr.getDate() + 1);
         }
 
-        if(confirm(ui[lang].vac_confirm.replace('{n}', workDays.length))) {
+        if(confirm(ui[lang].vac_confirm.replace('{n}', workDays.length).replace('{cat}', cat))) {
             for(let d of workDays) {
                 const ds = d.toISOString().split('T')[0];
+                const dObj = new Date(d);
+                // Règle 8h lun-jeu, 7h ven
+                const dayMinutes = (dObj.getDay() === 5) ? 420 : 480;
+                
                 await db.ref('users/'+currentUserId+'/entries/'+ds.replace(/-/g, '')).set({
-                    date: ds, location: 'Vacation', minutes: 0
+                    date: ds, location: cat, minutes: dayMinutes, isVacation: true
                 });
             }
             alert(ui[lang].save_ok);
@@ -316,14 +329,12 @@
         const selMonth = parseInt(document.getElementById('selectMonth').value || new Date().getMonth());
         const selYear = parseInt(document.getElementById('selectYear').value || new Date().getFullYear());
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let totalMonthMin = 0, totalSuppMin = 0, weekWork = 0, congesPris = 0;
+        let totalMonthMin = 0, totalSuppMin = 0, weekWork = 0, congesLegauxPris = 0;
         
         const now = new Date();
         const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
         curMon.setHours(0,0,0,0);
         const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
-
-        document.getElementById('pdf-month-title').innerText = `${ui[lang].pdf_res} ${ui[lang].months[selMonth]} ${selYear}`;
 
         const days = new Date(selYear, selMonth + 1, 0).getDate();
         for (let i = 1; i <= days; i++) {
@@ -334,18 +345,15 @@
             let goal = (dayIdx >= 1 && dayIdx <= 4) ? 480 : (dayIdx === 5 ? 420 : 0);
             
             if(e) { 
-                if(e.location === 'Vacation') {
-                    congesPris++;
-                } else {
-                    totalMonthMin += e.minutes;
-                    totalSuppMin += (e.minutes - goal);
-                    if(dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
-                }
+                totalMonthMin += e.minutes;
+                totalSuppMin += (e.minutes - goal);
+                if(dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
+                if(e.location === 'Congés légaux') congesLegauxPris++;
             }
 
             const dateF = `${String(i).padStart(2,'0')}/${String(selMonth+1).padStart(2,'0')}/${selYear}`;
-            let details = e ? (e.location === 'Vacation' ? `<b>${lang==='fr'?'Congé':'Verlof'}</b>` : e.location) : '';
-            if(e && e.location !== 'Vacation') {
+            let details = e ? `<b>${e.location}</b>` : '';
+            if(e && !e.isVacation) {
                 let [h1, m1] = e.start.split(':').map(Number);
                 let [h2, m2] = e.end.split(':').map(Number);
                 let ws = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
@@ -357,54 +365,27 @@
             tBody.innerHTML += `<tr class="${isWE ? 'weekend' : ''}">
                 <td style="font-weight:600;">${dateF}</td>
                 <td style="text-align:left;">${details}</td>
-                <td style="font-weight:700;">${e && e.location !== 'Vacation' ? formatT(e.minutes) : ''}</td>
-                <td style="color:${(e && e.minutes - goal) >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${e && e.location !== 'Vacation' ? formatT(e.minutes - goal) : ''}</td>
+                <td style="font-weight:700;">${e ? formatT(e.minutes) : ''}</td>
+                <td style="color:${(e && (e.minutes - goal)) >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${e ? formatT(e.minutes - goal) : ''}</td>
                 <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer;">🗑️</span>` : ''}</td>
             </tr>`;
         }
         
         document.getElementById('stat-remaining-ptr').innerText = (2340 - weekWork) <= 0 ? "OK ✅" : formatT(2340 - weekWork);
-        document.getElementById('stat-vac-count').innerText = (28 - congesPris);
-        document.getElementById('pdf-totals').innerHTML = `${ui[lang].pdf_total}: ${formatT(totalMonthMin)} | ${ui[lang].pdf_supp}: ${formatT(totalSuppMin)}`;
+        document.getElementById('stat-vac-count').innerText = (28 - congesLegauxPris);
     }
 
-    async function deleteEntry(dateKey) {
-        if(confirm(ui[lang].del_confirm)) {
-            await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove();
-        }
-    }
-
-    function formatT(min) {
-        const h = Math.floor(Math.abs(min)/60);
-        const m = Math.round(Math.abs(min)%60);
-        return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`;
-    }
-
-    function openTab(id, btn) {
-        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).style.display = 'block'; btn.classList.add('active');
-    }
-    
+    async function deleteEntry(dateKey) { if(confirm(ui[lang].del_confirm)) await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove(); }
+    function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
+    function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); }
     function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
-
     function updateMonthAndYearSelectors() {
-        const mSel = document.getElementById('selectMonth');
-        const curM = mSel.value || new Date().getMonth();
-        mSel.innerHTML = '';
+        const mSel = document.getElementById('selectMonth'); const curM = mSel.value || new Date().getMonth(); mSel.innerHTML = '';
         ui[lang].months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==curM?'selected':''}>${n}</option>`);
-        const ySel = document.getElementById('selectYear');
-        const curY = parseInt(ySel.value) || new Date().getFullYear();
-        ySel.innerHTML = '';
+        const ySel = document.getElementById('selectYear'); const curY = parseInt(ySel.value) || new Date().getFullYear(); ySel.innerHTML = '';
         for(let y = 2020; y <= 2100; y++) ySel.innerHTML += `<option value="${y}" ${y==curY?'selected':''}>${y}</option>`;
     }
-
-    window.toggleLang = function() {
-        lang = (lang === 'fr' ? 'nl' : 'fr');
-        localStorage.setItem('lang', lang);
-        translateUI();
-        renderTable();
-    }
+    window.toggleLang = function() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); translateUI(); renderTable(); }
 </script>
 </body>
 </html>

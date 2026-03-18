@@ -3,80 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V20</title>
+    <title>Dräger WorkLog V21</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
-        :root { --primary: #003366; --secondary: #3498db; --bg: #f0f2f5; --danger: #e74c3c; --success: #27ae60; }
+        :root { 
+            --primary: #003366; 
+            --secondary: #005eb8; 
+            --bg: #f4f7f9; 
+            --danger: #d9534f; 
+            --success: #28a745;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
         
         /* INTERFACE APPLI */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
-        .container { padding: 20px 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; background: #fff; }
+        .box { background: white; padding: 35px; border-radius: 24px; width: 85%; max-width: 340px; text-align: center; shadow: var(--shadow); }
+        .container { padding: 20px 15px 120px 15px; max-width: 650px; margin: auto; display: none; }
         
-        .check-row { display: flex; flex-direction: column; gap: 10px; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        .check-item { display: flex; align-items: center; cursor: pointer; }
-        .check-item input { width: 25px; height: 25px; margin-right: 12px; flex-shrink: 0; }
+        .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.03); }
         
-        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .info-week { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; }
-        .info-week b { font-size: 1.6em; display: block; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.85em; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 15px; transition: border 0.3s; }
+        input:focus { border-color: var(--secondary); outline: none; }
         
-        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid #ccc; z-index: 1000; }
-        .tab { flex: 1; border: none; background: none; font-size: 11px; color: #888; text-align: center; }
-        .tab.active { color: var(--secondary); font-weight: bold; }
-        
-        .filter-row { display: flex; gap: 8px; margin-bottom: 15px; }
-        .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: white; padding: 12px; border-radius: 15px; text-align: center; font-size: 0.8em; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
-        th, td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #eee; }
-        .weekend { color: #ccc; background: #f9f9f9; }
+        .check-row { background: #f8fafc; padding: 15px; border-radius: 14px; border: 1px dashed #cbd5e1; margin-bottom: 20px; }
+        .check-item { display: flex; align-items: center; cursor: pointer; padding: 8px 0; }
+        .check-item input { width: 22px; height: 22px; margin-right: 12px; margin-bottom: 0; accent-color: var(--secondary); }
 
-        /* --- STYLES POUR L'IMPRESSION PDF --- */
-        #print-header { display: none; } /* Caché sur l'appli */
+        .btn-main { 
+            width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; padding: 18px; border: none; border-radius: 14px; font-weight: 700; 
+            font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 94, 184, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-main:active { transform: scale(0.98); }
 
+        .info-week { background: white; border-left: 5px solid var(--primary); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: var(--shadow); }
+        .info-week span { font-size: 0.8em; color: #64748b; font-weight: 600; }
+        .info-week b { font-size: 1.8em; color: var(--primary); display: block; }
+
+        .tabs { display: flex; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: fixed; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #e1e8ed; z-index: 1000; }
+        .tab { flex: 1; border: none; background: none; font-size: 11px; color: #94a3b8; text-align: center; transition: 0.3s; }
+        .tab.active { color: var(--secondary); font-weight: 800; }
+
+        .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: white; padding: 15px; border-radius: 18px; text-align: center; box-shadow: var(--shadow); border-bottom: 4px solid transparent; }
+        .stat-box.balance { border-bottom-color: var(--secondary); }
+        .stat-box.conges { border-bottom-color: var(--success); }
+        .stat-box span { font-size: 0.75em; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .stat-box b { display: block; font-size: 1.5em; margin-top: 5px; color: #1e293b; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: center; padding: 12px 5px; color: #64748b; font-size: 0.8em; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 14px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.85em; }
+        .weekend { background: #fcfcfc; color: #cbd5e1; }
+
+        /* PDF & PRINT */
+        #print-header { display: none; }
         @media print {
+            .tabs, .export-bar, .filter-row, .stat-banner, .btn-main, .delete-col, #login-overlay, .info-week, .btn-exp { display: none !important; }
             body { background: white; }
-            .tabs, .export-bar, .filter-row, .stat-banner, .btn-main, #txt-btn-save, .btn-exp, .delete-col, #login-overlay, .info-week { 
-                display: none !important; 
-            }
-            .container { display: block !important; padding: 0; margin: 0; width: 100%; max-width: 100%; }
-            .card { box-shadow: none; padding: 0; border: none; }
-            
-            #print-header { 
-                display: block; 
-                margin-bottom: 30px; 
-                line-height: 1.4;
-            }
-            #print-header h1 { font-size: 1.4em; margin: 0; }
-            #print-header p { margin: 2px 0; color: #333; }
-            #print-header .report-title { 
-                margin-top: 20px; 
-                font-weight: bold; 
-                text-decoration: underline; 
-                font-size: 1.1em;
-            }
-
-            table { font-size: 10pt; width: 100%; border: 1px solid #000; }
-            th { background-color: #f2f2f2 !important; color: black !important; border: 1px solid #000; }
-            td { border: 1px solid #000; }
-            .weekend { background-color: #f9f9f9 !important; -webkit-print-color-adjust: exact; }
-            
-            .print-footer { 
-                margin-top: 20px; 
-                text-align: right; 
-                font-weight: bold; 
-                font-size: 1.1em;
-            }
-            .delete-col { display: none; } /* Cache l'icône poubelle au PDF */
+            .container { display: block !important; padding: 0; width: 100%; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            #print-header { display: block; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+            #print-header h1 { font-size: 22px; margin: 0; }
+            #print-header p { font-size: 14px; margin: 4px 0; }
+            table { border: 1px solid #ddd; }
+            th { background: #f8fafc !important; color: black !important; border: 1px solid #ddd; }
+            td { border: 1px solid #ddd; }
+            .print-footer { margin-top: 30px; border-top: 1px solid #000; padding-top: 10px; text-align: right; font-size: 14px; font-weight: bold; }
         }
     </style>
 </head>
@@ -85,63 +85,63 @@
 <div id="print-header">
     <h1>Burton, Sean</h1>
     <p>Service Engineer - Logistic Support RSS</p>
-    <p class="report-title" id="pdf-month-title">Résumé du mois</p>
+    <p style="font-weight:bold; margin-top:15px;" id="pdf-month-title">Résumé du mois</p>
 </div>
 
 <div id="login-overlay">
     <div class="box">
-        <h2>Dräger RSS</h2>
+        <h2 style="color:white; margin-bottom:20px;">Dräger RSS</h2>
         <input type="text" id="userInput" placeholder="Utilisateur">
         <input type="password" id="userPin" maxlength="4" placeholder="PIN">
-        <button class="btn-main" onclick="handleAuth()">Connexion</button>
+        <button class="btn-main" onclick="handleAuth()">Se connecter</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
     <div id="saisie" class="content active">
-        <div class="export-bar" style="display:flex; justify-content:space-between; margin-bottom:15px;">
-             <button onclick="softLogout()" class="btn-exp" style="background:#eee;">Logout</button>
-             <button class="btn-exp btn-lang" onclick="toggleLang()">🌐</button>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+             <button onclick="softLogout()" style="border:none; background:none; color:#64748b; font-weight:bold;">Déconnexion</button>
+             <button class="btn-lang" onclick="toggleLang()" style="border:none; background:var(--primary); color:white; padding:8px 12px; border-radius:10px;">🌐 FR/NL</button>
         </div>
         <div class="info-week">
             <span id="txt-rem-label">Reste à prester (Semaine)</span>
             <b id="stat-remaining-ptr">--h--</b>
         </div>
         <div class="card">
-            <label id="txt-lbl-date">Date</label>
+            <label id="txt-lbl-date">Date de prestation</label>
             <input type="date" id="dateInput">
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:15px;">
                 <div style="flex:1;"><label id="txt-lbl-start">Début</label><input type="time" id="startTime" value="08:00"></div>
                 <div style="flex:1;"><label id="txt-lbl-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
             </div>
             <div class="check-row">
                 <div class="check-item" onclick="document.getElementById('homeStart').click()">
                     <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
-                    <label id="txt-lbl-hs">🏠 Départ Maison (+30m)</label>
+                    <label id="txt-lbl-hs">Départ Domicile (+30m)</label>
                 </div>
                 <div class="check-item" onclick="document.getElementById('homeEnd').click()">
                     <input type="checkbox" id="homeEnd" onclick="event.stopPropagation()">
-                    <label id="txt-lbl-he">🏠 Retour Maison (+30m)</label>
+                    <label id="txt-lbl-he">Retour Domicile (+30m)</label>
                 </div>
             </div>
-            <label id="txt-lbl-loc">Lieu</label>
+            <label id="txt-lbl-loc">Lieu d'intervention</label>
             <select id="location">
                 <option value="Wemmel">Wemmel (-45m pause)</option>
                 <option value="Client">Client (-30m pause)</option>
                 <option value="INEOS">INEOS (-30m pause)</option>
                 <option value="Esso">Esso (-30m pause)</option>
             </select>
-            <button class="btn-main" id="txt-btn-save" onclick="saveData()">Enregistrer</button>
+            <button class="btn-main" id="txt-btn-save" onclick="saveData()">Enregistrer la journée</button>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
-        <div class="export-bar" style="margin-bottom:15px;">
-            <button class="btn-exp" id="txt-btn-print" onclick="window.print()">🖨️ PDF / Imprimer</button>
+        <div style="margin-bottom:20px;">
+            <button class="btn-main" id="txt-btn-print" onclick="window.print()" style="background:var(--primary);">🖨️ Générer le rapport PDF</button>
         </div>
         <div class="stat-banner">
-            <div class="stat-box"><span id="txt-stat-bal">Balance Mois</span><b id="stat-balance">--</b></div>
-            <div class="stat-box"><span>Congés</span><b>28</b></div>
+            <div class="stat-box balance"><span id="txt-stat-bal">Balance Mois</span><b id="stat-balance" style="color:var(--secondary);">--</b></div>
+            <div class="stat-box conges"><span id="txt-stat-con">Congés Restants</span><b id="stat-conges" style="color:var(--success);">28</b></div>
         </div>
         <div class="card">
             <div class="filter-row">
@@ -152,7 +152,7 @@
                 <thead>
                     <tr id="txt-table-head">
                         <th>Date</th>
-                        <th style="text-align:left;">Lieu & Travail</th>
+                        <th style="text-align:left;">Détails</th>
                         <th>Réel</th>
                         <th>+/-</th>
                         <th class="delete-col"></th>
@@ -160,16 +160,14 @@
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
-            <div class="print-footer" id="pdf-totals">
-                Total Mois: 0h00 | Total Supp: 0h00
-            </div>
+            <div class="print-footer" id="pdf-totals"></div>
         </div>
     </div>
 </div>
 
 <nav class="tabs">
-    <button class="tab active" id="txt-nav-ptr" onclick="openTab('saisie', this)">➕ Pointer</button>
-    <button class="tab" id="txt-nav-cal" onclick="openTab('historique', this)">📅 Calendrier</button>
+    <button class="tab active" id="txt-nav-ptr" onclick="openTab('saisie', this)">➕ POINTER</button>
+    <button class="tab" id="txt-nav-cal" onclick="openTab('historique', this)">📅 CALENDRIER</button>
 </nav>
 
 <script>
@@ -183,22 +181,22 @@
 
     const ui = {
         fr: {
-            rem_label: "Reste à prester (Semaine)", lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", 
-            lbl_hs: "🏠 Départ Maison (+30m)", lbl_he: "🏠 Retour Maison (+30m)", lbl_loc: "Lieu", 
-            btn_save: "Enregistrer", btn_print: "🖨️ Imprimer PDF", stat_bal: "Balance Mois",
-            nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", 
-            table_head: "<th>Date</th><th style='text-align:left;'>Lieu & Travail</th><th>Réel</th><th>+/-</th><th class='delete-col'></th>",
-            pdf_res: "Résumé du mois de", pdf_total: "Total Mois", pdf_supp: "Total Supp",
-            save_ok: "Enregistré !", del_confirm: "Supprimer ?", confirm_calc: "Total : {t} - Confirmer ?"
+            rem_label: "Reste à prester cette semaine", lbl_date: "Date", lbl_start: "Arrivée", lbl_end: "Départ", 
+            lbl_hs: "Départ Maison (+30m)", lbl_he: "Retour Maison (+30m)", lbl_loc: "Lieu", 
+            btn_save: "Enregistrer la journée", btn_print: "🖨️ Générer le rapport PDF", stat_bal: "Balance Mensuelle",
+            stat_con: "Congés Restants", nav_ptr: "➕ POINTER", nav_cal: "📅 CALENDRIER", 
+            table_head: "<th>Date</th><th style='text-align:left;'>Détails</th><th>Réel</th><th>+/-</th><th class='delete-col'></th>",
+            pdf_res: "Résumé des prestations - ", pdf_total: "Total Heures Site", pdf_supp: "Total Overtime",
+            save_ok: "Données enregistrées !", del_confirm: "Supprimer cette entrée ?", confirm_calc: "Total net : {t} - Confirmer ?"
         },
         nl: {
-            rem_label: "Nog te presteren (Week)", lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", 
-            lbl_hs: "🏠 Vertrek Huis (+30m)", lbl_he: "🏠 Terug Huis (+30m)", lbl_loc: "Locatie", 
-            btn_save: "Opslaan", btn_print: "🖨️ PDF afdrukken", stat_bal: "Maand Balans",
-            nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", 
-            table_head: "<th>Datum</th><th style='text-align:left;'>Locatie & Werk</th><th>Echt</th><th>+/-</th><th class='delete-col'></th>",
-            pdf_res: "Maandoverzicht van", pdf_total: "Totaal Maand", pdf_supp: "Totaal Extra",
-            save_ok: "Opgeslagen!", del_confirm: "Verwijderen ?", confirm_calc: "Totaal : {t} - Bevestigen ?"
+            rem_label: "Nog te presteren deze week", lbl_date: "Datum", lbl_start: "Aankomst", lbl_end: "Vertrek", 
+            lbl_hs: "Vertrek Huis (+30m)", lbl_he: "Terug Huis (+30m)", lbl_loc: "Locatie", 
+            btn_save: "Dag opslaan", btn_print: "🖨️ PDF-rapport genereren", stat_bal: "Maandelijkse Balans",
+            stat_con: "Resterend Verlof", nav_ptr: "➕ INVOER", nav_cal: "📅 KALENDER", 
+            table_head: "<th>Datum</th><th style='text-align:left;'>Details</th><th>Echt</th><th>+/-</th><th class='delete-col'></th>",
+            pdf_res: "Overzicht van prestaties - ", pdf_total: "Totaal Uren Site", pdf_supp: "Totaal Overtime",
+            save_ok: "Gegevens opgeslagen!", del_confirm: "Verwijderen ?", confirm_calc: "Netto totaal : {t} - Bevestigen ?"
         }
     };
 
@@ -214,6 +212,7 @@
         document.getElementById('txt-btn-save').innerText = t.btn_save;
         document.getElementById('txt-btn-print').innerText = t.btn_print;
         document.getElementById('txt-stat-bal').innerText = t.stat_bal;
+        document.getElementById('txt-stat-con').innerText = t.stat_con;
         document.getElementById('txt-nav-ptr').innerText = t.nav_ptr;
         document.getElementById('txt-nav-cal').innerText = t.nav_cal;
         document.getElementById('txt-table-head').innerHTML = t.table_head;
@@ -277,7 +276,6 @@
         curMon.setHours(0,0,0,0);
         const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
 
-        // Mettre à jour le titre PDF
         const mNames = lang === 'fr' ? ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"] : ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"];
         document.getElementById('pdf-month-title').innerText = `${ui[lang].pdf_res} ${mNames[selMonth]} ${selYear}`;
 
@@ -296,8 +294,6 @@
                 if(dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
             }
             const isWE = (dayIdx === 0 || dayIdx === 6);
-            
-            // Format Date JJ/MM/AAAA
             const dateFormatted = `${String(i).padStart(2,'0')}/${String(selMonth+1).padStart(2,'0')}/${selYear}`;
             
             let displayRange = '';
@@ -306,21 +302,21 @@
                 let [h2, m2] = e.end.split(':').map(Number);
                 let workStartMin = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
                 let workEndMin = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
-                displayRange = ` (${Math.floor(workStartMin/60).toString().padStart(2,'0')}:${(workStartMin%60).toString().padStart(2,'0')} - ${Math.floor(workEndMin/60).toString().padStart(2,'0')}:${(workEndMin%60).toString().padStart(2,'0')})`;
+                displayRange = ` <span style="color:#94a3b8; font-size:0.9em;">(${Math.floor(workStartMin/60).toString().padStart(2,'0')}:${(workStartMin%60).toString().padStart(2,'0')} - ${Math.floor(workEndMin/60).toString().padStart(2,'0')}:${(workEndMin%60).toString().padStart(2,'0')})</span>`;
             }
             
             tBody.innerHTML += `<tr class="${isWE ? 'weekend' : ''}">
-                <td>${dateFormatted}</td>
+                <td style="font-weight:600;">${dateFormatted}</td>
                 <td style="text-align:left;">${e ? e.location + displayRange : ''}</td>
-                <td><b>${e ? formatT(e.minutes) : ''}</b></td>
-                <td style="color:${diff >= 0 ? 'green' : 'red'}">${e ? formatT(diff) : ''}</td>
-                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer; color:red;">🗑️</span>` : ''}</td>
+                <td style="font-weight:700;">${e ? formatT(e.minutes) : ''}</td>
+                <td style="color:${diff >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${e ? formatT(diff) : ''}</td>
+                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer; font-size:1.2em;">🗑️</span>` : ''}</td>
             </tr>`;
         }
         
-        document.getElementById('stat-remaining-ptr').innerText = (2340 - weekWork) <= 0 ? "Objectif ✅" : formatT(2340 - weekWork);
+        document.getElementById('stat-remaining-ptr').innerText = (2340 - weekWork) <= 0 ? "Objectif Atteint ✅" : formatT(2340 - weekWork);
         document.getElementById('stat-balance').innerText = formatT(totalSuppMin);
-        document.getElementById('pdf-totals').innerText = `${ui[lang].pdf_total}: ${formatT(totalMonthMin)} | ${ui[lang].pdf_supp}: ${formatT(totalSuppMin)}`;
+        document.getElementById('pdf-totals').innerHTML = `<div style="padding:15px; background:#f8fafc; border-radius:12px;">${ui[lang].pdf_total}: <b>${formatT(totalMonthMin)}</b> | ${ui[lang].pdf_supp}: <b>${formatT(totalSuppMin)}</b></div>`;
     }
 
     async function deleteEntry(dateKey) {
@@ -344,8 +340,8 @@
     function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
 
     function updateMonthAndYearSelectors() {
-        const mFr = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
-        const mNl = ["Jan", "Feb", "Maa", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+        const mFr = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        const mNl = ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"];
         const mSel = document.getElementById('selectMonth');
         const currentM = mSel.value || new Date().getMonth();
         mSel.innerHTML = '';

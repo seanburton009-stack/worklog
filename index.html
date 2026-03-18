@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V51</title>
+    <title>Dräger WorkLog V51 - Full Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -11,9 +11,11 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; color: #333; }
         
+        /* Authentification */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
         
+        /* Conteneur Principal */
         .container { padding: 10px 15px 140px 15px; max-width: 800px; margin: auto; display: none; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
@@ -25,25 +27,34 @@
         .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
         .info-week b { font-size: 2em; color: var(--primary); display: block; }
 
+        /* Navigation */
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; position: relative; }
         .tab.active { color: var(--secondary); }
         .tab-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+        .badge { position: absolute; top: -5px; right: 25%; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 2px solid white; }
 
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 15px; }
         .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; }
         .sub-tab.active { background: white; color: var(--primary); }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.7em; table-layout: fixed; }
-        th { padding: 10px 2px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: center; }
-        td { padding: 12px 2px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        /* Tableau */
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; table-layout: fixed; }
+        th { padding: 10px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: center; }
+        td { padding: 12px 4px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; word-wrap: break-word; }
         .weekend { background: #f8fafc !important; }
 
+        /* Impression */
+        #pdf-header { display: none; }
         @media print {
+            body { background: white; padding: 0; }
             .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, select, input { display: none !important; }
-            .container { display: block !important; padding: 0; width: 100%; }
-            .card { box-shadow: none; border: none; padding: 0; }
-            #pdf-header { display: block !important; border-bottom: 2px solid #000; margin-bottom: 20px; }
+            .container { display: block !important; padding: 0; width: 100%; max-width: 100%; }
+            .card { box-shadow: none; border: none; padding: 0; margin: 0; }
+            #pdf-header { display: block !important; margin-bottom: 20px; border-bottom: 2.5px solid black; padding-bottom: 10px; text-align: left; }
+            #pdf-header h1 { margin: 0; font-size: 22px; color: #000; }
+            table { font-size: 10pt; width: 100%; }
+            th, td { text-align: center !important; border-bottom: 1px solid #eee; }
         }
     </style>
 </head>
@@ -55,20 +66,30 @@
         <input type="text" id="loginUser" placeholder="User">
         <input type="password" id="loginPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleAuth()">LOGIN</button>
+        <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
+    </div>
+    <div class="box" id="auth-register" style="display:none;">
+        <h2>Inscriptions</h2>
+        <input type="text" id="regNom" placeholder="NOM">
+        <input type="text" id="regPrenom" placeholder="Prénom">
+        <input type="text" id="regUser" placeholder="User">
+        <input type="password" id="regPin" maxlength="4" placeholder="PIN" inputmode="numeric">
+        <button class="btn-main" onclick="handleRegister()">VALIDER</button>
+        <button class="btn-main" style="background:#ccc; margin-top:10px;" onclick="showAuth('login')">RETOUR</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    <div id="pdf-header" style="display:none;">
+    <div id="pdf-header">
         <h1 id="print-name">--</h1>
         <p>Service Engineer - Logistic Support RSS</p>
-        <p id="print-month" style="font-weight:bold;">Résumé Mensuel</p>
+        <p style="font-weight:bold; margin-top:10px;" id="print-month">Résumé Mensuel des Prestations</p>
     </div>
 
     <div id="saisie" class="content active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b id="welcome-msg" style="color:var(--primary)">...</b>
-            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">Logout 🚪</button>
+            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Logout</button>
         </div>
 
         <div class="sub-tabs">
@@ -77,7 +98,7 @@
         </div>
 
         <div id="form-work">
-            <div class="info-week"><span>Reste à prester (Semaine)</span><b id="stat-remaining-week">39h00</b></div>
+            <div class="info-week"><span>Reste à prester (39h)</span><b id="stat-remaining-week">39h00</b></div>
             <div class="card">
                 <label>Date</label><input type="date" id="dateInput">
                 <div style="display:flex; gap:10px;">
@@ -87,9 +108,12 @@
                 <label>Lieu</label>
                 <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
                 
-                <div style="display:flex; gap:10px; background:#f8fafc; padding:10px; border-radius:12px; margin-bottom:15px;">
-                    <div style="flex:1;"><label>Trajet</label><select id="tripType"><option value="AR">Aller-Retour</option><option value="AS">Aller simple</option></select></div>
-                    <div style="flex:1;"><label>KM (Total)</label><input type="number" id="kmInput" placeholder="ex: 45" style="margin-bottom:0;"></div>
+                <div style="background:#f0f7ff; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #d0e3ff;">
+                    <label style="color:#005eb8;">Options de trajet (Domicile)</label>
+                    <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
+                        <input type="checkbox" id="startHome" style="width:20px; height:20px; margin:0;"> <span>Départ Maison</span>
+                        <input type="checkbox" id="endHome" style="width:20px; height:20px; margin:0; margin-left:15px;"> <span>Arrivée Maison</span>
+                    </div>
                 </div>
 
                 <button class="btn-main" onclick="saveData()">ENREGISTRER</button>
@@ -115,25 +139,34 @@
             </div>
             <table>
                 <thead>
-                    <tr>
-                        <th style="width:15%">Date</th>
-                        <th style="width:45%">Détails</th>
-                        <th style="width:15%">Km</th>
-                        <th style="width:15%">Heures</th>
-                        <th class="delete-col" style="width:10%"></th>
-                    </tr>
+                    <tr><th style="width:15%">Date</th><th style="width:50%">Détails</th><th style="width:15%">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
+        <div class="card" style="border-top: 4px solid var(--primary); display:flex; justify-content:space-between; font-weight:bold;">
+            <span>Total: <span id="total-month-work">0h00</span></span>
+            <span>+/- : <span id="total-month-diff">0h00</span></span>
+        </div>
         <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
-        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 EXPORT EXCEL (EMAIL)</button>
+        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 EXPORT VERS EXCEL</button>
+    </div>
+
+    <div id="admin" class="content" style="display:none;">
+        <div class="card">
+            <h3 style="color:var(--primary);">Gestion Utilisateurs</h3>
+            <div id="user-list"></div>
+        </div>
     </div>
 </div>
 
 <nav class="tabs">
     <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">➕</span>POINTAGE</button>
     <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📅</span>TABLEAU</button>
+    <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)">
+        <span class="tab-icon">⚙️</span>ADMIN
+        <div id="notif-badge" class="badge">0</div>
+    </button>
 </nav>
 
 <script>
@@ -148,11 +181,16 @@
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
+                if (!d.active && d.role !== 'admin') return alert("Compte en attente de validation admin.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "Salut " + user.prenom;
                 document.getElementById('print-name').innerText = user.nom + " " + user.prenom;
+                if(user.role === 'admin') { 
+                    document.getElementById('nav-admin').style.display = 'block'; 
+                    loadAdminList(); 
+                }
                 syncData();
             } else alert("Identifiants incorrects");
         });
@@ -161,82 +199,107 @@
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
+        let totalM = 0, totalD = 0;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
         
         for (let i = 1; i <= daysInMonth; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
             const e = entries.find(x => x.date === ds);
+            const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
             
+            if(e) {
+                totalM += e.minutes; totalD += (e.minutes - goal);
+            }
+
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td style="font-weight:bold">${i}/${m+1}</td>
-                <td style="font-size:0.9em">${e ? e.location + ' ('+e.start+'-'+e.end+')' : ''}</td>
-                <td>${e && e.km ? e.km + ' km' : ''}</td>
-                <td style="font-weight:bold">${e ? formatT(e.minutes) : ''}</td>
-                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')">🗑️</span>` : ''}</td>
+                <td>${e ? e.location + ' ('+e.start+'-'+e.end+')' : ''}</td>
+                <td>${e ? formatT(e.minutes) : ''}</td>
+                <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
+                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer">🗑️</span>` : ''}</td>
             </tr>`;
         }
-        updateStats();
+        document.getElementById('total-month-work').innerText = formatT(totalM);
+        document.getElementById('total-month-diff').innerText = formatT(totalD);
+        updateWeeklyStats();
     }
 
-    function updateStats() {
+    function updateWeeklyStats() {
         const now = new Date();
-        const startWeek = new Date(now); startWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+        const startWeek = new Date(now); 
+        startWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
         startWeek.setHours(0,0,0,0);
         
         let weekWork = 0;
         entries.forEach(e => {
-            const d = new Date(e.date);
-            if(d >= startWeek) weekWork += e.minutes;
+            if(new Date(e.date) >= startWeek) weekWork += e.minutes;
         });
         const rem = 2340 - weekWork;
         document.getElementById('stat-remaining-week').innerText = rem <= 0 ? "OK" : formatT(rem);
     }
 
-    function sendEmail() {
-        const mLabel = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
-        let mailBody = `RECAPITULATIF PRESTATIONS - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel}\n\n`;
-        mailBody += `DATE\tDETAILS\tKM\tHEURES\n`;
-
-        const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
-        for (let i = 1; i <= new Date(y, m + 1, 0).getDate(); i++) {
-            const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-            const e = entries.find(x => x.date === ds);
-            if(e) mailBody += `${i}/${m+1}\t${e.location} (${e.start}-${e.end})\t${e.km || 0}\t${formatT(e.minutes)}\n`;
-        }
-
-        const subject = encodeURIComponent(`WorkLog ${mLabel} - ${user.nom}`);
-        window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(mailBody)}`;
-    }
-
     async function saveData() {
         const d = document.getElementById('dateInput').value;
         const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
-        const km = document.getElementById('kmInput').value;
+        const fromHome = document.getElementById('startHome').checked;
+        const toHome = document.getElementById('endHome').checked;
+        
         if(!d) return alert("Date manquante");
 
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
-        let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
+        let totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+
+        // RÈGLE DRÄGER : Si trajet domicile-lieu, déduction forfaitaire
+        let deduction = 0;
+        if (fromHome) deduction += (l === "Wemmel" ? 45 : 30);
+        if (toHome) deduction += (l === "Wemmel" ? 45 : 30);
+        
+        totalMinutes -= deduction;
 
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ 
-            date: d, location: l, minutes: min, start: s, end: e, km: km 
+            date: d, location: l, minutes: totalMinutes, start: s, end: e, fromHome, toHome 
         });
-        alert("Enregistré !");
+        alert("Pointage enregistré !");
     }
 
-    async function saveVacation() {
-        const sD = new Date(document.getElementById('vacStart').value), eD = new Date(document.getElementById('vacEnd').value);
-        let curr = new Date(sD);
-        while(curr <= eD) {
-            if(curr.getDay() !== 0 && curr.getDay() !== 6) {
-                const ds = curr.toISOString().split('T')[0];
-                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ 
-                    date: ds, location: document.getElementById('vacCategory').value, minutes: (curr.getDay() === 5 ? 420 : 480), start: "08:00", end: (curr.getDay() === 5 ? "15:00" : "16:30"), km: 0 
-                });
+    function loadAdminList() {
+        db.ref('users').on('value', snap => {
+            const all = snap.val(); const list = document.getElementById('user-list'); 
+            list.innerHTML = ""; let pending = 0;
+            for(let id in all) {
+                const u = all[id]; if(!u.active) pending++;
+                list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; text-align:left;">
+                    <div style="display:flex; justify-content:space-between;"><b>${u.nom} ${u.prenom}</b><span>${u.role}</span></div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Approuver</button>` : ''}
+                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Role Switch</button>
+                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px; width:40px;">🗑️</button>
+                    </div></div>`;
             }
-            curr.setDate(curr.getDate() + 1);
+            const badge = document.getElementById('notif-badge');
+            if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; } else { badge.style.display = 'none'; }
+        });
+    }
+
+    function sendEmail() {
+        const mLabel = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
+        const yVal = document.getElementById('selectYear').value;
+        let mailBody = `RECAPITULATIF PRESTATIONS - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel} ${yVal}\n`;
+        mailBody += `--------------------------------------------------\n`;
+        mailBody += `DATE\tLIEU (HORAIRE)\tREEL\tDIFF\n`;
+
+        const mIndex = parseInt(document.getElementById('selectMonth').value);
+        for (let i = 1; i <= new Date(yVal, mIndex + 1, 0).getDate(); i++) {
+            const ds = `${yVal}-${String(mIndex+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const e = entries.find(x => x.date === ds);
+            const dobj = new Date(yVal, mIndex, i);
+            const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
+            if(e) mailBody += `${i}/${mIndex+1}\t${e.location} (${e.start}-${e.end})\t${formatT(e.minutes)}\t${formatT(e.minutes-goal)}\n`;
         }
-        alert("Congés ajoutés !");
+
+        const subject = encodeURIComponent(`WorkLog ${mLabel} ${yVal} - ${user.nom}`);
+        window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(mailBody)}`;
     }
 
     function syncData() {
@@ -249,13 +312,21 @@
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); }
     function switchSubTab(t) { document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; document.getElementById('btn-w').classList.toggle('active', t==='work'); document.getElementById('btn-v').classList.toggle('active', t==='vacation'); }
+    
     function initApp() {
         const mSel = document.getElementById('selectMonth');
         ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
         for(let y = 2024; y <= 2030; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }
-    async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
+    
+    function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
+    function handleRegister() {
+        const uId = document.getElementById('regUser').value.trim().toLowerCase();
+        db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
+        alert("Demande envoyée à l'administrateur."); showAuth('login');
+    }
+    async function deleteEntry(k) { if(confirm("Supprimer ce pointage ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>
 </body>
 </html>

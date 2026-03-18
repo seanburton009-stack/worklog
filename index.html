@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V66 - FULL VERSION</title>
+    <title>Dräger WorkLog V68 - FULL SYSTEM</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -23,6 +23,7 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg); margin: 0; color: var(--text-main);
@@ -43,6 +44,8 @@
             width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); 
             color: white; padding: 16px; border: none; border-radius: 15px; font-weight: 700; cursor: pointer; 
         }
+
+        .logout-btn { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 0.7em; font-weight: 800; cursor: pointer; margin-top: 5px; }
 
         .tabs { 
             display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); 
@@ -75,7 +78,7 @@
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         
         @media print {
-            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #btn-theme { display: none !important; }
+            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #btn-theme, .logout-btn { display: none !important; }
             .container { display: block !important; width: 100%; padding: 0; }
         }
     </style>
@@ -103,8 +106,11 @@
 </div>
 
 <div class="container" id="mainContainer">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <b id="welcome-msg">...</b>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+        <div>
+            <b id="welcome-msg" style="font-size: 1.2em;">...</b><br>
+            <button class="logout-btn" onclick="logout()">LOGOUT</button>
+        </div>
         <div style="display:flex; gap:8px;">
             <button onclick="toggleTheme()" id="btn-theme" style="border:none; background:var(--border); padding:8px; border-radius:10px;">🌙</button>
             <select id="langSelect" onchange="toggleLang(true)" style="width:auto; margin:0; padding:5px;">
@@ -138,11 +144,11 @@
                 </select>
                 <div style="background:var(--bg); padding:12px; border-radius:12px; margin-bottom:15px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span id="txt-sh" style="font-size:0.85em;">Maison (-30m)</span>
+                        <span id="txt-sh" style="font-size:0.85em;">Maison / Thuis (-30m)</span>
                         <input type="checkbox" id="startHome" class="ios-switch">
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span id="txt-eh" style="font-size:0.85em;">Maison (-30m)</span>
+                        <span id="txt-eh" style="font-size:0.85em;">Maison / Thuis (-30m)</span>
                         <input type="checkbox" id="endHome" class="ios-switch">
                     </div>
                 </div>
@@ -199,8 +205,11 @@
 
     <div id="admin" class="content" style="display:none;">
         <div class="card">
-            <h3 style="color:var(--primary); margin-top:0;">Gestion des Utilisateurs</h3>
-            <div id="user-list">Chargement...</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="color:var(--primary); margin:0;">Utilisateurs</h3>
+                <button onclick="setupAdminWatcher()" style="border:none; background:none; font-size:1.2em;">🔄</button>
+            </div>
+            <div id="user-list">Chargement des comptes en cours...</div>
         </div>
     </div>
 </div>
@@ -215,6 +224,7 @@
 </nav>
 
 <script>
+    // Configuration Firebase
     const firebaseConfig = { 
         apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
         authDomain: "worklog-fc54b.firebaseapp.com", 
@@ -243,16 +253,20 @@
         }
     };
 
-    // --- INITIALISATION ---
+    // Initialisation
     function initApp() {
         if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); document.getElementById('btn-theme').innerText = '☀️'; }
         const cy = new Date().getFullYear();
-        const ySel = document.getElementById('selectYear');
+        const ySel = document.getElementById('selectYear'); ySel.innerHTML = "";
         for(let y=cy-1; y<=cy+1; y++) ySel.innerHTML += `<option value="${y}" ${y==cy?'selected':''}>${y}</option>`;
+        
+        const lastUser = localStorage.getItem('loggedUser');
+        if(lastUser) document.getElementById('loginUser').value = lastUser;
+        
         toggleLang(false);
     }
 
-    // --- AUTHENTIFICATION ---
+    // Gestion Auth
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
         const pin = document.getElementById('loginPin').value;
@@ -261,6 +275,7 @@
             if (d && d.pin === pin) {
                 if(!d.active && d.role !== 'admin') return alert("En attente de validation admin.");
                 user = { id: uId, ...d };
+                localStorage.setItem('loggedUser', uId);
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
                 if(user.lang) { document.getElementById('langSelect').value = user.lang; toggleLang(false); }
@@ -273,16 +288,23 @@
         });
     }
 
+    function logout() {
+        user = null;
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('loginPin').value = "";
+    }
+
     async function handleRegister() {
         const id = document.getElementById('regUser').value.trim().toLowerCase();
         const n = document.getElementById('regNom').value, p = document.getElementById('regPrenom').value, pin = document.getElementById('regPin').value;
-        if(!id || pin.length < 4) return alert("Champs incomplets");
+        if(!id || pin.length < 4) return alert("Remplissez tous les champs.");
         await db.ref('users/' + id).set({ nom: n, prenom: p, pin: pin, active: false, role: 'user', lang: currentLang });
-        alert("Inscription réussie. Demandez à l'admin de vous activer.");
+        alert("Inscription faite. Attendez activation.");
         showAuth('login');
     }
 
-    // --- CALCULS & SYNC ---
+    // Données et Calculs
     function syncData() { 
         db.ref('users/' + user.id + '/entries').on('value', snap => { 
             entries = snap.val() ? Object.values(snap.val()) : []; 
@@ -298,12 +320,12 @@
         if(document.getElementById('startHome').checked) total -= 30;
         if(document.getElementById('endHome').checked) total -= 30;
         await db.ref('users/' + user.id + '/entries/' + d.replace(/-/g, '')).set({ date: d, location: l, minutes: total, isVacation: false });
-        alert("Enregistré");
+        alert("Sauvegardé");
     }
 
     async function saveVacation() {
         const sD = new Date(document.getElementById('vacStart').value), eD = new Date(document.getElementById('vacEnd').value);
-        if(!sD || !eD) return alert("Dates manquantes");
+        if(!sD || !eD || sD > eD) return alert("Dates invalides");
         let curr = new Date(sD);
         while(curr <= eD) {
             if(curr.getDay()!==0 && curr.getDay()!==6) {
@@ -312,13 +334,14 @@
             }
             curr.setDate(curr.getDate()+1);
         }
-        alert("Congés sauvegardés");
+        alert("Congés enregistrés");
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         let totalM = 0, totalD = 0, vacUsed = 0;
+        
         entries.forEach(e => { if(e.isVacation && (e.location.includes("Congé") || e.location.includes("Wettelijk"))) vacUsed++; });
         document.getElementById('vac-balance').innerText = (28 - vacUsed) + " j";
         document.getElementById('hist-vac-balance').innerText = 28 - vacUsed;
@@ -344,34 +367,33 @@
     function formatT(min) { const h = Math.floor(Math.abs(min)/60), m = Math.round(Math.abs(min)%60); return `${min<0?'-':''}${h}h${m.toString().padStart(2,'0')}`; }
 
     function updateWeeklyStats() {
-        const now = new Date(), startWeek = new Date(now);
-        startWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
-        startWeek.setHours(0,0,0,0);
-        let wk = 0; entries.forEach(e => { if(new Date(e.date) >= startWeek && !e.isVacation) wk += e.minutes; });
+        const now = new Date(), sw = new Date(now); sw.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); sw.setHours(0,0,0,0);
+        let wk = 0; entries.forEach(e => { if(new Date(e.date) >= sw && !e.isVacation) wk += e.minutes; });
         const rem = 2340 - wk; document.getElementById('stat-remaining-week').innerText = rem <= 0 ? "OK" : formatT(rem);
     }
 
-    // --- GESTION ADMIN ---
+    // Administration
     function setupAdminWatcher() {
         db.ref('users').on('value', snap => {
             const users = snap.val(), div = document.getElementById('user-list'), badge = document.getElementById('admin-badge');
             div.innerHTML = ''; let pending = 0;
-            for(let id in users) { if(id===user.id) continue;
+            if(!users) return div.innerHTML = "Aucun utilisateur.";
+            for(let id in users) {
+                if(id === user.id) continue;
                 if(!users[id].active) pending++;
                 div.innerHTML += `<div class="user-row" style="${!users[id].active?'background:rgba(217,83,79,0.05);':''}">
                     <div><b>${users[id].prenom} ${users[id].nom}</b><br><small>${id}</small></div>
-                    <div style="display:flex; gap:12px;">
+                    <div style="display:flex; gap:12px; align-items:center;">
                         <input type="checkbox" class="ios-switch" ${users[id].active?'checked':''} onchange="db.ref('users/${id}/active').set(this.checked)">
                         <span onclick="deleteUser('${id}')" style="font-size:18px;">🗑️</span>
                     </div>
                 </div>`;
             }
-            if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; }
-            else badge.style.display = 'none';
-        });
+            badge.innerText = pending; badge.style.display = pending > 0 ? 'block' : 'none';
+        }, err => { document.getElementById('user-list').innerHTML = "Erreur: " + err.message; });
     }
 
-    // --- UI HELPERS ---
+    // UI Navigation
     function openTab(id, btn) { 
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); 
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
@@ -404,8 +426,10 @@
         document.getElementById('nav-t').innerText = t.navT; document.getElementById('txt-final-vac').innerText = t.fvac;
         document.getElementById('txt-days').innerText = t.days; document.getElementById('txt-total').innerText = t.total;
         document.getElementById('txt-diff-lbl').innerText = t.diff_lbl; document.getElementById('btn-pdf').innerText = t.pdf;
+        
         const mSel = document.getElementById('selectMonth'), curM = mSel.value;
         mSel.innerHTML = ""; t.months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth() && curM=='' ? 'selected' : (i==curM?'selected':'')}>${n}</option>`);
+        
         if(user) document.getElementById('welcome-msg').innerText = `${t.welcome} ${user.prenom}`;
         if(updateDb && user) db.ref('users/' + user.id + '/lang').set(currentLang);
         renderTable();

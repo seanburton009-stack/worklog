@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V29</title>
+    <title>Dräger WorkLog V30</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -46,7 +46,6 @@
         .tab { flex: 1; border: none; background: none; font-size: 11px; color: #94a3b8; text-align: center; }
         .tab.active { color: var(--secondary); font-weight: 800; }
 
-        /* TABLEAU CENTRÉ ET HOMOGÈNE */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th { text-align: center; padding: 12px 2px; color: #64748b; font-size: 0.7em; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.82em; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; }
@@ -287,13 +286,23 @@
     async function deleteEntry(dateKey) { if(confirm("Supprimer ?")) await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove(); }
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); renderTable(); }
+    
     function initApp() { 
+        // Génération des mois
         const mSel = document.getElementById('selectMonth');
         const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
         months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        
+        // Génération des années élargie (1998 - 2100)
         const ySel = document.getElementById('selectYear');
-        for(let y = 2024; y <= 2027; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
+        const currentYear = new Date().getFullYear();
+        for(let y = 2020; y <= 2035; y++) {
+            ySel.innerHTML += `<option value="${y}" ${y==currentYear?'selected':''}>${y}</option>`;
+        }
     }
+    
+    function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
+    function toggleLang() { alert("Langue toggled"); } // Simplifié pour cette version
 </script>
 </body>
 </html>

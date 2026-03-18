@@ -13,7 +13,6 @@
         .login-box { background: white; padding: 30px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .container { background: white; padding: 15px; border-radius: 15px; width: 100%; max-width: 600px; display: none; box-sizing: border-box; position: relative; }
         
-        /* Language Switcher */
         .lang-switch { position: absolute; top: 10px; right: 15px; display: flex; gap: 5px; z-index: 100; }
         .lang-btn { background: #eee; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .lang-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
@@ -41,6 +40,7 @@
         .weekend { background: #f9f9f9; color: #ccc; }
         .holiday-row { background: #eef7ff; color: #005596; font-weight: bold; }
         .planned-row { background: #f0faff; color: #3498db; font-style: italic; }
+        .other-conge-row { background: #fdf2e9; color: #e67e22; font-weight: bold; }
         .counter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 0.85em; }
         .badge-rem { background: var(--success); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
 
@@ -80,7 +80,17 @@
             <label id="lbl-type">Type d'entrée</label>
             <select id="entryType" onchange="togglePeriod()">
                 <option value="WORK" id="opt-work">Travail</option>
-                <option value="CONGE" id="opt-conge">Congé / Maladie</option>
+                <option value="CONGE" id="opt-conge">Congé / Absence</option>
+            </select>
+        </div>
+
+        <div id="conge-type-group" class="input-group" style="display:none; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+            <label id="lbl-subconge">Précision de l'absence</label>
+            <select id="subCongeType">
+                <option value="ANNUEL" id="opt-annuel">🌴 Congé Annuel (Décompté)</option>
+                <option value="FERIE" id="opt-ferie">🇧🇪 Jour Férié (Non décompté)</option>
+                <option value="REPORTE" id="opt-reporte">⏳ Congé Reporté/Récup (Non décompté)</option>
+                <option value="MALADIE" id="opt-maladie">🤒 Maladie (Non décompté)</option>
             </select>
         </div>
 
@@ -129,7 +139,7 @@
             <div><span id="lbl-taken">Pris</span>: <b id="stat-taken">0</b></div>
             <div><span id="lbl-planned">Prévus</span>: <b id="stat-planned">0</b></div>
             <div style="grid-column: span 2; border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">
-                <span id="lbl-rest">Reste</span>: <b id="stat-left" class="badge-rem">28</b>
+                <span id="lbl-rest">Solde Annuel Reste</span>: <b id="stat-left" class="badge-rem">28</b>
             </div>
         </div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;" class="no-print">
@@ -166,18 +176,20 @@
 
     const translations = {
         fr: {
-            login: "Connexion", tabSaisie: "Saisie", tabHist: "Historique", type: "Type d'entrée", work: "Travail", conge: "Congé / Maladie",
+            login: "Connexion", tabSaisie: "Saisie", tabHist: "Historique", type: "Type d'entrée", work: "Travail", conge: "Congé / Absence",
+            sub: "Précision de l'absence", annuel: "🌴 Congé Annuel (Décompté)", ferie: "🇧🇪 Jour Férié (Non décompté)", reporte: "⏳ Congé Reporté (Non décompté)", maladie: "🤒 Maladie",
             date: "Date", from: "Du", to: "Au", trajet: "Trajets (-30m par case)", hStart: "Départ Maison", hEnd: "Retour Maison",
             loc: "Lieu", start: "Début", end: "Fin", save: "Enregistrer", sync: "✅ Synchronisé !", taken: "Pris", planned: "Prévus",
-            rest: "Reste", thDate: "Date", thInfo: "Lieu / Heures", thNet: "Net", thDiff: "Diff", pdf: "EXPORTER PDF",
+            rest: "Solde Annuel Reste", thDate: "Date", thInfo: "Lieu / Heures", thNet: "Net", thDiff: "Diff", pdf: "EXPORTER PDF",
             months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
             days: ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"], total: "TOTAL MOIS", delConfirm: "Supprimer ?"
         },
         nl: {
-            login: "Inloggen", tabSaisie: "Invoer", tabHist: "Overzicht", type: "Type invoer", work: "Werkdag", conge: "Verlof / Ziekte",
+            login: "Inloggen", tabSaisie: "Invoer", tabHist: "Overzicht", type: "Type invoer", work: "Werkdag", conge: "Verlof / Afwezigheid",
+            sub: "Type afwezigheid", annuel: "🌴 Jaarlijks Verlof (Telt mee)", ferie: "🇧🇪 Feestdag (Telt niet mee)", reporte: "⏳ Overgedragen verlof (Telt niet mee)", maladie: "🤒 Ziekte",
             date: "Datum", from: "Van", to: "Tot", trajet: "Traject opties (-30m per vinkje)", hStart: "Vertrek Thuis", hEnd: "Terug Thuis",
             loc: "Locatie", start: "Start", end: "Einde", save: "Opslaan", sync: "✅ Gesynchroniseerd!", taken: "Genomen", planned: "Gepland",
-            rest: "Resterend", thDate: "Datum", thInfo: "Locatie / Uren", thNet: "Netto", thDiff: "Diff", pdf: "EXPORTEREN PDF",
+            rest: "Jaarlijks Saldo", thDate: "Datum", thInfo: "Locatie / Uren", thNet: "Netto", thDiff: "Diff", pdf: "EXPORTEREN PDF",
             months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
             days: ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"], total: "MAAND TOTAAL", delConfirm: "Verwijderen?"
         }
@@ -200,6 +212,11 @@
         document.getElementById('lbl-type').innerText = t.type;
         document.getElementById('opt-work').innerText = t.work;
         document.getElementById('opt-conge').innerText = t.conge;
+        document.getElementById('lbl-subconge').innerText = t.sub;
+        document.getElementById('opt-annuel').innerText = t.annuel;
+        document.getElementById('opt-ferie').innerText = t.ferie;
+        document.getElementById('opt-reporte').innerText = t.reporte;
+        document.getElementById('opt-maladie').innerText = t.maladie;
         document.getElementById('lbl-date').innerText = t.date;
         document.getElementById('lbl-from').innerText = t.from;
         document.getElementById('lbl-to').innerText = t.to;
@@ -219,7 +236,6 @@
         document.getElementById('th-diff').innerText = t.thDiff;
         document.getElementById('btn-pdf').innerText = t.pdf;
 
-        // Refresh Month Selector
         const mSel = document.getElementById('selectMonth');
         const currentM = mSel.value || new Date().getMonth();
         mSel.innerHTML = '';
@@ -249,6 +265,7 @@
 
     async function saveData() {
         const type = document.getElementById('entryType').value;
+        const subType = document.getElementById('subCongeType').value;
         if (type === "CONGE") {
             let start = new Date(document.getElementById('dateStart').value);
             let end = new Date(document.getElementById('dateEnd').value);
@@ -256,7 +273,7 @@
                 if (d.getDay() !== 0 && d.getDay() !== 6) {
                     const dStr = d.toISOString().split('T')[0];
                     await db.ref('users/' + currentUserId + '/entries/' + dStr.replace(/-/g, '')).set({
-                        date: dStr, location: "CONGE", minutes: 468, start: "08:00", end: "16:30"
+                        date: dStr, location: "CONGE", subType: subType, minutes: 468, start: "08:00", end: "16:30"
                     });
                 }
             }
@@ -295,9 +312,20 @@
             if(entry) { tMin += entry.minutes; tSupp += (entry.minutes - goal); }
             
             let rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
-            if (entry && entry.location === 'CONGE') rClass = (dStr >= new Date().toISOString().split('T')[0]) ? 'planned-row' : 'holiday-row';
+            let info = "-";
             
-            let info = entry ? (entry.location === 'CONGE' ? (dStr >= new Date().toISOString().split('T')[0] ? t.planned.toUpperCase() : t.conge.toUpperCase()) : entry.location + ' ' + entry.start + '-' + entry.end) : '-';
+            if (entry && entry.location === 'CONGE') {
+                const isFuture = dStr >= new Date().toISOString().split('T')[0];
+                if(entry.subType === "ANNUEL") {
+                    rClass = isFuture ? 'planned-row' : 'holiday-row';
+                    info = isFuture ? t.planned.toUpperCase() : t.annuel.split(' ')[2].toUpperCase();
+                } else {
+                    rClass = 'other-conge-row';
+                    info = entry.subType; // FERIE, REPORTE, MALADIE
+                }
+            } else if (entry) {
+                info = entry.location + ' ' + entry.start + '-' + entry.end;
+            }
 
             tBody.innerHTML += `<tr class="${rClass}">
                 <td>${t.days[dNum]} ${i}</td>
@@ -319,32 +347,36 @@
     function updateStats() {
         const curY = new Date().getFullYear().toString();
         const today = new Date().toISOString().split('T')[0];
-        const conges = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE");
-        const taken = conges.filter(e => e.date < today).length;
-        const planned = conges.filter(e => e.date >= today).length;
+        // On ne compte que les congés de type "ANNUEL"
+        const congesAnnuels = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE" && e.subType === "ANNUEL");
+        const taken = congesAnnuels.filter(e => e.date < today).length;
+        const planned = congesAnnuels.filter(e => e.date >= today).length;
         document.getElementById('stat-taken').innerText = taken;
         document.getElementById('stat-planned').innerText = planned;
         document.getElementById('stat-left').innerText = Math.max(0, 28 - (taken + planned));
     }
 
     function deleteEntry(d) { if(confirm(translations[lang].delConfirm)) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
+    
     function openTab(id, btn) { 
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(id).classList.add('active'); btn.classList.add('active');
     }
+    
     function toggleCheck(id) {
         const cb = document.getElementById(id); cb.checked = !cb.checked;
         document.getElementById('card' + id.charAt(0).toUpperCase() + id.slice(1)).classList.toggle('active', cb.checked);
     }
+    
     function togglePeriod() {
         const isC = document.getElementById('entryType').value === "CONGE";
+        document.getElementById('conge-type-group').style.display = isC ? "block" : "none";
         document.getElementById('date-single').style.display = isC ? "none" : "block";
         document.getElementById('date-period').style.display = isC ? "block" : "none";
         document.getElementById('work-fields').style.display = isC ? "none" : "block";
     }
 
-    // Init years
     [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`);
     document.getElementById('date').valueAsDate = new Date();
     document.getElementById('dateStart').valueAsDate = new Date();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V13</title>
+    <title>Dräger WorkLog V14</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -38,7 +38,6 @@
         .export-bar { display: flex; gap: 8px; margin-bottom: 15px; align-items: center; }
         .btn-exp { flex: 1; padding: 12px 5px; border-radius: 10px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .btn-lang { flex: 0 0 50px; background: var(--primary); color: white; border: none; font-size: 1.2em; }
-        @media print { .tabs, .export-bar, #btn-logout, .btn-del { display: none !important; } .container { padding: 0; display: block !important; } .card { box-shadow: none; border: 1px solid #eee; } }
     </style>
 </head>
 <body onload="initApp()">
@@ -101,7 +100,7 @@
                 <button onclick="softLogout()" id="txt-btn-logout" style="background:#eee; border:none; padding:10px; border-radius:8px; font-size:11px;">Logout</button>
             </div>
             <table>
-                <thead><tr id="txt-table-head"><th>J</th><th style="text-align:left;">Lieu & Heures</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
+                <thead><tr id="txt-table-head"><th>J</th><th style="text-align:left;">Lieu & Travail</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -127,14 +126,14 @@
             login_user: "Utilisateur", login_btn: "Connexion", rem_label: "Reste à prester (Semaine)",
             lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", lbl_hs: "🏠 Départ Maison", lbl_he: "🏠 Retour Maison",
             lbl_loc: "Lieu", btn_save: "Enregistrer", btn_print: "🖨️ PDF", stat_bal: "Balance Mois",
-            stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu & Heures</th><th>Réel</th><th>+/-</th><th></th>",
+            stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu & Travail</th><th>Réel</th><th>+/-</th><th></th>",
             save_ok: "Enregistré !", done: "Objectif atteint ✅", del_confirm: "Supprimer ?", confirm_calc: "Total : {t} - Confirmer ?"
         },
         nl: {
             login_user: "Gebruiker", login_btn: "Inloggen", rem_label: "Nog te presteren (Week)",
             lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", lbl_hs: "🏠 Vertrek Huis", lbl_he: "🏠 Terug Huis",
             lbl_loc: "Locatie", btn_save: "Opslaan", btn_print: "🖨️ PDF", stat_bal: "Maand Balans",
-            stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie & Uren</th><th>Echt</th><th>+/-</th><th></th>",
+            stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie & Werk</th><th>Echt</th><th>+/-</th><th></th>",
             save_ok: "Opgeslagen!", done: "Doel bereikt ✅", del_confirm: "Verwijderen ?", confirm_calc: "Totaal : {t} - Bevestigen ?"
         }
     };
@@ -206,12 +205,6 @@
         }
     }
 
-    async function deleteEntry(dateKey) {
-        if(confirm(ui[lang].del_confirm)) {
-            await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove();
-        }
-    }
-
     function renderTable() {
         const selMonth = parseInt(document.getElementById('selectMonth').value || new Date().getMonth());
         const selYear = new Date().getFullYear();
@@ -236,29 +229,46 @@
                 if(dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
             }
             const isWE = (dayIdx === 0 || dayIdx === 6);
-            const timeDisplay = e && e.start ? `<br><small style="color:#666;">(${e.start} - ${e.end})</small>` : '';
+            
+            // Calcul de l'affichage des heures travaillées (sans trajet)
+            let displayRange = '';
+            if(e && e.start && e.end) {
+                let [h1, m1] = e.start.split(':').map(Number);
+                let [h2, m2] = e.end.split(':').map(Number);
+                
+                // Si trajet coché, on décale l'heure affichée
+                let workStartMin = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
+                let workEndMin = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
+                
+                let startStr = `${Math.floor(workStartMin/60).toString().padStart(2,'0')}:${(workStartMin%60).toString().padStart(2,'0')}`;
+                let endStr = `${Math.floor(workEndMin/60).toString().padStart(2,'0')}:${(workEndMin%60).toString().padStart(2,'0')}`;
+                displayRange = `<br><small style="color:#666;">(${startStr} - ${endStr})</small>`;
+            }
             
             tBody.innerHTML += `<tr class="${isWE ? 'weekend' : ''}">
                 <td>${i}</td>
-                <td style="text-align:left;">${e ? (e.homeS?'🏠':'') + e.location + (e.homeE?'🏠':'') + timeDisplay : ''}</td>
+                <td style="text-align:left;">${e ? (e.homeS?'🏠':'') + e.location + (e.homeE?'🏠':'') + displayRange : ''}</td>
                 <td><b>${e ? formatT(e.minutes) : '-'}</b></td>
                 <td class="${diff >= 0 ? 'diff-pos' : 'diff-neg'}">${e ? formatT(diff) : '-'}</td>
                 <td>${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer; color:red; font-size:1.2em;">🗑️</span>` : ''}</td>
             </tr>`;
         }
-        const rem = 2340 - weekWork;
-        document.getElementById('stat-remaining-ptr').innerText = rem <= 0 ? ui[lang].done : formatT(rem);
+        document.getElementById('stat-remaining-ptr').innerText = (2340 - weekWork) <= 0 ? ui[lang].done : formatT(2340 - weekWork);
         document.getElementById('stat-balance').innerText = formatT(totalBalance);
     }
 
+    async function deleteEntry(dateKey) {
+        if(confirm(ui[lang].del_confirm)) {
+            await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove();
+        }
+    }
+
     function exportExcel() {
-        let csv = "Date;Lieu;Debut;Fin;Heures Net\n";
+        let csv = "Date;Lieu;Travail Debut;Travail Fin;Net\n";
         entries.forEach(e => { csv += `${e.date};${e.location};${e.start||''};${e.end||''};${formatT(e.minutes)}\n`; });
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `Dräger_${currentUserId}.csv`;
-        link.click();
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+        link.download = `Dräger_${currentUserId}.csv`; link.click();
     }
 
     function formatT(min) {

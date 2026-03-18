@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V15</title>
+    <title>Dräger WorkLog V16</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -17,10 +17,17 @@
         .container { padding: 20px 15px calc(100px + env(safe-area-inset-bottom)) 15px; max-width: 600px; margin: auto; display: none; }
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; background: #fff; -webkit-appearance: none; }
-        .check-row { display: flex; justify-content: space-around; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        .check-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.85em; }
-        .check-item input { width: 20px; height: 20px; margin: 0; }
+        input[type="text"], input[type="password"], input[type="date"], input[type="time"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; background: #fff; -webkit-appearance: none; }
+        
+        /* STYLE DES CHECKBOX AMÉLIORÉ */
+        .check-row { display: flex; flex-direction: column; gap: 10px; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .check-item { display: flex; align-items: center; cursor: pointer; padding: 5px 0; }
+        .check-item input[type="checkbox"] { 
+            width: 25px; height: 25px; margin-right: 12px; cursor: pointer; 
+            flex-shrink: 0;
+        }
+        .check-item label { margin: 0; cursor: pointer; font-size: 1em; flex-grow: 1; }
+
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
         .info-week { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; }
         .info-week b { font-size: 1.6em; letter-spacing: 1px; display: block; margin-top: 5px; }
@@ -69,10 +76,18 @@
                 <div style="flex:1;"><label id="txt-lbl-start">Début</label><input type="time" id="startTime" value="08:00"></div>
                 <div style="flex:1;"><label id="txt-lbl-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
             </div>
+            
             <div class="check-row">
-                <div class="check-item"><input type="checkbox" id="homeStart"><label for="homeStart" id="txt-lbl-hs">🏠 Départ Maison</label></div>
-                <div class="check-item"><input type="checkbox" id="homeEnd"><label for="homeEnd" id="txt-lbl-he">🏠 Retour Maison</label></div>
+                <div class="check-item" onclick="document.getElementById('homeStart').click()">
+                    <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
+                    <label id="txt-lbl-hs">🏠 Départ Maison (+30m)</label>
+                </div>
+                <div class="check-item" onclick="document.getElementById('homeEnd').click()">
+                    <input type="checkbox" id="homeEnd" onclick="event.stopPropagation()">
+                    <label id="txt-lbl-he">🏠 Retour Maison (+30m)</label>
+                </div>
             </div>
+
             <label id="txt-lbl-loc">Lieu</label>
             <select id="location">
                 <option value="Wemmel">Wemmel (-45m pause)</option>
@@ -124,14 +139,14 @@
     const ui = {
         fr: {
             login_user: "Utilisateur", login_btn: "Connexion", rem_label: "Reste à prester (Semaine)",
-            lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", lbl_hs: "🏠 Départ Maison", lbl_he: "🏠 Retour Maison",
+            lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", lbl_hs: "🏠 Départ Maison (+30m)", lbl_he: "🏠 Retour Maison (+30m)",
             lbl_loc: "Lieu", btn_save: "Enregistrer", btn_print: "🖨️ PDF", stat_bal: "Balance Mois",
             stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu & Travail</th><th>Réel</th><th>+/-</th><th></th>",
             save_ok: "Enregistré !", done: "Objectif atteint ✅", del_confirm: "Supprimer ?", confirm_calc: "Total : {t} - Confirmer ?"
         },
         nl: {
             login_user: "Gebruiker", login_btn: "Inloggen", rem_label: "Nog te presteren (Week)",
-            lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", lbl_hs: "🏠 Vertrek Huis", lbl_he: "🏠 Terug Huis",
+            lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", lbl_hs: "🏠 Vertrek Huis (+30m)", lbl_he: "🏠 Terug Huis (+30m)",
             lbl_loc: "Locatie", btn_save: "Opslaan", btn_print: "🖨️ PDF", stat_bal: "Maand Balans",
             stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie & Werk</th><th>Echt</th><th>+/-</th><th></th>",
             save_ok: "Opgeslagen!", done: "Doel bereikt ✅", del_confirm: "Verwijderen ?", confirm_calc: "Totaal : {t} - Bevestigen ?"
@@ -234,11 +249,8 @@
             if(e && e.start && e.end) {
                 let [h1, m1] = e.start.split(':').map(Number);
                 let [h2, m2] = e.end.split(':').map(Number);
-                
-                // AJUSTEMENT AFFICHAGE : On n'affiche que le temps de travail effectif
                 let workStartMin = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
                 let workEndMin = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
-                
                 let startStr = `${Math.floor(workStartMin/60).toString().padStart(2,'0')}:${(workStartMin%60).toString().padStart(2,'0')}`;
                 let endStr = `${Math.floor(workEndMin/60).toString().padStart(2,'0')}:${(workEndMin%60).toString().padStart(2,'0')}`;
                 displayRange = `<br><small style="color:#666;">(${startStr} - ${endStr})</small>`;

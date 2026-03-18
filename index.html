@@ -3,36 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dräger WorkLog - Pro Edition</title>
+    <title>Dräger WorkLog - Correction Salaire</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #003366; --secondary: #3498db; --success: #27ae60; --draeger-orange: #ff9a00; --draeger-blue: #005596; }
+        :root { --primary: #003366; --secondary: #3498db; --success: #27ae60; --draeger-orange: #ff9a00; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; display: flex; justify-content: center; }
         #login-overlay, #config-overlay { position: fixed; inset: 0; background: rgba(0,51,102,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .box { background: white; padding: 25px; border-radius: 15px; width: 85%; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         .container { background: white; padding: 15px; border-radius: 15px; width: 100%; max-width: 600px; display: none; }
-        
         .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
         .tab { flex: 1; padding: 12px; text-align: center; border: none; background: none; font-weight: bold; color: #777; cursor: pointer; }
         .tab.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
         .content { display: none; }
         .content.active { display: block; }
-
         .input-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.8em; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-        
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-config { background: #6c757d; font-size: 0.8em; margin-top: 5px; }
-        
         table { width: 100%; border-collapse: collapse; font-size: 0.75em; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 6px 4px; text-align: center; }
         .weekend { background: #f9f9f9; color: #ccc; }
-        .holiday-row { background: #eef7ff; font-weight: bold; }
-
+        .holiday-row { background: #eef7ff; font-weight: bold; color: #005596; }
         .salary-badge { background: #f0faff; border-left: 4px solid var(--secondary); padding: 12px; border-radius: 0 8px 8px 0; margin-top: 15px; }
-        .counter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.75em; text-align: center; }
     </style>
 </head>
 <body>
@@ -41,74 +34,44 @@
     <div class="box">
         <h2 style="color:var(--primary); margin:0 0 20px 0;">WorkLog Cloud</h2>
         <input type="text" id="loginUser" placeholder="Utilisateur (burtonse)">
-        <button class="btn-main" onclick="checkLogin()">Connexion</button>
+        <button class="btn-main" onclick="checkLogin()">Entrer</button>
     </div>
 </div>
 
 <div id="config-overlay" style="display:none;">
     <div class="box">
         <h3 style="margin-top:0;">Paramètres Salaire</h3>
-        <div class="input-group"><label>Net Fixe (Base)</label><input type="number" id="cfgNet" value="2151.21" step="0.01"></div>
+        <div class="input-group"><label>Net Fixe (Sans trajets)</label><input type="number" id="cfgNet" value="2151.21" step="0.01"></div>
         <div class="input-group"><label>Indemnité / jour (€)</label><input type="number" id="cfgIndem" value="11" step="0.5"></div>
         <div class="input-group"><label>Taux Horaire Brut</label><input type="number" id="cfgTaux" value="15.3444" step="0.0001"></div>
         <button class="btn-main" onclick="saveConfig()">Sauvegarder</button>
-        <button class="btn-main btn-config" onclick="toggleConfig(false)">Annuler</button>
+        <button class="btn-main" style="background:#666" onclick="toggleConfig(false)">Annuler</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    <div class="tabs no-print">
+    <div class="tabs">
         <button class="tab active" onclick="openTab('saisie', this)">Saisie</button>
         <button class="tab" onclick="openTab('historique', this)">Historique</button>
     </div>
 
     <div id="saisie" class="content active">
-        <div class="input-group">
-            <label>Type d'entrée</label>
-            <select id="entryType" onchange="togglePeriod()">
-                <option value="WORK">Travail</option>
-                <option value="CONGE">Congé / Absence</option>
-            </select>
-        </div>
-        <div id="conge-type-group" class="input-group" style="display:none;">
-            <select id="subCongeType">
-                <option value="ANNUEL">🌴 Congé Annuel</option>
-                <option value="FERIE">🇧🇪 Jour Férié</option>
-                <option value="MALADIE">🤒 Maladie</option>
-                <option value="REPORTE">⏳ Récupération</option>
-            </select>
-        </div>
+        <div class="input-group"><label>Type</label><select id="entryType" onchange="togglePeriod()"><option value="WORK">Travail</option><option value="CONGE">Congé / Absence</option></select></div>
+        <div id="conge-type" class="input-group" style="display:none;"><select id="subCongeType"><option value="ANNUEL">🌴 Congé Annuel</option><option value="FERIE">🇧🇪 Jour Férié</option><option value="MALADIE">🤒 Maladie</option></select></div>
         <div id="date-single" class="input-group"><label>Date</label><input type="date" id="date"></div>
         <div id="date-period" class="input-group" style="display:none;"><label>Du</label><input type="date" id="dateStart"><label>Au</label><input type="date" id="dateEnd"></div>
-        
         <div id="work-fields">
-            <div style="display: flex; gap: 10px; margin-bottom:10px;">
-                <div style="flex:1"><label>Début</label><input type="time" id="startTime" value="08:00"></div>
-                <div style="flex:1"><label>Fin</label><input type="time" id="endTime" value="16:30"></div>
-            </div>
-            <label>Lieu</label>
-            <select id="location"><option value="Wemmel">Wemmel (45m)</option><option value="Esso">Esso (30m)</option><option value="Client">Client (30m)</option></select>
+            <div style="display: flex; gap: 10px; margin-bottom:10px;"><div style="flex:1"><label>Début</label><input type="time" id="startTime" value="08:00"></div><div style="flex:1"><label>Fin</label><input type="time" id="endTime" value="16:30"></div></div>
+            <label>Lieu</label><select id="location"><option value="Wemmel">Wemmel (45m)</option><option value="Esso">Esso (30m)</option><option value="Client">Client (30m)</option></select>
         </div>
         <button class="btn-main" onclick="saveData()">Enregistrer</button>
     </div>
 
     <div id="historique" class="content">
-        <div class="counter-grid">
-            <div>Pris: <b id="stat-taken">0</b></div>
-            <div>Prévus: <b id="stat-planned">0</b></div>
-            <div>Solde: <b id="stat-left">28</b></div>
-        </div>
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <select id="selectMonth" onchange="renderTable()" style="flex:2;"></select>
-            <select id="selectYear" onchange="renderTable()" style="flex:1;"></select>
-        </div>
-        <table>
-            <thead><tr><th>Date</th><th>Info</th><th>Net</th><th>Diff</th><th></th></tr></thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-        
-        <div class="salary-badge" id="salaryDisplay">Calcul en cours...</div>
-        <button class="btn-main btn-config no-print" onclick="toggleConfig(true)">⚙️ Paramètres Salaire</button>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;"><select id="selectMonth" onchange="renderTable()" style="flex:2;"></select><select id="selectYear" onchange="renderTable()" style="flex:1;"></select></div>
+        <table><thead><tr><th>Date</th><th>Info</th><th>Net</th><th>Diff</th><th></th></tr></thead><tbody id="tableBody"></tbody></table>
+        <div class="salary-badge" id="salaryDisplay"></div>
+        <button class="btn-main" style="background:#6c757d; font-size:0.8em;" onclick="toggleConfig(true)">⚙️ Paramètres Salaire</button>
     </div>
 </div>
 
@@ -118,8 +81,6 @@
     const db = firebase.database();
     let entries = [];
     let currentUserId = "";
-
-    // Chargement des paramètres locaux ou valeurs par défaut (Fiche Fév 2026)
     let salaryParams = JSON.parse(localStorage.getItem('salaryParams')) || { netBase: 2151.21, indem: 11.0, taux: 15.3444 };
 
     function checkLogin() {
@@ -131,7 +92,6 @@
         db.ref('users/' + currentUserId + '/entries').on('value', (snap) => {
             entries = snap.val() ? Object.values(snap.val()) : [];
             renderTable();
-            updateStats();
         });
     }
 
@@ -139,8 +99,7 @@
     function saveConfig() {
         salaryParams = { netBase: parseFloat(document.getElementById('cfgNet').value), indem: parseFloat(document.getElementById('cfgIndem').value), taux: parseFloat(document.getElementById('cfgTaux').value) };
         localStorage.setItem('salaryParams', JSON.stringify(salaryParams));
-        toggleConfig(false);
-        renderTable();
+        toggleConfig(false); renderTable();
     }
 
     async function saveData() {
@@ -160,13 +119,13 @@
             diff -= (document.getElementById('location').value === "Wemmel" ? 45 : 30);
             await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ date: d, location: document.getElementById('location').value, minutes: diff, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value });
         }
+        alert("Enregistré !");
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value);
         const y = parseInt(document.getElementById('selectYear').value);
-        const tBody = document.getElementById('tableBody');
-        tBody.innerHTML = '';
+        const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         let totalSuppMinutes = 0, joursTravailles = 0;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
 
@@ -184,25 +143,21 @@
                     info = `${entry.location} ${entry.start}-${entry.end}`;
                 } else { info = entry.subType; rClass = 'holiday-row'; }
             }
-            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td>${entry ? formatT(entry.minutes) : '-'}</td><td>${entry ? formatT(diff) : '-'}</td><td onclick="deleteEntry('${dStr}')">✕</td></tr>`;
+            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td>${entry ? formatT(entry.minutes) : '-'}</td><td>${entry ? formatT(diff) : '0h00'}</td><td onclick="deleteEntry('${dStr}')" style="color:red">✕</td></tr>`;
         }
 
         const bonusSupp = totalSuppMinutes > 0 ? (totalSuppMinutes/60) * salaryParams.taux * 1.5 * 0.75 : 0;
-        const totalIndem = joursTravailles * salaryParams.indem;
-        const totalNet = salaryParams.netBase + totalIndem + bonusSupp;
+        const totalNet = salaryParams.netBase + (joursTravailles * salaryParams.indem) + bonusSupp;
 
         document.getElementById('salaryDisplay').innerHTML = `
-            <div style="font-size:1.1em; color:var(--primary);"><b>Est. Salaire Net : ${totalNet.toFixed(2)} €</b></div>
-            <div style="font-size:0.85em; color:#666; margin-top:5px;">
-                Trajet: +${totalIndem.toFixed(2)}€ (${joursTravailles}j) | Heures Sup: +${bonusSupp.toFixed(2)}€
-            </div>
-        `;
+            <b>Salaire Net Estimé : ${totalNet.toFixed(2)} €</b><br>
+            <small>Base: ${salaryParams.netBase}€ | Trajets: ${joursTravailles * salaryParams.indem}€ | Heures Sup: ${bonusSupp.toFixed(2)}€</small>`;
     }
 
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
-    function updateStats() { const curY = new Date().getFullYear().toString(); const annuels = entries.filter(e => e.date.startsWith(curY) && e.subType === "ANNUEL"); document.getElementById('stat-taken').innerText = annuels.filter(e => e.date < new Date().toISOString().split('T')[0]).length; document.getElementById('stat-planned').innerText = annuels.length; document.getElementById('stat-left').innerText = 28 - annuels.length; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); }
-    function togglePeriod() { const isC = document.getElementById('entryType').value === "CONGE"; document.getElementById('conge-type-group').style.display = isC ? "block" : "none"; document.getElementById('date-single').style.display = isC ? "none" : "block"; document.getElementById('date-period').style.display = isC ? "block" : "none"; document.getElementById('work-fields').style.display = isC ? "none" : "block"; }
+    function togglePeriod() { const isC = document.getElementById('entryType').value === "CONGE"; document.getElementById('conge-type').style.display = isC ? "block" : "none"; document.getElementById('work-fields').style.display = isC ? "none" : "block"; document.getElementById('date-single').style.display = isC ? "none" : "block"; document.getElementById('date-period').style.display = isC ? "block" : "none"; }
+    function deleteEntry(d) { if(confirm("Supprimer ?")) db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).remove(); }
 
     const mNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
     mNames.forEach((n, i) => document.getElementById('selectMonth').innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);

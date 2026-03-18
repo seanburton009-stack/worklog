@@ -32,7 +32,8 @@
         .check-card.active { background: #ffeaa7; border: 2px solid #e67e22; }
 
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-export { background: var(--draeger-orange); color: white; margin-top: 20px; border: none; display: block; text-decoration: none; text-align: center; }
+        .btn-export { background: var(--draeger-orange); color: white; margin-top: 20px; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-excel { background: #217346; color: white; margin-top: 8px; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
         
         table { width: 100%; border-collapse: collapse; font-size: 0.75em; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 8px 4px; text-align: center; }
@@ -45,7 +46,7 @@
         .badge-rem { background: var(--success); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
 
         @media print {
-            .tabs, .btn-main, .input-group, .travel-options, select, #login-overlay, .no-print, .btn-export, .lang-switch { display: none !important; }
+            .tabs, .btn-main, .input-group, .travel-options, select, #login-overlay, .no-print, .btn-export, .btn-excel, .lang-switch { display: none !important; }
             body { background: white; padding: 0; }
             .container { display: block !important; width: 100%; max-width: none; border: none; box-shadow: none; }
             .content { display: block !important; }
@@ -153,7 +154,10 @@
             <tbody id="tableBody"></tbody>
             <tfoot id="tableFoot"></tfoot>
         </table>
-        <button class="btn-main btn-export no-print" id="btn-pdf" onclick="window.print()">EXPORTER PDF</button>
+        <div class="no-print">
+            <button class="btn-export" id="btn-pdf" onclick="window.print()">EXPORTER PDF</button>
+            <button class="btn-excel" id="btn-excel-lbl" onclick="exportToExcel()">EXPORTER EXCEL (CSV)</button>
+        </div>
     </div>
 </div>
 
@@ -177,35 +181,30 @@
     const translations = {
         fr: {
             login: "Connexion", tabSaisie: "Saisie", tabHist: "Historique", type: "Type d'entrée", work: "Travail", conge: "Congé / Absence",
-            sub: "Précision de l'absence", annuel: "🌴 Congé Annuel (Décompté)", ferie: "🇧🇪 Jour Férié (Non décompté)", reporte: "⏳ Congé Reporté (Non décompté)", maladie: "🤒 Maladie",
+            sub: "Précision de l'absence", annuel: "🌴 Congé Annuel", ferie: "🇧🇪 Jour Férié", reporte: "⏳ Congé Reporté", maladie: "🤒 Maladie",
             date: "Date", from: "Du", to: "Au", trajet: "Trajets (-30m par case)", hStart: "Départ Maison", hEnd: "Retour Maison",
             loc: "Lieu", start: "Début", end: "Fin", save: "Enregistrer", sync: "✅ Synchronisé !", taken: "Pris", planned: "Prévus",
-            rest: "Solde Annuel Reste", thDate: "Date", thInfo: "Lieu / Heures", thNet: "Net", thDiff: "Diff", pdf: "EXPORTER PDF",
+            rest: "Solde Annuel Reste", thDate: "Date", thInfo: "Lieu / Heures", thNet: "Net", thDiff: "Diff", pdf: "EXPORTER PDF", excel: "EXPORTER EXCEL (CSV)",
             months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
             days: ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"], total: "TOTAL MOIS", delConfirm: "Supprimer ?"
         },
         nl: {
             login: "Inloggen", tabSaisie: "Invoer", tabHist: "Overzicht", type: "Type invoer", work: "Werkdag", conge: "Verlof / Afwezigheid",
-            sub: "Type afwezigheid", annuel: "🌴 Jaarlijks Verlof (Telt mee)", ferie: "🇧🇪 Feestdag (Telt niet mee)", reporte: "⏳ Overgedragen verlof (Telt niet mee)", maladie: "🤒 Ziekte",
+            sub: "Type afwezigheid", annuel: "🌴 Jaarlijks Verlof", ferie: "🇧🇪 Feestdag", reporte: "⏳ Overgedragen verlof", maladie: "🤒 Ziekte",
             date: "Datum", from: "Van", to: "Tot", trajet: "Traject opties (-30m per vinkje)", hStart: "Vertrek Thuis", hEnd: "Terug Thuis",
             loc: "Locatie", start: "Start", end: "Einde", save: "Opslaan", sync: "✅ Gesynchroniseerd!", taken: "Genomen", planned: "Gepland",
-            rest: "Jaarlijks Saldo", thDate: "Datum", thInfo: "Locatie / Uren", thNet: "Netto", thDiff: "Diff", pdf: "EXPORTEREN PDF",
+            rest: "Jaarlijks Saldo", thDate: "Datum", thInfo: "Locatie / Uren", thNet: "Netto", thDiff: "Diff", pdf: "EXPORTEREN PDF", excel: "EXPORTEREN EXCEL (CSV)",
             months: ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
             days: ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"], total: "MAAND TOTAAL", delConfirm: "Verwijderen?"
         }
     };
 
-    function setLang(l) {
-        lang = l;
-        localStorage.setItem('worklog_lang', l);
-        updateUI();
-    }
+    function setLang(l) { lang = l; localStorage.setItem('worklog_lang', l); updateUI(); }
 
     function updateUI() {
         const t = translations[lang];
         document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
         document.getElementById('btn-nl').classList.toggle('active', lang === 'nl');
-        
         document.getElementById('lbl-login').innerText = t.login;
         document.getElementById('tab-saisie').innerText = t.tabSaisie;
         document.getElementById('tab-hist').innerText = t.tabHist;
@@ -235,12 +234,12 @@
         document.getElementById('th-net').innerText = t.thNet;
         document.getElementById('th-diff').innerText = t.thDiff;
         document.getElementById('btn-pdf').innerText = t.pdf;
+        document.getElementById('btn-excel-lbl').innerText = t.excel;
 
         const mSel = document.getElementById('selectMonth');
         const currentM = mSel.value || new Date().getMonth();
         mSel.innerHTML = '';
         t.months.forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == currentM ? 'selected' : ''}>${m}</option>`);
-        
         renderTable();
     }
 
@@ -310,32 +309,51 @@
             const dNum = dObj.getDay();
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
             if(entry) { tMin += entry.minutes; tSupp += (entry.minutes - goal); }
-            
             let rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
             let info = "-";
-            
             if (entry && entry.location === 'CONGE') {
                 const isFuture = dStr >= new Date().toISOString().split('T')[0];
                 if(entry.subType === "ANNUEL") {
                     rClass = isFuture ? 'planned-row' : 'holiday-row';
-                    info = isFuture ? t.planned.toUpperCase() : t.annuel.split(' ')[2].toUpperCase();
-                } else {
-                    rClass = 'other-conge-row';
-                    info = entry.subType; // FERIE, REPORTE, MALADIE
-                }
-            } else if (entry) {
-                info = entry.location + ' ' + entry.start + '-' + entry.end;
-            }
-
-            tBody.innerHTML += `<tr class="${rClass}">
-                <td>${t.days[dNum]} ${i}</td>
-                <td style="text-align:left;">${info}</td>
-                <td>${entry ? formatT(entry.minutes) : '-'}</td>
-                <td style="color:${(entry && (entry.minutes-goal)>0) ? 'green' : (entry && (entry.minutes-goal)<0 ? 'red' : 'black')}">${entry ? formatT(entry.minutes - goal) : '-'}</td>
-                <td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer;color:red;">✕</span></td>
-            </tr>`;
+                    info = isFuture ? t.planned.toUpperCase() : "CONGE";
+                } else { rClass = 'other-conge-row'; info = entry.subType; }
+            } else if (entry) { info = entry.location + ' ' + entry.start + '-' + entry.end; }
+            tBody.innerHTML += `<tr class="${rClass}"><td>${t.days[dNum]} ${i}</td><td style="text-align:left;">${info}</td><td>${entry ? formatT(entry.minutes) : '-'}</td><td style="color:${(entry && (entry.minutes-goal)>0) ? 'green' : (entry && (entry.minutes-goal)<0 ? 'red' : 'black')}">${entry ? formatT(entry.minutes - goal) : '-'}</td><td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer;color:red;">✕</span></td></tr>`;
         }
         document.getElementById('tableFoot').innerHTML = `<tr class="total-row"><td colspan="2">${t.total}</td><td>${formatT(tMin)}</td><td>${formatT(tSupp)}</td><td class="no-print"></td></tr>`;
+    }
+
+    function exportToExcel() {
+        const m = parseInt(document.getElementById('selectMonth').value);
+        const y = parseInt(document.getElementById('selectYear').value);
+        const t = translations[lang];
+        let csvContent = "\uFEFF"; // BOM pour UTF-8 (Excel)
+        csvContent += `${t.thDate};${t.thInfo};${t.thNet};${t.thDiff}\n`;
+
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const entry = entries.find(e => e.date === dStr);
+            const dObj = new Date(y, m, i);
+            const dNum = dObj.getDay();
+            let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
+            
+            let info = entry ? (entry.location === 'CONGE' ? entry.subType : entry.location + " " + entry.start + "-" + entry.end) : "-";
+            let net = entry ? formatT(entry.minutes) : "-";
+            let diff = entry ? formatT(entry.minutes - goal) : "-";
+            
+            csvContent += `${t.days[dNum]} ${i};${info};${net};${diff}\n`;
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `WorkLog_${t.months[m]}_${y}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function formatT(min) {
@@ -347,28 +365,17 @@
     function updateStats() {
         const curY = new Date().getFullYear().toString();
         const today = new Date().toISOString().split('T')[0];
-        // On ne compte que les congés de type "ANNUEL"
-        const congesAnnuels = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE" && e.subType === "ANNUEL");
-        const taken = congesAnnuels.filter(e => e.date < today).length;
-        const planned = congesAnnuels.filter(e => e.date >= today).length;
+        const conAnnuels = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE" && e.subType === "ANNUEL");
+        const taken = conAnnuels.filter(e => e.date < today).length;
+        const planned = conAnnuels.filter(e => e.date >= today).length;
         document.getElementById('stat-taken').innerText = taken;
         document.getElementById('stat-planned').innerText = planned;
         document.getElementById('stat-left').innerText = Math.max(0, 28 - (taken + planned));
     }
 
     function deleteEntry(d) { if(confirm(translations[lang].delConfirm)) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
-    
-    function openTab(id, btn) { 
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).classList.add('active'); btn.classList.add('active');
-    }
-    
-    function toggleCheck(id) {
-        const cb = document.getElementById(id); cb.checked = !cb.checked;
-        document.getElementById('card' + id.charAt(0).toUpperCase() + id.slice(1)).classList.toggle('active', cb.checked);
-    }
-    
+    function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); }
+    function toggleCheck(id) { const cb = document.getElementById(id); cb.checked = !cb.checked; document.getElementById('card' + id.charAt(0).toUpperCase() + id.slice(1)).classList.toggle('active', cb.checked); }
     function togglePeriod() {
         const isC = document.getElementById('entryType').value === "CONGE";
         document.getElementById('conge-type-group').style.display = isC ? "block" : "none";

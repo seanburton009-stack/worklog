@@ -23,6 +23,7 @@
 
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 25px; width: 80%; max-width: 300px; text-align: center; }
+        .login-input { width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; }
         .pin-input { width: 100%; border: 2px solid #ddd; border-radius: 12px; padding: 15px; font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; outline: none; }
 
         .container { padding: calc(var(--safe-top) + 20px) 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
@@ -58,7 +59,11 @@
 
 <div id="login-overlay">
     <div class="box">
-        <h2 id="l-title">Dräger - RSS - Heures</h2>
+        <h2 id="l-title">Dräger - RSS</h2>
+        <div id="first-setup-fields" style="display:none;">
+            <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">Configuration initiale</p>
+            <input type="text" id="setupUser" class="login-input" placeholder="Utilisateur (ex: burtonse)">
+        </div>
         <p id="l-sub">Entrez votre code PIN</p>
         <input type="password" id="userPin" class="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••">
         <button id="l-btn" class="btn-main" onclick="handleAuth()">Se connecter</button>
@@ -68,7 +73,10 @@
 <div class="container" id="mainContainer">
     <div class="header no-print">
         <h2 id="t-appname">WorkLog</h2>
-        <button onclick="toggleLang()" style="border:none; background:none; font-size:1.5em;">🌐</button>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span id="displayUser" style="font-size:0.8em; color:var(--primary); font-weight:bold;"></span>
+            <button onclick="toggleLang()" style="border:none; background:none; font-size:1.5em;">🌐</button>
+        </div>
     </div>
 
     <div id="saisie" class="content active">
@@ -123,12 +131,7 @@
             </div>
             <table id="tableData">
                 <thead>
-                    <tr>
-                        <th id="th-day">Jour</th>
-                        <th id="th-det">Détails</th>
-                        <th id="th-pres">Prestation</th>
-                        <th>+/-</th>
-                    </tr>
+                    <tr><th id="th-day">Jour</th><th id="th-det">Lieu</th><th id="th-pres">Prestation</th><th>+/-</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -137,6 +140,7 @@
                 <button class="btn-print" onclick="window.print()">📄 PDF / Print</button>
             </div>
             <button class="btn-main" style="margin-top:20px; background:#aaa;" onclick="changePinPrompt()" id="b-pin">Changer PIN</button>
+            <button class="btn-main" style="margin-top:10px; background:#e74c3c;" onclick="logout()">🔒 Déconnexion (Reset)</button>
         </div>
     </div>
 </div>
@@ -150,7 +154,9 @@
     const firebaseConfig = { apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", authDomain: "worklog-fc54b.firebaseapp.com", databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "worklog-fc54b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let entries = []; const currentUserId = "burtonse";
+    
+    let entries = [];
+    let currentUserId = localStorage.getItem('userId') || "";
     let lang = localStorage.getItem('lang') || 'fr';
 
     const absLabels = {
@@ -161,8 +167,8 @@
     };
 
     const dict = {
-        fr: { l_title: "Dräger - RSS - Heures", l_sub: "Entrez votre code PIN", l_btn: "Se connecter", t_appname: "Prestations", l_activity: "Activité", o_work: "🛠 Travail", o_conge: "🌴 Congé / Absence", l_date: "Date", l_start: "Début", l_end: "Fin", l_loc: "Lieu", l_abstype: "Type d'absence", l_from: "Du", l_to: "Au", b_save: "Enregistrer", l_stat_c: "Solde Congés", l_stat_h: "Heures +/-", th_day: "Jour", th_det: "Lieu", th_pres: "Prestation", b_pin: "Changer PIN", nav_1: "➕ Pointer", nav_2: "📅 Calendrier" },
-        nl: { l_title: "Dräger - RSS - Uren", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof / Afwezigheid", l_date: "Datum", l_start: "Start", l_end: "Einde", l_loc: "Locatie", l_abstype: "Type afwezigheid", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Uren +/-", th_day: "Dag", th_det: "Locatie", th_pres: "Werktijd", b_pin: "PIN wijzigen", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
+        fr: { l_title: "Dräger - RSS", l_sub: "Entrez votre code PIN", l_btn: "Se connecter", t_appname: "Prestations", l_activity: "Activité", o_work: "🛠 Travail", o_conge: "🌴 Congé / Absence", l_date: "Date", l_start: "Début", l_end: "Fin", l_loc: "Lieu", l_abstype: "Type d'absence", l_from: "Du", l_to: "Au", b_save: "Enregistrer", l_stat_c: "Solde Congés", l_stat_h: "Heures +/-", th_day: "Jour", th_det: "Lieu", th_pres: "Prestation", b_pin: "Changer PIN", nav_1: "➕ Pointer", nav_2: "📅 Calendrier" },
+        nl: { l_title: "Dräger - RSS", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof / Afwezigheid", l_date: "Datum", l_start: "Start", l_end: "Einde", l_loc: "Locatie", l_abstype: "Type afwezigheid", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Uren +/-", th_day: "Dag", th_det: "Locatie", th_pres: "Werktijd", b_pin: "PIN wijzigen", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
     };
 
     function toggleLang() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); applyLang(); }
@@ -177,23 +183,45 @@
     function initApp() {
         applyLang();
         const savedPin = localStorage.getItem('userPin');
-        if (!savedPin) {
-            document.getElementById('l-title').innerText = "Configuration";
-            document.getElementById('l-sub').innerText = (lang === 'fr' ? "Créez votre code PIN" : "Maak uw pincode aan");
+        if (!savedPin || !currentUserId) {
+            document.getElementById('first-setup-fields').style.display = 'block';
+            document.getElementById('l-sub').innerText = "Créez votre utilisateur et PIN";
         }
+        if(currentUserId) document.getElementById('displayUser').innerText = currentUserId;
     }
 
     function handleAuth() {
         const inputPin = document.getElementById('userPin').value;
         const savedPin = localStorage.getItem('userPin');
-        if (!savedPin) {
-            if (inputPin.length === 4) { localStorage.setItem('userPin', inputPin); location.reload(); }
+
+        if (!savedPin || !currentUserId) {
+            // Premier enregistrement
+            const newUser = document.getElementById('setupUser').value.trim().toLowerCase();
+            if (newUser && inputPin.length === 4) {
+                localStorage.setItem('userId', newUser);
+                localStorage.setItem('userPin', inputPin);
+                currentUserId = newUser;
+                location.reload();
+            } else {
+                alert("Veuillez remplir l'utilisateur et un PIN de 4 chiffres.");
+            }
         } else {
+            // Connexion normale
             if (inputPin === savedPin) { 
                 document.getElementById('login-overlay').style.display = 'none'; 
                 document.getElementById('mainContainer').style.display = 'block'; 
                 loadData(); 
-            } else { alert("PIN Error"); }
+            } else { 
+                alert("Code PIN incorrect"); 
+                document.getElementById('userPin').value = "";
+            }
+        }
+    }
+
+    function logout() {
+        if(confirm("Cela effacera votre session sur ce téléphone. Continuer ?")) {
+            localStorage.clear();
+            location.reload();
         }
     }
 
@@ -221,7 +249,7 @@
             diff -= (document.getElementById('location').value === "Wemmel" ? 45 : 30);
             await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ date: d, location: document.getElementById('location').value, minutes: diff, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value });
         }
-        alert("OK");
+        alert("Enregistré !");
     }
 
     function renderTable() {
@@ -240,9 +268,7 @@
             
             if (e) {
                 if (e.location !== 'CONGE') { 
-                    diff = e.minutes - goal; 
-                    total += diff; 
-                    info = e.location;
+                    diff = e.minutes - goal; total += diff; info = e.location;
                     prest = `${e.start} - ${e.end}`; 
                 }
                 else { 

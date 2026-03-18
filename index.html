@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V16</title>
+    <title>Dräger WorkLog V17</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -19,13 +19,9 @@
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
         input[type="text"], input[type="password"], input[type="date"], input[type="time"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; background: #fff; -webkit-appearance: none; }
         
-        /* STYLE DES CHECKBOX AMÉLIORÉ */
         .check-row { display: flex; flex-direction: column; gap: 10px; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
         .check-item { display: flex; align-items: center; cursor: pointer; padding: 5px 0; }
-        .check-item input[type="checkbox"] { 
-            width: 25px; height: 25px; margin-right: 12px; cursor: pointer; 
-            flex-shrink: 0;
-        }
+        .check-item input[type="checkbox"] { width: 25px; height: 25px; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
         .check-item label { margin: 0; cursor: pointer; font-size: 1em; flex-grow: 1; }
 
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
@@ -45,6 +41,10 @@
         .export-bar { display: flex; gap: 8px; margin-bottom: 15px; align-items: center; }
         .btn-exp { flex: 1; padding: 12px 5px; border-radius: 10px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .btn-lang { flex: 0 0 50px; background: var(--primary); color: white; border: none; font-size: 1.2em; }
+        
+        /* Style spécifique pour la rangée des filtres */
+        .filter-row { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; }
+        .filter-row select { margin-bottom: 0; flex: 1; }
     </style>
 </head>
 <body onload="initApp()">
@@ -110,9 +110,10 @@
             <div class="stat-box"><span id="txt-stat-con">Congés</span><b>28</b></div>
         </div>
         <div class="card">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <select id="selectMonth" onchange="renderTable()" style="margin:0; width:60%;"></select>
-                <button onclick="softLogout()" id="txt-btn-logout" style="background:#eee; border:none; padding:10px; border-radius:8px; font-size:11px;">Logout</button>
+            <div class="filter-row">
+                <select id="selectMonth" onchange="renderTable()"></select>
+                <select id="selectYear" onchange="renderTable()"></select>
+                <button onclick="softLogout()" id="txt-btn-logout" style="background:#eee; border:none; padding:10px; border-radius:8px; font-size:11px; flex:0 0 60px;">Logout</button>
             </div>
             <table>
                 <thead><tr id="txt-table-head"><th>J</th><th style="text-align:left;">Lieu & Travail</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
@@ -171,7 +172,7 @@
         document.getElementById('txt-nav-ptr').innerText = t.nav_ptr;
         document.getElementById('txt-nav-cal').innerText = t.nav_cal;
         document.getElementById('txt-table-head').innerHTML = t.table_head;
-        updateMonthSelect();
+        updateMonthAndYearSelectors();
     }
 
     function initApp() {
@@ -222,7 +223,7 @@
 
     function renderTable() {
         const selMonth = parseInt(document.getElementById('selectMonth').value || new Date().getMonth());
-        const selYear = new Date().getFullYear();
+        const selYear = parseInt(document.getElementById('selectYear').value || new Date().getFullYear());
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         let totalBalance = 0; let weekWork = 0;
         
@@ -275,19 +276,24 @@
     }
 
     function exportExcel() {
+        const selMonth = parseInt(document.getElementById('selectMonth').value);
+        const selYear = parseInt(document.getElementById('selectYear').value);
         let csv = "Date;Lieu;Travail Debut;Travail Fin;Net\n";
         entries.forEach(e => {
-            let [h1, m1] = e.start.split(':').map(Number);
-            let [h2, m2] = e.end.split(':').map(Number);
-            let s = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
-            let f = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
-            let sStr = `${Math.floor(s/60)}h${(s%60).toString().padStart(2,'0')}`;
-            let fStr = `${Math.floor(f/60)}h${(f%60).toString().padStart(2,'0')}`;
-            csv += `${e.date};${e.location};${sStr};${fStr};${formatT(e.minutes)}\n`;
+            const eDate = new Date(e.date);
+            if(eDate.getMonth() === selMonth && eDate.getFullYear() === selYear) {
+                let [h1, m1] = e.start.split(':').map(Number);
+                let [h2, m2] = e.end.split(':').map(Number);
+                let s = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
+                let f = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
+                let sStr = `${Math.floor(s/60)}h${(s%60).toString().padStart(2,'0')}`;
+                let fStr = `${Math.floor(f/60)}h${(f%60).toString().padStart(2,'0')}`;
+                csv += `${e.date};${e.location};${sStr};${fStr};${formatT(e.minutes)}\n`;
+            }
         });
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-        link.download = `Dräger_${currentUserId}.csv`; link.click();
+        link.download = `Dräger_${currentUserId}_${selMonth+1}_${selYear}.csv`; link.click();
     }
 
     function formatT(min) {
@@ -304,13 +310,21 @@
     
     function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
 
-    function updateMonthSelect() {
+    function updateMonthAndYearSelectors() {
         const mFr = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
         const mNl = ["Jan", "Feb", "Maa", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
-        const sel = document.getElementById('selectMonth');
-        const current = sel.value || new Date().getMonth();
-        sel.innerHTML = '';
-        (lang === 'fr' ? mFr : mNl).forEach((n, i) => sel.innerHTML += `<option value="${i}" ${i==current?'selected':''}>${n}</option>`);
+        
+        const mSel = document.getElementById('selectMonth');
+        const currentM = mSel.value || new Date().getMonth();
+        mSel.innerHTML = '';
+        (lang === 'fr' ? mFr : mNl).forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==currentM?'selected':''}>${n}</option>`);
+
+        const ySel = document.getElementById('selectYear');
+        const currentY = parseInt(ySel.value) || new Date().getFullYear();
+        ySel.innerHTML = '';
+        for(let y = 2024; y <= 2030; y++) {
+            ySel.innerHTML += `<option value="${y}" ${y==currentY?'selected':''}>${y}</option>`;
+        }
     }
 
     window.toggleLang = function() {

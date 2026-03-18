@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V50</title>
+    <title>Dräger WorkLog V50.1</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -11,11 +11,9 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; color: #333; }
         
-        /* AUTH */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
         
-        /* LAYOUT */
         .container { padding: 10px 15px 140px 15px; max-width: 800px; margin: auto; display: none; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
@@ -27,7 +25,6 @@
         .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
         .info-week b { font-size: 2em; color: var(--primary); display: block; }
 
-        /* TABS */
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; position: relative; }
         .tab.active { color: var(--secondary); }
@@ -38,7 +35,6 @@
         .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; }
         .sub-tab.active { background: white; color: var(--primary); }
 
-        /* TABLEAU CENTRÉ */
         table { width: 100%; border-collapse: collapse; font-size: 0.75em; table-layout: fixed; }
         th { padding: 10px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: center; }
         td { padding: 12px 4px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; word-wrap: break-word; }
@@ -46,7 +42,6 @@
 
         .lang-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8em; }
 
-        /* PRINT */
         #pdf-header { display: none; }
         @media print {
             body { background: white; padding: 0; }
@@ -71,7 +66,7 @@
         <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
-        <h2 id="t-reg-title">Inscriptions</h2>
+        <h2>Inscriptions</h2>
         <input type="text" id="regNom" placeholder="NOM / NAAM">
         <input type="text" id="regPrenom" placeholder="Prénom / Voornaam">
         <input type="text" id="regUser" placeholder="User">
@@ -346,7 +341,7 @@
     }
     function initApp() {
         const mSel = document.getElementById('selectMonth');
-        ["Jan","Fév","Mar","Avr","Mai","Jui","Juil","Aoû","Sep","Oct","Nov","Déc"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
         for(let y = 2024; y <= 2030; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }
@@ -354,7 +349,7 @@
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
         db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Check!"); showAuth('login');
+        alert("Demande envoyée."); showAuth('login');
     }
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>

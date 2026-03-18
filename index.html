@@ -38,20 +38,21 @@
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #444; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; }
         
-        /* Checkbox style */
         .check-row { display: flex; justify-content: space-around; margin: 15px 0; background: #f8f9fa; padding: 10px; border-radius: 10px; }
-        .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.9em; font-weight: 500; }
-        .check-item input { width: 20px; height: 20px; }
+        .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.85em; font-weight: 500; }
+        .check-item input { width: 18px; height: 18px; }
 
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
         .btn-export { background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 0.8em; margin-top: 10px; width: 48%; cursor: pointer; }
         
         .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-box { background: white; padding: 15px; border-radius: 15px; text-align: center; }
-        .stat-box b { display: block; font-size: 1.4em; color: var(--primary); }
+        .stat-box b { display: block; font-size: 1.2em; color: var(--primary); }
+        .stat-highlight { grid-column: span 2; background: #eef2f7; border: 1px solid var(--secondary); }
+        .stat-highlight b { color: var(--secondary); font-size: 1.5em; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
-        th, td { padding: 10px 2px; text-align: center; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.72em; }
+        th, td { padding: 8px 2px; text-align: center; border-bottom: 1px solid #eee; }
         .weekend { color: #ccc; background: #fafafa; }
         .holiday-row { color: var(--secondary); font-weight: bold; background: #f0f7ff; }
         .diff-pos { color: #27ae60; font-weight: bold; }
@@ -64,17 +65,18 @@
 
 <div id="login-overlay">
     <div class="box">
-        <h2>Dräger - RSS</h2>
-        <input type="text" id="userInput" class="login-input" placeholder="Utilisateur (ex: burtonse)">
+        <h2 id="l-title">Dräger - RSS</h2>
+        <input type="text" id="userInput" class="login-input" placeholder="Utilisateur / Gebruiker">
+        <p id="l-sub">Entrez votre code PIN</p>
         <input type="password" id="userPin" class="pin-input" inputmode="numeric" maxlength="4" placeholder="••••">
-        <button class="btn-main" onclick="handleAuth()">Se connecter</button>
+        <button id="l-btn" class="btn-main" onclick="handleAuth()">Se connecter</button>
         <p id="login-msg" style="font-size: 0.7em; color: #666; margin-top: 10px;"></p>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
     <div class="header no-print">
-        <h2>WorkLog</h2>
+        <h2 id="t-appname">WorkLog</h2>
         <div style="display:flex; align-items:center; gap:15px;">
             <span id="displayUser" style="font-size:0.8em; color:var(--primary); font-weight:bold; text-transform: uppercase;"></span>
             <button onclick="toggleLang()" style="border:none; background:none; font-size:1.5em;">🌐</button>
@@ -86,31 +88,31 @@
             <div class="input-group">
                 <label id="l-activity">Activité</label>
                 <select id="entryType" onchange="toggleForm()">
-                    <option value="WORK">🛠 Travail</option>
-                    <option value="CONGE">🌴 Congé / Absence</option>
+                    <option value="WORK" id="o-work">🛠 Travail</option>
+                    <option value="CONGE" id="o-conge">🌴 Congé / Absence</option>
                 </select>
             </div>
 
             <div id="work-fields">
-                <div class="input-group"><label>Date</label><input type="date" id="date"></div>
+                <div class="input-group"><label id="l-date">Date</label><input type="date" id="date"></div>
                 <div style="display:flex; gap:10px;">
-                    <div class="input-group" style="flex:1;"><label>Début</label><input type="time" id="startTime" value="08:00"></div>
-                    <div class="input-group" style="flex:1;"><label>Fin</label><input type="time" id="endTime" value="16:30"></div>
+                    <div class="input-group" style="flex:1;"><label id="l-start">Début</label><input type="time" id="startTime" value="08:00"></div>
+                    <div class="input-group" style="flex:1;"><label id="l-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
 
                 <div class="check-row">
                     <div class="check-item">
                         <input type="checkbox" id="homeStart">
-                        <label for="homeStart">🏠 Départ Maison</label>
+                        <label for="homeStart" id="l-hstart">🏠 Départ Maison</label>
                     </div>
                     <div class="check-item">
                         <input type="checkbox" id="homeEnd">
-                        <label for="homeEnd">🏠 Retour Maison</label>
+                        <label for="homeEnd" id="l-hend">🏠 Retour Maison</label>
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Lieu principal</label>
+                    <label id="l-loc">Lieu principal</label>
                     <select id="location">
                         <option value="Wemmel">Wemmel (45m)</option>
                         <option value="Client">Client (30m)</option>
@@ -120,25 +122,29 @@
             </div>
 
             <div id="conge-fields" style="display:none;">
-                <div class="input-group"><label>Type d'absence</label>
+                <div class="input-group"><label id="l-abstype">Type d'absence</label>
                     <select id="subCongeType">
-                        <option value="ANNUEL">🌴 Congé Annuel</option>
-                        <option value="FERIE">🇧🇪 Jour Férié</option>
-                        <option value="MALADIE">🤒 Maladie</option>
-                        <option value="RECU">⏳ Récupération</option>
+                        <option value="ANNUEL" id="o-annuel">🌴 Congé Annuel</option>
+                        <option value="FERIE" id="o-ferie">🇧🇪 Jour Férié</option>
+                        <option value="MALADIE" id="o-maladie">🤒 Maladie</option>
+                        <option value="RECU" id="o-recu">⏳ Récupération</option>
                     </select>
                 </div>
-                <div class="input-group"><label>Du</label><input type="date" id="dateStart"></div>
-                <div class="input-group"><label>Au</label><input type="date" id="dateEnd"></div>
+                <div class="input-group"><label id="l-from">Du</label><input type="date" id="dateStart"></div>
+                <div class="input-group"><label id="l-to">Au</label><input type="date" id="dateEnd"></div>
             </div>
-            <button class="btn-main" onclick="saveData()">Enregistrer</button>
+            <button class="btn-main" id="b-save" onclick="saveData()">Enregistrer</button>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="stat-banner">
-            <div class="stat-box"><span>Solde Congés</span><b id="stat-conge">28</b></div>
-            <div class="stat-box"><span>Heures +/-</span><b id="stat-hours">0h00</b></div>
+            <div class="stat-box stat-highlight">
+                <span id="l-stat-rem">Reste à faire cette semaine</span>
+                <b id="stat-remaining">0h00</b>
+            </div>
+            <div class="stat-box"><span id="l-stat-c">Solde Congés</span><b id="stat-conge">28</b></div>
+            <div class="stat-box"><span id="l-stat-h">Balance Totale</span><b id="stat-hours">0h00</b></div>
         </div>
         <div class="card">
             <div style="display:flex; gap:10px; margin-bottom:15px;" class="no-print">
@@ -147,21 +153,21 @@
             </div>
             <table id="tableData">
                 <thead>
-                    <tr><th>Jour</th><th>Lieu</th><th>Prestation</th><th>+/-</th></tr>
+                    <tr><th id="th-day">J</th><th id="th-det">Lieu</th><th id="th-work">Presté</th><th id="th-diff">+/-</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
             <div style="display:flex; justify-content: space-between;" class="no-print">
-                <button class="btn-export" onclick="exportExcel()">📊 Excel</button>
-                <button class="btn-main" style="width:48%; padding:10px; font-size:0.8em; background:#555;" onclick="softLogout()">🔒 Quitter</button>
+                <button class="btn-export" id="b-export" onclick="exportExcel()">📊 Excel</button>
+                <button class="btn-main" id="b-logout" style="width:48%; padding:10px; font-size:0.8em; background:#555;" onclick="softLogout()">🔒 Quitter</button>
             </div>
         </div>
     </div>
 </div>
 
 <nav class="tabs no-print">
-    <button class="tab active" onclick="openTab('saisie', this)"><span>➕ Pointer</span></button>
-    <button class="tab" onclick="openTab('historique', this)"><span>📅 Calendrier</span></button>
+    <button class="tab active" onclick="openTab('saisie', this)"><span id="nav-1">➕ Pointer</span></button>
+    <button class="tab" onclick="openTab('historique', this)"><span id="nav-2">📅 Calendrier</span></button>
 </nav>
 
 <script>
@@ -173,57 +179,36 @@
     let currentUserId = "";
     let lang = localStorage.getItem('lang') || 'fr';
 
-    const absLabels = {
-        ANNUEL: { fr: "🌴 Congé", nl: "🌴 Verlof" },
-        FERIE: { fr: "🇧🇪 Férié", nl: "🇧🇪 Feestdag" },
-        MALADIE: { fr: "🤒 Maladie", nl: "🤒 Ziekte" },
-        RECU: { fr: "⏳ Récup", nl: "⏳ Inhaalrust" }
+    const dict = {
+        fr: { l_title: "Dräger - RSS", l_sub: "Entrez votre code PIN", l_btn: "Se connecter", t_appname: "Prestations", l_activity: "Activité", o_work: "🛠 Travail", o_conge: "🌴 Congé / Absence", l_date: "Date", l_start: "Début", l_end: "Fin", l_hstart: "🏠 Départ Maison", l_hend: "🏠 Retour Maison", l_loc: "Lieu principal", l_abstype: "Type d'absence", o_annuel: "🌴 Congé Annuel", o_ferie: "🇧🇪 Jour Férié", o_maladie: "🤒 Maladie", o_recu: "⏳ Récupération", l_from: "Du", l_to: "Au", b_save: "Enregistrer", l_stat_c: "Solde Congés", l_stat_h: "Balance Totale", l_stat_rem: "Reste à prester (Semaine)", th_day: "J", th_det: "Lieu", th_work: "Presté", th_diff: "+/-", b_export: "📊 Excel", b_logout: "🔒 Quitter", nav_1: "➕ Pointer", nav_2: "📅 Calendrier" },
+        nl: { l_title: "Dräger - RSS", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof / Afwezigheid", l_date: "Datum", l_start: "Start", l_end: "Einde", l_hstart: "🏠 Vertrek Huis", l_hend: "🏠 Terug Huis", l_loc: "Hoofdlocatie", l_abstype: "Type afwezigheid", o_annuel: "🌴 Jaarlijks Verlof", o_ferie: "🇧🇪 Feestdag", o_maladie: "🤒 Ziekte", o_recu: "⏳ Inhaalrust", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Totaal Balans", l_stat_rem: "Nog te werken (Week)", th_day: "D", th_det: "Locatie", th_work: "Gewerkt", th_diff: "+/-", b_export: "📊 Excel", b_logout: "🔒 Afmelden", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
     };
 
-    function initApp() {
-        const lastUser = localStorage.getItem('lastLoggedUser');
-        if(lastUser) {
-            document.getElementById('userInput').value = lastUser;
-            document.getElementById('login-msg').innerText = "Utilisateur mémorisé : " + lastUser;
-        }
-    }
+    const absLabels = { ANNUEL: { fr: "🌴 Congé", nl: "🌴 Verlof" }, FERIE: { fr: "🇧🇪 Férié", nl: "🇧🇪 Feestdag" }, MALADIE: { fr: "🤒 Maladie", nl: "🤒 Ziekte" }, RECU: { fr: "⏳ Récup", nl: "⏳ Inhaalrust" } };
+
+    function toggleLang() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); applyLang(); }
+    function applyLang() { Object.keys(dict[lang]).forEach(id => { let el = document.getElementById(id.replace(/_/g, '-')); if(el) el.innerText = dict[lang][id]; }); renderTable(); }
+    function initApp() { applyLang(); const lastUser = localStorage.getItem('lastLoggedUser'); if(lastUser) { document.getElementById('userInput').value = lastUser; } }
 
     function handleAuth() {
         const user = document.getElementById('userInput').value.trim().toLowerCase();
         const pin = document.getElementById('userPin').value;
-        if(!user || pin.length !== 4) { alert("Utilisateur et PIN requis"); return; }
+        if(!user || pin.length !== 4) return;
         const storedPin = localStorage.getItem('pin_' + user);
-        if (!storedPin) {
-            if(confirm("Créer profil pour " + user + " ?")) {
-                localStorage.setItem('pin_' + user, pin); loginSuccess(user);
-            }
-        } else {
-            if (pin === storedPin) loginSuccess(user);
-            else { alert("PIN incorrect"); }
-        }
+        if (!storedPin) { if(confirm("Créer profil ?")) { localStorage.setItem('pin_' + user, pin); loginSuccess(user); } }
+        else { if (pin === storedPin) loginSuccess(user); else alert("PIN incorrect"); }
     }
 
     function loginSuccess(user) {
-        currentUserId = user;
-        localStorage.setItem('lastLoggedUser', user);
+        currentUserId = user; localStorage.setItem('lastLoggedUser', user);
         document.getElementById('displayUser').innerText = user;
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
         loadData();
     }
 
-    function softLogout() {
-        document.getElementById('mainContainer').style.display = 'none';
-        document.getElementById('login-overlay').style.display = 'flex';
-        document.getElementById('userPin').value = "";
-    }
-
-    function loadData() {
-        db.ref('users/' + currentUserId + '/entries').on('value', (snap) => {
-            entries = snap.val() ? Object.values(snap.val()) : [];
-            renderTable();
-        });
-    }
+    function softLogout() { document.getElementById('mainContainer').style.display = 'none'; document.getElementById('login-overlay').style.display = 'flex'; }
+    function loadData() { db.ref('users/' + currentUserId + '/entries').on('value', (snap) => { entries = snap.val() ? Object.values(snap.val()) : []; renderTable(); }); }
 
     async function saveData() {
         const type = document.getElementById('entryType').value;
@@ -233,7 +218,7 @@
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 if (d.getDay() !== 0 && d.getDay() !== 6) {
                     const dStr = d.toISOString().split('T')[0];
-                    await db.ref('users/'+currentUserId+'/entries/'+dStr.replace(/-/g,'')).set({ date: dStr, location: "CONGE", subType: document.getElementById('subCongeType').value, minutes: 0 });
+                    await db.ref('users/'+currentUserId+'/entries/'+dStr.replace(/-/g,'')).set({ date: dStr, location: "CONGE", subType: document.getElementById('subCongeType').value, minutes: 480 }); // On compte 8h par défaut pour les calculs de balance
                 }
             }
         } else {
@@ -241,64 +226,60 @@
             const loc = document.getElementById('location').value;
             const isHomeS = document.getElementById('homeStart').checked;
             const isHomeE = document.getElementById('homeEnd').checked;
-
             let diff = (new Date(`${d}T${document.getElementById('endTime').value}`) - new Date(`${d}T${document.getElementById('startTime').value}`)) / 60000;
-            
-            // Logique de déduction trajet
-            let deduction = 0;
-            if (loc === "Wemmel") deduction = 45;
-            else deduction = 30; // Client ou Esso
-
-            // Si case maison cochée, on applique la déduction forfaitaire sur le temps presté
+            let deduction = (loc === "Wemmel") ? 45 : 30;
             if (isHomeS || isHomeE) diff -= deduction;
-
-            let displayLoc = loc;
-            if(isHomeS && isHomeE) displayLoc = "🏠-🏠 " + loc;
-            else if(isHomeS) displayLoc = "🏠-> " + loc;
-            else if(isHomeE) displayLoc = loc + " ->🏠";
-
-            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ 
-                date: d, 
-                location: displayLoc, 
-                minutes: diff, 
-                start: document.getElementById('startTime').value, 
-                end: document.getElementById('endTime').value 
-            });
+            let displayLoc = (isHomeS && isHomeE) ? "🏠-🏠 "+loc : (isHomeS ? "🏠-> "+loc : (isHomeE ? loc+" ->🏠" : loc));
+            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ date: d, location: displayLoc, minutes: diff, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value });
         }
-        alert("Enregistré !");
-        // Reset checkboxes
-        document.getElementById('homeStart').checked = false;
-        document.getElementById('homeEnd').checked = false;
+        alert("OK");
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value);
         const y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let total = 0, conge = 0;
-        const days = new Date(y, m + 1, 0).getDate();
-        for (let i = 1; i <= days; i++) {
-            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-            const e = entries.find(x => x.date === dStr);
+        
+        let totalBalance = 0, congeCount = 0, weekDone = 0;
+        
+        // Calcul semaine actuelle
+        const now = new Date();
+        const day = now.getDay() || 7; // Lundi=1 ... Dimanche=7
+        const monday = new Date(now); monday.setDate(now.getDate() - day + 1); monday.setHours(0,0,0,0);
+        const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6); sunday.setHours(23,59,59,999);
+
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+        for (let i = 1; i <= daysInMonth; i++) {
             const dObj = new Date(y, m, i);
+            const dStr = dObj.toISOString().split('T')[0];
+            const e = entries.find(x => x.date === dStr);
             const dNum = dObj.getDay();
-            let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
-            let diff = 0, rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '', info = "-", prest = "-";
+            
+            // Objectifs : 8h (480) Lun-Jeu, 7h (420) Ven
+            let goal = (dNum >= 1 && dNum <= 4) ? 480 : (dNum === 5 ? 420 : 0);
+            
+            let diff = 0, info = "-", prestStr = "-";
             if (e) {
                 if (e.location !== 'CONGE') { 
-                    diff = e.minutes - goal; total += diff; info = e.location;
-                    prest = `${e.start}-${e.end}`; 
+                    diff = e.minutes - goal; totalBalance += diff; info = e.location; prestStr = formatT(e.minutes); 
+                    if (dObj >= monday && dObj <= sunday) weekDone += e.minutes;
                 } else { 
-                    info = absLabels[e.subType] ? absLabels[e.subType][lang] : e.subType;
-                    rClass = 'holiday-row';
-                    if(e.subType === "ANNUEL") conge++;
+                    info = absLabels[e.subType][lang]; if(e.subType === "ANNUEL") congeCount++;
+                    if (dObj >= monday && dObj <= sunday) weekDone += goal; // On considère l'objectif atteint si congé
                 }
             }
-            const dClass = diff > 0 ? 'diff-pos' : (diff < 0 ? 'diff-neg' : '');
-            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td>${prest}</td><td class="${dClass}">${e ? formatT(diff) : '-'}</td></tr>`;
+            
+            const rClass = (dNum === 0 || dNum === 6) ? 'weekend' : (e && e.location === 'CONGE' ? 'holiday-row' : '');
+            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td style="text-align:left;">${info}</td><td>${prestStr}</td><td class="${diff>0?'diff-pos':'diff-neg'}">${e?formatT(diff):'-'}</td></tr>`;
         }
-        document.getElementById('stat-conge').innerText = (28 - conge);
-        document.getElementById('stat-hours').innerText = formatT(total);
+        
+        document.getElementById('stat-conge').innerText = (28 - congeCount);
+        document.getElementById('stat-hours').innerText = formatT(totalBalance);
+        
+        // Reste à faire cette semaine (Objectif 39h = 2340 min)
+        let remaining = 2340 - weekDone;
+        document.getElementById('stat-remaining').innerText = remaining > 0 ? formatT(remaining) : "OK ✅";
     }
 
     function formatT(min) {
@@ -307,30 +288,14 @@
         return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`;
     }
 
-    function exportExcel() {
-        const table = document.getElementById("tableData");
-        const wb = XLSX.utils.table_to_book(table);
-        XLSX.writeFile(wb, `WorkLog_${currentUserId}.xlsx`);
-    }
+    function exportExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("tableData")), `WorkLog_${currentUserId}.xlsx`); }
+    function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); }
+    function toggleForm() { const isC = document.getElementById('entryType').value === "CONGE"; document.getElementById('work-fields').style.display = isC ? 'none' : 'block'; document.getElementById('conge-fields').style.display = isC ? 'block' : 'none'; }
 
-    function openTab(id, btn) {
-        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).style.display = 'block'; btn.classList.add('active');
-    }
-
-    function toggleForm() {
-        const isC = document.getElementById('entryType').value === "CONGE";
-        document.getElementById('work-fields').style.display = isC ? 'none' : 'block';
-        document.getElementById('conge-fields').style.display = isC ? 'block' : 'none';
-    }
-
-    const mNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+    const mNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
     mNames.forEach((n, i) => document.getElementById('selectMonth').innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
     [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`);
     document.getElementById('date').valueAsDate = new Date();
-    document.getElementById('dateStart').valueAsDate = new Date();
-    document.getElementById('dateEnd').valueAsDate = new Date();
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V18</title>
+    <title>Dräger WorkLog V19</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -100,7 +100,6 @@
 
     <div id="historique" class="content" style="display:none;">
         <div class="export-bar">
-            <button class="btn-exp" onclick="exportExcel()">📊 Excel</button>
             <button class="btn-exp" id="txt-btn-print" onclick="window.print()">🖨️ PDF</button>
             <button class="btn-exp btn-lang" onclick="toggleLang()">🌐</button>
         </div>
@@ -274,32 +273,6 @@
         }
     }
 
-    function exportExcel() {
-        const selMonth = parseInt(document.getElementById('selectMonth').value);
-        const selYear = parseInt(document.getElementById('selectYear').value);
-        let csv = "Date;Lieu;Travail Debut;Travail Fin;Net\n";
-        
-        entries.forEach(e => {
-            const dateParts = e.date.split('-');
-            const eYear = parseInt(dateParts[0]);
-            const eMonth = parseInt(dateParts[1]) - 1; // 0-indexed
-
-            if(eYear === selYear && eMonth === selMonth) {
-                let [h1, m1] = e.start.split(':').map(Number);
-                let [h2, m2] = e.end.split(':').map(Number);
-                let s = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
-                let f = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
-                let sStr = `${Math.floor(s/60)}h${(s%60).toString().padStart(2,'0')}`;
-                let fStr = `${Math.floor(f/60)}h${(f%60).toString().padStart(2,'0')}`;
-                csv += `${e.date};${e.location};${sStr};${fStr};${formatT(e.minutes)}\n`;
-            }
-        });
-        
-        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-        link.download = `Draeger_${currentUserId}_${selMonth+1}_${selYear}.csv`; link.click();
-    }
-
     function formatT(min) {
         const h = Math.floor(Math.abs(min)/60);
         const m = Math.round(Math.abs(min)%60);
@@ -326,7 +299,6 @@
         const ySel = document.getElementById('selectYear');
         const currentY = parseInt(ySel.value) || new Date().getFullYear();
         ySel.innerHTML = '';
-        // CORRECTION : Plage d'années de 2020 à 2100
         for(let y = 2020; y <= 2100; y++) {
             ySel.innerHTML += `<option value="${y}" ${y==currentY?'selected':''}>${y}</option>`;
         }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V55</title>
+    <title>Dräger WorkLog V56</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -193,10 +193,12 @@
 
     const translations = {
         fr: { 
-            btnW: "HEURES", btnV: "CONGÉS", remW: "Reste à prester (Semaine)", vacT: "SOLDE CONGÉS LÉGAUX", save: "ENREGISTRER", date: "Date", start: "Départ Maison/Site", end: "Retour Maison/Site", loc: "Lieu", sh: "Départ de la maison ? (-30m)", eh: "Retour à la maison ? (-30m)", real: "Réel", navP: "POINTAGE", navT: "TABLEAU", fvac: "Solde Congés restant :", days: "jours", total: "Total:", diff: "+/- :", vtype: "Type", vfrom: "Du", vto: "Au"
+            btnW: "HEURES", btnV: "CONGÉS", remW: "Reste à prester (Semaine)", vacT: "SOLDE CONGÉS LÉGAUX", save: "ENREGISTRER", date: "Date", start: "Départ Maison/Site", end: "Retour Maison/Site", loc: "Lieu", sh: "Départ de la maison ? (-30m)", eh: "Retour à la maison ? (-30m)", real: "Réel", navP: "POINTAGE", navT: "TABLEAU", fvac: "Solde Congés restant :", days: "jours", total: "Total:", diff: "+/- :", vtype: "Type", vfrom: "Du", vto: "Au",
+            months: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
         },
         nl: { 
-            btnW: "UREN", btnV: "VERLOF", remW: "Nog te presteren (Week)", vacT: "WETTELIJK VERLOFSALDO", save: "OPSLAAN", date: "Datum", start: "Vertrek Huis/Site", end: "Terug Huis/Site", loc: "Locatie", sh: "Vertrek van huis ? (-30m)", eh: "Terug naar huis ? (-30m)", real: "Echt", navP: "TIJDREGISTRATIE", navT: "TABEL", fvac: "Resterend verlofsaldo :", days: "dagen", total: "Totaal:", diff: "+/- :", vtype: "Type", vfrom: "Van", vto: "Tot"
+            btnW: "UREN", btnV: "VERLOF", remW: "Nog te presteren (Week)", vacT: "WETTELIJK VERLOFSALDO", save: "OPSLAAN", date: "Datum", start: "Vertrek Huis/Site", end: "Terug Huis/Site", loc: "Locatie", sh: "Vertrek van huis ? (-30m)", eh: "Terug naar huis ? (-30m)", real: "Echt", navP: "TIJDREGISTRATIE", navT: "TABEL", fvac: "Resterend verlofsaldo :", days: "dagen", total: "Totaal:", diff: "+/- :", vtype: "Type", vfrom: "Van", vto: "Tot",
+            months: ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"]
         }
     };
 
@@ -226,13 +228,21 @@
         document.getElementById('lbl-vfrom').innerText = t.vfrom;
         document.getElementById('lbl-vto').innerText = t.vto;
         
-        // Update options de congé
+        // Mise à jour des mois dans le sélecteur
+        const mSel = document.getElementById('selectMonth');
+        const currentM = mSel.value;
+        mSel.innerHTML = "";
+        t.months.forEach((n, i) => {
+            mSel.innerHTML += `<option value="${i}" ${i == currentM ? 'selected' : ''}>${n}</option>`;
+        });
+
         const vacOpts = document.getElementById('vacCategory').options;
         if(currentLang === 'nl') {
             vacOpts[0].text = "Wettelijk verlof"; vacOpts[1].text = "Feestdag"; vacOpts[2].text = "Ziek"; vacOpts[3].text = "Inhaalrust";
         } else {
             vacOpts[0].text = "Congés légaux"; vacOpts[1].text = "Jour férié"; vacOpts[2].text = "Malade"; vacOpts[3].text = "Récupération";
         }
+        renderTable();
     }
 
     function handleAuth() {
@@ -368,7 +378,7 @@
     function switchSubTab(t) { document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; document.getElementById('btn-w').classList.toggle('active', t==='work'); document.getElementById('btn-v').classList.toggle('active', t==='vacation'); }
     function initApp() {
         const mSel = document.getElementById('selectMonth');
-        ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        translations.fr.months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
         for(let y = 2024; y <= 2030; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }

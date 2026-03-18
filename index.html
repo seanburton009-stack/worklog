@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V40 - Full Restore</title>
+    <title>Dräger WorkLog V41 - Full Version</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -14,13 +14,14 @@
         .box { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 380px; text-align: center; }
         .container { padding: 20px 15px 120px 15px; max-width: 800px; margin: auto; display: none; }
         .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
-        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.8em; color: var(--primary); text-transform: uppercase; }
+        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.8em; color: var(--primary); text-transform: uppercase; text-align: left; }
         input, select { width: 100%; padding: 12px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 12px; }
         .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; }
-        .info-week { background: white; border-top: 5px solid var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
-        .info-week b { font-size: 1.6em; color: var(--primary); display: block; }
+        .info-week { background: white; border-top: 5px solid var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
+        .info-week span { font-size: 0.9em; color: #64748b; font-weight: 600; }
+        .info-week b { font-size: 1.8em; color: var(--primary); display: block; }
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
-        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; }
+        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; cursor: pointer; }
         .tab.active { color: var(--secondary); font-weight: 800; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { font-size: 0.7em; padding: 10px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
@@ -59,7 +60,7 @@
 <div id="pdf-header" style="display:none; padding: 20px;">
     <h1 id="pdf-user-name">--</h1>
     <p>Service Engineer - Logistic Support RSS</p>
-    <p id="pdf-title-date" style="font-weight:bold; border-bottom:2px solid black;">Résumé Mensuel</p>
+    <p id="pdf-title-date" style="font-weight:bold; border-bottom:2px solid black;">Résumé Mensuel des Prestations</p>
 </div>
 
 <div class="container" id="mainContainer">
@@ -67,6 +68,11 @@
         <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
             <b id="welcome-msg">...</b>
             <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Déconnexion</button>
+        </div>
+
+        <div class="info-week">
+            <span id="txt-rem-week">Reste à prester cette semaine (Objectif 39h)</span>
+            <b id="stat-remaining-week">39h00</b>
         </div>
 
         <div class="sub-tabs" style="display: flex; gap: 10px; margin-bottom: 15px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
@@ -82,19 +88,19 @@
             </div>
             <label>Lieu</label>
             <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
-            <button class="btn-main" onclick="saveData()">Enregistrer</button>
+            <button class="btn-main" onclick="saveData()">Enregistrer journée</button>
         </div>
 
         <div id="form-vacation" class="card" style="display:none;">
             <div class="info-week" style="border-top-color:var(--emerald);">
-                <span>Solde Congés Restants</span>
-                <b id="vac-allowance">20 j</b>
+                <span>Solde Congés Légaux Restants</span>
+                <b id="vac-allowance">28 j</b>
             </div>
             <label>Type</label>
             <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
             <label>Du</label><input type="date" id="vacStart">
             <label>Au</label><input type="date" id="vacEnd">
-            <button class="btn-main" onclick="saveVacation()">Poser Congés</button>
+            <button class="btn-main" onclick="saveVacation()">Enregistrer Congés</button>
         </div>
     </div>
 
@@ -112,14 +118,14 @@
         <div id="pdf-footer" class="card" style="border-top: 3px solid var(--primary);">
             <div style="display:flex; justify-content:space-between; font-weight:bold;">
                 <span>Total Presté: <span id="total-month-work">0h00</span></span>
-                <span>Cumul +/- : <span id="total-month-diff">0h00</span></span>
+                <span>Cumul Heures Supp: <span id="total-month-diff">0h00</span></span>
             </div>
         </div>
-        <button class="btn-main" onclick="window.print()" style="margin-top:10px;">🖨️ Imprimer Rapport</button>
+        <button class="btn-main" onclick="window.print()" style="margin-top:10px;">🖨️ Générer Rapport PDF</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
-        <div class="card"><h3>Utilisateurs en attente / Actifs</h3><div id="user-list"></div></div>
+        <div class="card"><h3>Administration des Utilisateurs</h3><div id="user-list"></div></div>
     </div>
 </div>
 
@@ -143,15 +149,15 @@
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("Compte en attente.");
+                if (!d.active && d.role !== 'admin') return alert("Votre compte est en attente de validation par Sean.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = "Bonjour, " + user.prenom;
+                document.getElementById('welcome-msg').innerText = "Session : " + user.prenom + " " + user.nom;
                 document.getElementById('pdf-user-name').innerText = user.nom + " " + user.prenom;
                 if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
                 syncData();
-            } else alert("Erreur identifiants.");
+            } else alert("Erreur d'identification.");
         });
     }
 
@@ -176,8 +182,7 @@
         if(!d) return;
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
         let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
-        await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, isVacation: false });
-        alert("Sauvegardé !");
+        await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, isVacation: false, start: s, end: e });
     }
 
     async function saveVacation() {
@@ -186,7 +191,8 @@
         while(curr <= eD) {
             if(curr.getDay() !== 0 && curr.getDay() !== 6) {
                 const ds = curr.toISOString().split('T')[0];
-                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ date: ds, location: document.getElementById('vacCategory').value, minutes: (curr.getDay() === 5 ? 420 : 480), isVacation: true });
+                const dayType = curr.getDay(); // 1-4: 8h, 5: 7h
+                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ date: ds, location: document.getElementById('vacCategory').value, minutes: (dayType === 5 ? 420 : 480), isVacation: true });
             }
             curr.setDate(curr.getDate() + 1);
         }
@@ -196,9 +202,13 @@
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let totalM = 0, totalD = 0, vacCount = 0;
+        let totalM = 0, totalD = 0, vacCount = 0, weekWork = 0;
+        
+        const now = new Date();
+        const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
+        const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
+        
         const days = new Date(y, m + 1, 0).getDate();
-
         for (let i = 1; i <= days; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
@@ -208,6 +218,7 @@
             if(e) {
                 totalM += e.minutes; totalD += (e.minutes - goal);
                 if(e.isVacation && e.location === "Congés légaux") vacCount++;
+                if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
             }
 
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
@@ -220,7 +231,10 @@
         }
         document.getElementById('total-month-work').innerText = formatT(totalM);
         document.getElementById('total-month-diff').innerText = formatT(totalD);
-        document.getElementById('vac-allowance').innerText = (20 - vacCount) + " j";
+        document.getElementById('vac-allowance').innerText = (28 - vacCount) + " j";
+        
+        const remWeek = 2340 - weekWork; // 39h = 2340 min
+        document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "Objectif Atteint" : formatT(remWeek);
     }
 
     function loadAdminList() {

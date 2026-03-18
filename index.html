@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V14</title>
+    <title>Dräger WorkLog V15</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -230,13 +230,12 @@
             }
             const isWE = (dayIdx === 0 || dayIdx === 6);
             
-            // Calcul de l'affichage des heures travaillées (sans trajet)
             let displayRange = '';
             if(e && e.start && e.end) {
                 let [h1, m1] = e.start.split(':').map(Number);
                 let [h2, m2] = e.end.split(':').map(Number);
                 
-                // Si trajet coché, on décale l'heure affichée
+                // AJUSTEMENT AFFICHAGE : On n'affiche que le temps de travail effectif
                 let workStartMin = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
                 let workEndMin = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
                 
@@ -265,7 +264,15 @@
 
     function exportExcel() {
         let csv = "Date;Lieu;Travail Debut;Travail Fin;Net\n";
-        entries.forEach(e => { csv += `${e.date};${e.location};${e.start||''};${e.end||''};${formatT(e.minutes)}\n`; });
+        entries.forEach(e => {
+            let [h1, m1] = e.start.split(':').map(Number);
+            let [h2, m2] = e.end.split(':').map(Number);
+            let s = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
+            let f = (h2 * 60 + m2) - (e.homeE ? 30 : 0);
+            let sStr = `${Math.floor(s/60)}h${(s%60).toString().padStart(2,'0')}`;
+            let fStr = `${Math.floor(f/60)}h${(f%60).toString().padStart(2,'0')}`;
+            csv += `${e.date};${e.location};${sStr};${fStr};${formatT(e.minutes)}\n`;
+        });
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
         link.download = `Dräger_${currentUserId}.csv`; link.click();

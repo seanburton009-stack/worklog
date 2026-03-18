@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V30</title>
+    <title>Dräger WorkLog V31</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -48,10 +48,9 @@
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th { text-align: center; padding: 12px 2px; color: #64748b; font-size: 0.7em; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.82em; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; }
+        td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.82em; vertical-align: middle; }
         
         .col-date { width: 55px; }
-        .col-det { width: auto; }
         .col-reel { width: 60px; }
         .col-diff { width: 60px; }
         .col-del { width: 35px; }
@@ -59,16 +58,32 @@
         .weekend { background: #fcfcfc; color: #cbd5e1; }
         .det-text { color: #64748b; font-weight: normal; font-size: 0.85em; display: block; }
 
+        /* DESIGN SPÉCIFIQUE PDF / IMPRESSION */
+        #pdf-header { display: none; }
+
         @media print {
-            .tabs, .logout-link, .btn-lang, .btn-main, .delete-col, #login-overlay, .sub-tabs, .filter-row, .stat-grid { display: none !important; }
+            .tabs, .btn-main, .delete-col, #login-overlay, .sub-tabs, .filter-row, .stat-grid, #nav-ptr, .logout-row, .btn-lang { display: none !important; }
+            #pdf-header { display: block !important; margin-bottom: 30px; text-align: left; }
+            #pdf-header h1 { margin: 0; font-size: 22px; color: #000; text-transform: uppercase; }
+            #pdf-header p { margin: 2px 0; font-size: 14px; color: #333; }
+            #pdf-header .resume-title { margin-top: 15px; font-weight: bold; font-size: 16px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+            
             .container { display: block !important; padding: 0; width: 100%; max-width: 100%; }
             .card { box-shadow: none; border: none; padding: 0; }
-            table { border: 1px solid #eee; }
-            th { background: #f8fafc !important; color: black !important; border-bottom: 1px solid #ddd; }
+            table { border: 1px solid #000; }
+            th { background: #eee !important; color: #000 !important; border: 1px solid #000; }
+            td { border: 1px solid #ccc; color: #000 !important; }
+            .col-del { display: none !important; }
         }
     </style>
 </head>
 <body onload="initApp()">
+
+<div id="pdf-header">
+    <h1>BURTON, Sean</h1>
+    <p>Service Engineer - Logistic Support RSS</p>
+    <p class="resume-title" id="pdf-dynamic-title">Résumé du mois</p>
+</div>
 
 <div id="login-overlay">
     <div class="box">
@@ -81,22 +96,22 @@
 
 <div class="container" id="mainContainer">
     <div id="saisie" class="content active">
-        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+        <div class="logout-row" style="display:flex; justify-content:space-between; margin-bottom:20px;">
              <button onclick="softLogout()" style="border:none; background:none; color:#64748b; font-weight:bold;">Déconnexion</button>
-             <button onclick="toggleLang()" style="border:none; background:var(--primary); color:white; padding:8px 12px; border-radius:10px;">🌐 FR/NL</button>
+             <button onclick="toggleLang()" class="btn-lang" style="border:none; background:var(--primary); color:white; padding:8px 12px; border-radius:10px;">🌐 FR/NL</button>
         </div>
         
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
+        <div class="sub-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
             <button class="sub-tab active" id="btn-work-tab" onclick="switchSubTab('work')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Travail</button>
             <button class="sub-tab" id="btn-vac-tab" onclick="switchSubTab('vacation')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Congés</button>
         </div>
 
         <div id="compteur-travail" class="info-week">
-            <span id="txt-rem-label">Reste à prester cette semaine</span>
+            <span>Reste à prester cette semaine</span>
             <b id="stat-remaining-ptr">--h--</b>
         </div>
         <div id="compteur-conges-total" class="info-week conges" style="display:none;">
-            <span id="txt-con-label">Solde annuel restants</span>
+            <span>Solde annuel restants</span>
             <b id="stat-vac-count-total">28</b>
         </div>
 
@@ -143,7 +158,7 @@
         </div>
 
         <div class="card" style="padding: 10px;">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div class="filter-row" style="display:flex; gap:10px; margin-bottom:15px;">
                 <select id="selectMonth" onchange="renderTable()"></select>
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
@@ -176,7 +191,7 @@
     
     let entries = [];
     let currentUserId = "";
-    let lang = localStorage.getItem('lang') || 'fr';
+    const monthsArr = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
     function switchSubTab(type) {
         document.querySelectorAll('.sub-tab').forEach(b => { b.style.background = 'none'; b.style.color = '#64748b'; });
@@ -237,6 +252,9 @@
         const selYear = parseInt(document.getElementById('selectYear').value || new Date().getFullYear());
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         
+        // Mise à jour du titre dynamique pour le PDF
+        document.getElementById('pdf-dynamic-title').innerText = `Résumé du mois de ${monthsArr[selMonth]} ${selYear}`;
+
         let totalSuppMois = 0, congesMois = 0, congesLegauxTotal = 0, weekWork = 0;
         const now = new Date();
         const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
@@ -288,21 +306,18 @@
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); renderTable(); }
     
     function initApp() { 
-        // Génération des mois
         const mSel = document.getElementById('selectMonth');
-        const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-        months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        monthsArr.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         
-        // Génération des années élargie (1998 - 2100)
         const ySel = document.getElementById('selectYear');
         const currentYear = new Date().getFullYear();
-        for(let y = 2020; y <= 2035; y++) {
+        for(let y = 2020; y <= 2100; y++) {
             ySel.innerHTML += `<option value="${y}" ${y==currentYear?'selected':''}>${y}</option>`;
         }
     }
     
     function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
-    function toggleLang() { alert("Langue toggled"); } // Simplifié pour cette version
+    function toggleLang() { alert("Langue toggled"); }
 </script>
 </body>
 </html>

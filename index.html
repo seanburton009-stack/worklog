@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -52,73 +52,73 @@
 <div id="login-overlay">
     <div class="login-box">
         <h2 style="color:var(--primary); margin-top:0;">WorkLog Cloud</h2>
-        <input type="text" id="loginUser" placeholder="Utilisateur (burtonse)">
+        <input type="text" id="loginUser" placeholder="Gebruiker (burtonse)">
         <input type="password" id="loginPass" placeholder="PIN" style="margin-top:10px;">
-        <button class="btn-main" onclick="checkLogin()">Connexion</button>
+        <button class="btn-main" onclick="checkLogin()">Inloggen</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
     <div class="tabs no-print">
-        <button class="tab active" onclick="openTab('saisie', this)">Saisie</button>
-        <button class="tab" onclick="openTab('historique', this)">Tableau & PDF</button>
+        <button class="tab active" onclick="openTab('saisie', this)">Invoer</button>
+        <button class="tab" onclick="openTab('historique', this)">Overzicht & PDF</button>
     </div>
 
     <div id="saisie" class="content active">
         <div class="input-group">
-            <label>Type d'entrée</label>
+            <label>Type invoer</label>
             <select id="entryType" onchange="togglePeriod()">
-                <option value="WORK">Journée de travail</option>
-                <option value="CONGE">🌴 Congé / Férié / Maladie</option>
+                <option value="WORK">Werkdag</option>
+                <option value="CONGE">🌴 Verlof / Feestdag / Ziekte</option>
             </select>
         </div>
 
         <div id="date-single" class="input-group">
-            <label>Date</label><input type="date" id="date">
+            <label>Datum</label><input type="date" id="date">
         </div>
 
         <div id="date-period" class="input-group" style="display:none;">
-            <label>Du (Début)</label><input type="date" id="dateStart">
-            <label style="margin-top:10px;">Au (Fin)</label><input type="date" id="dateEnd">
+            <label>Van (Begin)</label><input type="date" id="dateStart">
+            <label style="margin-top:10px;">Tot (Einde)</label><input type="date" id="dateEnd">
         </div>
 
         <div id="work-fields">
-            <label>Options de trajet (30m déduits par case)</label>
+            <label>Traject opties (30m aftrek per vinkje)</label>
             <div class="travel-options">
                 <div class="check-card" id="cardHomeStart" onclick="toggleCheck('homeStart')">
                     <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
-                    🏠 Départ Maison
+                    🏠 Vertrek Thuis
                 </div>
                 <div class="check-card" id="cardHomeEnd" onclick="toggleCheck('homeEnd')">
                     <input type="checkbox" id="homeEnd" onclick="event.stopPropagation()">
-                    🏠 Retour Maison
+                    🏠 Terug Thuis
                 </div>
             </div>
 
             <div class="input-group">
-                <label>Lieu (Déduction Pause auto)</label>
+                <label>Locatie (Pauze automatisch afgetrokken)</label>
                 <select id="location">
-                    <option value="Wemmel">Wemmel (Pause 45m)</option>
-                    <option value="Esso">Esso (Pause 30m)</option>
-                    <option value="INEOS">INEOS (Pause 30m)</option>
-                    <option value="Client">Client / Autre (Pause 30m)</option>
+                    <option value="Wemmel">Wemmel (Pauze 45m)</option>
+                    <option value="Esso">Esso (Pauze 30m)</option>
+                    <option value="INEOS">INEOS (Pauze 30m)</option>
+                    <option value="Klant">Klant / Andere (Pauze 30m)</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <div class="input-group" style="flex:1;"><label>Début (Départ)</label><input type="time" id="startTime" value="08:00"></div>
-                <div class="input-group" style="flex:1;"><label>Fin (Arrivée)</label><input type="time" id="endTime" value="16:30"></div>
+                <div class="input-group" style="flex:1;"><label>Start (Vertrek)</label><input type="time" id="startTime" value="08:00"></div>
+                <div class="input-group" style="flex:1;"><label>Einde (Aankomst)</label><input type="time" id="endTime" value="16:30"></div>
             </div>
         </div>
-        <button class="btn-main" id="btn-save" onclick="saveData()">Enregistrer & Synchroniser</button>
+        <button class="btn-main" id="btn-save" onclick="saveData()">Opslaan & Synchroniseren</button>
     </div>
 
     <div id="historique" class="content">
         <div class="counter-grid">
-            <div>✅ Pris: <b id="stat-taken">0</b></div>
-            <div>🗓️ Prévus: <b id="stat-planned">0</b></div>
+            <div>✅ Genomen: <b id="stat-taken">0</b></div>
+            <div>🗓️ Gepland: <b id="stat-planned">0</b></div>
             <div style="grid-column: span 2; border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">
-                🎯 Reste à poser: <b id="stat-left" class="badge-rem">28</b>
+                🎯 Resterend: <b id="stat-left" class="badge-rem">28</b>
             </div>
         </div>
         
@@ -129,14 +129,14 @@
         
         <table>
             <thead>
-                <tr><th style="width:60px;">Date</th><th>Lieu / Heures</th><th>Net</th><th>Diff</th><th class="no-print" style="width:30px;"></th></tr>
+                <tr><th style="width:60px;">Datum</th><th>Locatie / Uren</th><th>Netto</th><th>Diff</th><th class="no-print" style="width:30px;"></th></tr>
             </thead>
             <tbody id="tableBody"></tbody>
             <tfoot id="tableFoot"></tfoot>
         </table>
         
         <button class="btn-main btn-export no-print" onclick="window.print()">
-            📄 EXPORTER EN PDF / IMPRIMER
+            📄 EXPORTEREN NAAR PDF / PRINTEN
         </button>
     </div>
 </div>
@@ -165,7 +165,7 @@
             document.getElementById('mainContainer').style.display = 'block';
             loadData();
         } else {
-            alert("Identifiant incorrect (utilisez 'burtonse')");
+            alert("Onjuiste gebruikersnaam (gebruik 'burtonse')");
         }
     }
 
@@ -198,7 +198,7 @@
         if (type === "CONGE") {
             let start = new Date(document.getElementById('dateStart').value);
             let end = new Date(document.getElementById('dateEnd').value);
-            if (!start || !end || start > end) { alert("Dates invalides"); return; }
+            if (!start || !end || start > end) { alert("Ongeldige datums"); return; }
             
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 if (d.getDay() !== 0 && d.getDay() !== 6) {
@@ -216,7 +216,7 @@
             const hStart = document.getElementById('homeStart').checked;
             const hEnd = document.getElementById('homeEnd').checked;
             
-            if(!d) { alert("Sélectionnez une date"); return; }
+            if(!d) { alert("Selecteer een datum"); return; }
             
             let diff = (new Date(`${d}T${e}`) - new Date(`${d}T${s}`)) / 60000;
             if (hStart) diff -= 30;
@@ -228,8 +228,8 @@
                 date: d, location: loc, minutes: diff, start: s, end: e, hStart: hStart, hEnd: hEnd
             });
         }
-        btn.innerText = "✅ Synchronisé !";
-        setTimeout(() => btn.innerText = "Enregistrer & Synchroniser", 2000);
+        btn.innerText = "✅ Gesynchroniseerd!";
+        setTimeout(() => btn.innerText = "Opslaan & Synchroniseren", 2000);
     }
 
     function updateStats() {
@@ -257,7 +257,7 @@
         tbody.innerHTML = '';
         let tMin = 0; let tSupp = 0;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
-        const daysFr = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
+        const daysFr = ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"];
         
         for (let i = 1; i <= daysInMonth; i++) {
             const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -270,7 +270,7 @@
             let rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
             if (entry && entry.location === 'CONGE') { rClass = (dStr >= todayStr) ? 'planned-row' : 'holiday-row'; }
             
-            let displayLoc = entry ? (entry.location === 'CONGE' ? (dStr >= todayStr ? 'PREVU' : 'CONGE') : entry.location + ' ' + entry.start + '-' + entry.end) : '-';
+            let displayLoc = entry ? (entry.location === 'CONGE' ? (dStr >= todayStr ? 'GEPLAND' : 'VERLOF') : entry.location + ' ' + entry.start + '-' + entry.end) : '-';
 
             tbody.innerHTML += `<tr class="${rClass}">
                 <td>${daysFr[dNum]} ${i}</td>
@@ -280,10 +280,10 @@
                 <td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer; color:red; font-weight:bold;">✕</span></td>
             </tr>`;
         }
-        document.getElementById('tableFoot').innerHTML = `<tr class="total-row"><td colspan="2">TOTAL MOIS</td><td>${formatT(tMin)}</td><td>${formatT(tSupp)}</td><td class="no-print"></td></tr>`;
+        document.getElementById('tableFoot').innerHTML = `<tr class="total-row"><td colspan="2">MAAND TOTAAL</td><td>${formatT(tMin)}</td><td>${formatT(tSupp)}</td><td class="no-print"></td></tr>`;
     }
 
-    function deleteEntry(d) { if(confirm("Supprimer cette entrée ?")) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
+    function deleteEntry(d) { if(confirm("Dit item verwijderen?")) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
     
     function openTab(id, btn) { 
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); 
@@ -292,7 +292,7 @@
     }
 
     // Initialisation
-    const mNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    const mNames = ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"];
     mNames.forEach((m, i) => document.getElementById('selectMonth').innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
     [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`);
     

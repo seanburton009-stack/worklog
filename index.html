@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V46</title>
+    <title>Dräger WorkLog V47</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -30,19 +30,32 @@
         .tab.active { color: var(--secondary); }
         .tab-icon { font-size: 20px; display: block; margin-bottom: 3px; }
 
-        /* Notification Badge */
         .badge { position: absolute; top: -5px; right: 25%; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 2px solid white; }
 
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 15px; }
         .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; }
         .sub-tab.active { background: white; color: var(--primary); }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
-        th { padding: 8px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
+        th { padding: 8px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: left; }
+        td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; text-align: left; }
         .weekend { background: #f8fafc !important; }
 
         .lang-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8em; }
+
+        /* PRINT STYLES */
+        #pdf-header { display: none; }
+        @media print {
+            body { background: white; padding: 0; }
+            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, .lang-btn, #selectMonth, #selectYear { display: none !important; }
+            .container { display: block !important; padding: 0; }
+            .card { box-shadow: none; border: none; padding: 0; margin: 0; }
+            #pdf-header { display: block !important; margin-bottom: 20px; border-bottom: 2.5px solid black; padding-bottom: 10px; }
+            #pdf-header h1 { margin: 0; font-size: 22px; color: #000; }
+            #pdf-header p { margin: 3px 0; font-size: 14px; }
+            table { font-size: 10pt; }
+            th { border-bottom: 1px solid #000; color: #000; }
+        }
     </style>
 </head>
 <body onload="initApp()">
@@ -67,6 +80,12 @@
 </div>
 
 <div class="container" id="mainContainer">
+    <div id="pdf-header">
+        <h1 id="print-name">--</h1>
+        <p>Service Engineer - Logistic Support RSS</p>
+        <p style="font-weight:bold; margin-top:10px;" id="print-month">Résumé Mensuel des Prestations</p>
+    </div>
+
     <div id="saisie" class="content active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b id="welcome-msg" style="color:var(--primary)">...</b>
@@ -118,7 +137,7 @@
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
             <table>
-                <thead><tr><th>Date</th><th>Lieu</th><th>H</th><th>Réel</th><th>+/-</th><th class="delete-col"></th></tr></thead>
+                <thead><tr><th>Date</th><th>Lieu (Horaires)</th><th style="text-align:right">Réel</th><th style="text-align:right">+/-</th><th class="delete-col"></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -126,7 +145,7 @@
             <span>Total: <span id="total-month-work">0h00</span></span>
             <span>+/- : <span id="total-month-diff">0h00</span></span>
         </div>
-        <button class="btn-main" onclick="window.print()">🖨️ PDF</button>
+        <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER RAPPORT PDF</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
@@ -185,42 +204,11 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = user.prenom;
-                if(user.role === 'admin') { 
-                    document.getElementById('nav-admin').style.display = 'block'; 
-                    loadAdminList(); 
-                }
+                document.getElementById('print-name').innerText = user.nom + " " + user.prenom;
+                if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
                 syncData();
             } else alert("Erreur.");
         });
-    }
-
-    function loadAdminList() {
-        db.ref('users').on('value', snap => {
-            const all = snap.val(); const list = document.getElementById('user-list'); 
-            list.innerHTML = ""; let pending = 0;
-            for(let id in all) {
-                const u = all[id];
-                if(!u.active) pending++;
-                list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; flex-direction:column; gap:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b>${u.nom} ${u.prenom}</b>
-                        <span>${u.role}</span>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Approuver</button>` : ''}
-                        <button onclick="toggleRole('${id}', '${u.role}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Role Switch</button>
-                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px; width:40px;">🗑️</button>
-                    </div>
-                </div>`;
-            }
-            const badge = document.getElementById('notif-badge');
-            if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; } else { badge.style.display = 'none'; }
-        });
-    }
-
-    function toggleRole(id, current) {
-        const newRole = current === 'admin' ? 'user' : 'admin';
-        db.ref(`users/${id}/role`).set(newRole);
     }
 
     function syncData() {
@@ -228,6 +216,43 @@
             entries = snap.val() ? Object.values(snap.val()) : [];
             renderTable();
         });
+    }
+
+    function renderTable() {
+        const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
+        const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
+        let totalM = 0, totalD = 0, vacCount = 0, weekWork = 0;
+        const now = new Date();
+        const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
+        const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
+        const days = new Date(y, m + 1, 0).getDate();
+        
+        for (let i = 1; i <= days; i++) {
+            const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const dobj = new Date(y, m, i);
+            const e = entries.find(x => x.date === ds);
+            const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
+            if(e) {
+                totalM += e.minutes; totalD += (e.minutes - goal);
+                if(e.isVacation && e.location === "Congés légaux") vacCount++;
+                if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
+            }
+            
+            const formatLoc = e ? `${e.location} ${e.start !== 'N/A' ? '('+e.start+'-'+e.end+')' : ''}` : '';
+            
+            tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
+                <td style="font-weight:600">${i}/${m+1}</td>
+                <td>${formatLoc}</td>
+                <td style="text-align:right">${e ? formatT(e.minutes) : ''}</td>
+                <td style="text-align:right; color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
+                <td class="delete-col" style="text-align:right">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer">🗑️</span>` : ''}</td>
+            </tr>`;
+        }
+        document.getElementById('total-month-work').innerText = formatT(totalM);
+        document.getElementById('total-month-diff').innerText = formatT(totalD);
+        document.getElementById('vac-allowance').innerText = (28 - vacCount) + " j";
+        const remWeek = 2340 - weekWork;
+        document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "OK" : formatT(remWeek);
     }
 
     async function saveData() {
@@ -253,38 +278,23 @@
         alert("Verlof Saved!");
     }
 
-    function renderTable() {
-        const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
-        const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let totalM = 0, totalD = 0, vacCount = 0, weekWork = 0;
-        const now = new Date();
-        const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
-        const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
-        const days = new Date(y, m + 1, 0).getDate();
-        for (let i = 1; i <= days; i++) {
-            const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-            const dobj = new Date(y, m, i);
-            const e = entries.find(x => x.date === ds);
-            const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
-            if(e) {
-                totalM += e.minutes; totalD += (e.minutes - goal);
-                if(e.isVacation && e.location === "Congés légaux") vacCount++;
-                if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
+    function loadAdminList() {
+        db.ref('users').on('value', snap => {
+            const all = snap.val(); const list = document.getElementById('user-list'); 
+            list.innerHTML = ""; let pending = 0;
+            for(let id in all) {
+                const u = all[id]; if(!u.active) pending++;
+                list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; flex-direction:column; gap:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><b>${u.nom} ${u.prenom}</b><span>${u.role}</span></div>
+                    <div style="display:flex; gap:10px;">
+                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Approuver</button>` : ''}
+                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Switch Role</button>
+                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px; width:40px;">🗑️</button>
+                    </div></div>`;
             }
-            tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
-                <td>${i}/${m+1}</td>
-                <td>${e ? e.location.substring(0,5) : ''}</td>
-                <td>${(e && e.start && e.start !== "N/A") ? e.start : ''}</td>
-                <td>${e ? formatT(e.minutes) : ''}</td>
-                <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
-                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')">🗑️</span>` : ''}</td>
-            </tr>`;
-        }
-        document.getElementById('total-month-work').innerText = formatT(totalM);
-        document.getElementById('total-month-diff').innerText = formatT(totalD);
-        document.getElementById('vac-allowance').innerText = (28 - vacCount) + " j";
-        const remWeek = 2340 - weekWork;
-        document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "OK" : formatT(remWeek);
+            const badge = document.getElementById('notif-badge');
+            if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; } else { badge.style.display = 'none'; }
+        });
     }
 
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
@@ -300,7 +310,7 @@
         const mSel = document.getElementById('selectMonth');
         ["Jan","Fév","Mar","Avr","Mai","Jui","Juil","Aoû","Sep","Oct","Nov","Déc"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
-        for(let y = 2024; y <= 2026; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
+        for(let y = 2024; y <= 2030; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }
     function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
     function handleRegister() {

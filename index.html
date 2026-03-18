@@ -25,45 +25,42 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* LOGIN OVERLAY */
         #login-overlay { 
             position: fixed; inset: 0; background: var(--primary); 
             display: flex; justify-content: center; align-items: center; z-index: 2000; 
         }
-        
         .box { 
-            background: white; padding: 25px; border-radius: 20px; 
-            width: 85%; max-width: 320px; text-align: center;
+            background: white; padding: 30px; border-radius: 25px; 
+            width: 80%; max-width: 300px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        .pin-input {
+            width: 100%; border: 2px solid #ddd; border-radius: 12px;
+            padding: 15px; font-size: 24px; text-align: center;
+            letter-spacing: 10px; margin-bottom: 20px; outline: none; background: #f9f9f9;
         }
 
-        .container { 
-            padding: calc(var(--safe-top) + 20px) 15px 100px 15px; 
-            max-width: 600px; margin: auto; display: none;
-        }
+        .container { padding: calc(var(--safe-top) + 20px) 15px 100px 15px; max-width: 600px; margin: auto; display: none; }
 
+        /* TABS */
         .tabs { 
             display: flex; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
             position: fixed; bottom: 0; left: 0; right: 0; 
             padding: 10px 10px calc(env(safe-area-inset-bottom) + 10px) 10px;
             border-top: 1px solid #ccc; z-index: 1000;
         }
-        .tab { 
-            flex: 1; border: none; background: none; font-size: 12px; 
-            color: #888; display: flex; flex-direction: column; align-items: center; 
-        }
+        .tab { flex: 1; border: none; background: none; font-size: 12px; color: #888; display: flex; flex-direction: column; align-items: center; }
         .tab.active { color: var(--secondary); font-weight: bold; }
 
+        /* CARDS & INPUTS */
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #444; }
-        input, select { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; 
-            font-size: 16px; box-sizing: border-box; background: #f9f9f9;
-        }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; }
 
-        .btn-main { 
-            width: 100%; background: var(--secondary); color: white; padding: 16px; 
-            border: none; border-radius: 12px; font-weight: bold; font-size: 16px;
-        }
+        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-outline { background: none; border: 1px solid #ccc; color: #666; padding: 10px; border-radius: 10px; margin-top: 10px; width: 100%; font-size: 0.9em; }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
         th, td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #eee; }
@@ -78,13 +75,17 @@
         .diff-neg { color: #e74c3c; }
     </style>
 </head>
-<body>
+<body onload="initApp()">
 
 <div id="login-overlay">
     <div class="box">
-        <h2 style="color:var(--primary); margin:0 0 20px 0;">Dräger - RSS - Heures</h2>
-        <input type="text" id="loginUser" placeholder="Utilisateur (burtonse)">
-        <button class="btn-main" style="margin-top:20px;" onclick="checkLogin()">Ouvrir ma session</button>
+        <h2 id="login-title" style="color:var(--primary); margin:0 0 10px 0;">Dräger - RSS - Heures</h2>
+        <p id="login-sub" style="color: #666; font-size: 0.9em; margin-bottom: 20px;">Entrez votre code PIN</p>
+        
+        <input type="password" id="userPin" class="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••">
+        
+        <button id="login-btn" class="btn-main" onclick="handleAuth()">Se connecter</button>
+        <p id="loginError" style="color: red; font-size: 0.8em; margin-top: 10px; display: none;">Code PIN incorrect</p>
     </div>
 </div>
 
@@ -141,9 +142,12 @@
                 <select id="selectYear" onchange="renderTable()" style="flex:1;"></select>
             </div>
             <table>
-                <thead><tr><th>Jour</th><th>Détails</th><th>Prestation</th><th>+/-</th></tr></thead>
+                <thead><tr><th>Jour</th><th>Détails</th><th>+/-</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
+            <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+            <button class="btn-outline" onclick="changePinPrompt()">⚙️ Changer mon code PIN</button>
+            <button class="btn-outline" style="color:red; border-color:#ffcccc;" onclick="location.reload()">🔒 Se déconnecter</button>
         </div>
     </div>
 </div>
@@ -159,15 +163,56 @@
     const db = firebase.database();
     
     let entries = [];
-    let currentUserId = "";
+    const currentUserId = "burtonse";
 
-    function checkLogin() {
-        const u = document.getElementById('loginUser').value.trim().toLowerCase();
-        if(u === "burtonse") {
-            currentUserId = u;
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-            loadData();
+    // INITIALISATION : Vérifie si un PIN existe déjà
+    function initApp() {
+        const savedPin = localStorage.getItem('userPin');
+        if (!savedPin) {
+            document.getElementById('login-title').innerText = "Configuration";
+            document.getElementById('login-sub').innerText = "Créez votre code PIN à 4 chiffres";
+            document.getElementById('login-btn').innerText = "Enregistrer le PIN";
+        }
+    }
+
+    function handleAuth() {
+        const inputPin = document.getElementById('userPin').value;
+        const savedPin = localStorage.getItem('userPin');
+
+        if (!savedPin) {
+            // Création du PIN
+            if (inputPin.length === 4) {
+                localStorage.setItem('userPin', inputPin);
+                alert("PIN enregistré !");
+                location.reload();
+            } else {
+                alert("Le PIN doit faire 4 chiffres.");
+            }
+        } else {
+            // Vérification du PIN
+            if (inputPin === savedPin) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+                loadData();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('userPin').value = "";
+            }
+        }
+    }
+
+    function changePinPrompt() {
+        const currentPin = prompt("Entrez votre code PIN actuel :");
+        if (currentPin === localStorage.getItem('userPin')) {
+            const newPin = prompt("Entrez votre NOUVEAU code PIN (4 chiffres) :");
+            if (newPin && newPin.length === 4 && !isNaN(newPin)) {
+                localStorage.setItem('userPin', newPin);
+                alert("Code PIN modifié avec succès !");
+            } else {
+                alert("Erreur : Le PIN doit être composé de 4 chiffres.");
+            }
+        } else {
+            alert("Code actuel incorrect.");
         }
     }
 
@@ -230,7 +275,7 @@
                 }
             }
             const diffClass = diff > 0 ? 'diff-pos' : (diff < 0 ? 'diff-neg' : '');
-            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td>${entry ? formatT(entry.minutes) : '-'}</td><td class="${diffClass}">${entry ? formatT(diff) : '-'}</td></tr>`;
+            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td class="${diffClass}">${entry ? formatT(diff) : '-'}</td></tr>`;
         }
         document.getElementById('stat-conge').innerText = (28 - congePris);
         document.getElementById('stat-hours').innerText = formatT(totalSuppMinutes);

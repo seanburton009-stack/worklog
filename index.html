@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V56</title>
+    <title>Dräger WorkLog V57</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -65,13 +65,18 @@
         <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
-        <h2>Inscriptions</h2>
+        <h2 id="reg-title">Inscriptions</h2>
         <input type="text" id="regNom" placeholder="NOM">
         <input type="text" id="regPrenom" placeholder="Prénom">
         <input type="text" id="regUser" placeholder="User">
         <input type="password" id="regPin" maxlength="4" placeholder="PIN" inputmode="numeric">
-        <button class="btn-main" onclick="handleRegister()">VALIDER</button>
-        <button class="btn-main" style="background:#ccc;" onclick="showAuth('login')">RETOUR</button>
+        <label>Langue par défaut / Standaardtaal</label>
+        <select id="regLang">
+            <option value="fr">Français 🇫🇷</option>
+            <option value="nl">Nederlands 🇧🇪</option>
+        </select>
+        <button class="btn-main" onclick="handleRegister()" id="btn-reg-val">VALIDER</button>
+        <button class="btn-main" style="background:#ccc;" onclick="showAuth('login')" id="btn-reg-back">RETOUR</button>
     </div>
 </div>
 
@@ -86,7 +91,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b id="welcome-msg" style="color:var(--primary)">...</b>
             <div style="display:flex; gap:10px;">
-                <select id="langSelect" onchange="toggleLang()" style="margin:0; padding:5px; width:auto;" class="lang-switch">
+                <select id="langSelect" onchange="toggleLang(true)" style="margin:0; padding:5px; width:auto;" class="lang-switch">
                     <option value="fr">FR 🇫🇷</option>
                     <option value="nl">NL 🇧🇪</option>
                 </select>
@@ -146,7 +151,7 @@
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:15%">Date</th><th style="width:50%">Lieu (H)</th><th style="width:15%" id="th-real">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
+                    <tr><th style="width:15%" id="th-date">Date</th><th style="width:50%" id="th-loc">Lieu (H)</th><th style="width:15%" id="th-real">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -164,8 +169,8 @@
             </div>
         </div>
 
-        <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
-        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 EXPORT EXCEL</button>
+        <button class="btn-main" onclick="window.print()" id="btn-pdf">🖨️ GÉNÉRER PDF</button>
+        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()" id="btn-excel">📧 EXPORT EXCEL</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
@@ -193,18 +198,24 @@
 
     const translations = {
         fr: { 
-            btnW: "HEURES", btnV: "CONGÉS", remW: "Reste à prester (Semaine)", vacT: "SOLDE CONGÉS LÉGAUX", save: "ENREGISTRER", date: "Date", start: "Départ Maison/Site", end: "Retour Maison/Site", loc: "Lieu", sh: "Départ de la maison ? (-30m)", eh: "Retour à la maison ? (-30m)", real: "Réel", navP: "POINTAGE", navT: "TABLEAU", fvac: "Solde Congés restant :", days: "jours", total: "Total:", diff: "+/- :", vtype: "Type", vfrom: "Du", vto: "Au",
-            months: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
+            btnW: "HEURES", btnV: "CONGÉS", remW: "Reste à prester (Semaine)", vacT: "SOLDE CONGÉS LÉGAUX", save: "ENREGISTRER", date: "Date", start: "Départ Maison/Site", end: "Retour Maison/Site", loc: "Lieu", sh: "Départ de la maison ? (-30m)", eh: "Retour à la maison ? (-30m)", real: "Réel", navP: "POINTAGE", navT: "TABLEAU", fvac: "Solde Congés restant :", days: "jours", total: "Total:", diff: "+/- :", vtype: "Type", vfrom: "Du", vto: "Au", pdf: "🖨️ GÉNÉRER PDF", excel: "📧 EXPORT EXCEL", welcome: "Salut", 
+            months: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
+            vopts: ["Congés légaux", "Jour férié", "Malade", "Récupération"],
+            alerts: { saved: "Sauvegardé.", v_saved: "Congés enregistrés.", del: "Supprimer ?", login_err: "Erreur identifiants.", wait: "Validation requise." }
         },
         nl: { 
-            btnW: "UREN", btnV: "VERLOF", remW: "Nog te presteren (Week)", vacT: "WETTELIJK VERLOFSALDO", save: "OPSLAAN", date: "Datum", start: "Vertrek Huis/Site", end: "Terug Huis/Site", loc: "Locatie", sh: "Vertrek van huis ? (-30m)", eh: "Terug naar huis ? (-30m)", real: "Echt", navP: "TIJDREGISTRATIE", navT: "TABEL", fvac: "Resterend verlofsaldo :", days: "dagen", total: "Totaal:", diff: "+/- :", vtype: "Type", vfrom: "Van", vto: "Tot",
-            months: ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"]
+            btnW: "UREN", btnV: "VERLOF", remW: "Nog te presteren (Week)", vacT: "WETTELIJK VERLOFSALDO", save: "OPSLAAN", date: "Datum", start: "Vertrek Huis/Site", end: "Terug Huis/Site", loc: "Locatie", sh: "Vertrek van huis ? (-30m)", eh: "Terug naar huis ? (-30m)", real: "Echt", navP: "TIJDREGISTRATIE", navT: "TABEL", fvac: "Resterend verlofsaldo :", days: "dagen", total: "Totaal:", diff: "+/- :", vtype: "Type", vfrom: "Van", vto: "Tot", pdf: "🖨️ PDF GENEREREN", excel: "📧 EXPORT EXCEL", welcome: "Hallo",
+            months: ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"],
+            vopts: ["Wettelijk verlof", "Feestdag", "Ziek", "Inhaalrust"],
+            alerts: { saved: "Opgeslagen.", v_saved: "Verlof geregistreerd.", del: "Verwijderen ?", login_err: "Foutieve inloggegevens.", wait: "Validatie vereist." }
         }
     };
 
-    function toggleLang() {
+    function toggleLang(updateDb = false) {
         currentLang = document.getElementById('langSelect').value;
         const t = translations[currentLang];
+        
+        // UI principal
         document.getElementById('btn-w').innerText = t.btnW;
         document.getElementById('btn-v').innerText = t.btnV;
         document.getElementById('txt-rem-week').innerText = t.remW;
@@ -217,6 +228,8 @@
         document.getElementById('lbl-loc').innerText = t.loc;
         document.getElementById('txt-sh').innerText = t.sh;
         document.getElementById('txt-eh').innerText = t.eh;
+        document.getElementById('th-date').innerText = t.date;
+        document.getElementById('th-loc').innerText = t.loc;
         document.getElementById('th-real').innerText = t.real;
         document.getElementById('nav-p').innerText = t.navP;
         document.getElementById('nav-t').innerText = t.navT;
@@ -227,21 +240,21 @@
         document.getElementById('lbl-vtype').innerText = t.vtype;
         document.getElementById('lbl-vfrom').innerText = t.vfrom;
         document.getElementById('lbl-vto').innerText = t.vto;
-        
-        // Mise à jour des mois dans le sélecteur
+        document.getElementById('btn-pdf').innerText = t.pdf;
+        document.getElementById('btn-excel').innerText = t.excel;
+        if(user) document.getElementById('welcome-msg').innerText = `${t.welcome} ${user.prenom}`;
+
+        // Mois
         const mSel = document.getElementById('selectMonth');
         const currentM = mSel.value;
         mSel.innerHTML = "";
-        t.months.forEach((n, i) => {
-            mSel.innerHTML += `<option value="${i}" ${i == currentM ? 'selected' : ''}>${n}</option>`;
-        });
+        t.months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i == currentM ? 'selected' : ''}>${n}</option>`);
 
+        // Options Congés
         const vacOpts = document.getElementById('vacCategory').options;
-        if(currentLang === 'nl') {
-            vacOpts[0].text = "Wettelijk verlof"; vacOpts[1].text = "Feestdag"; vacOpts[2].text = "Ziek"; vacOpts[3].text = "Inhaalrust";
-        } else {
-            vacOpts[0].text = "Congés légaux"; vacOpts[1].text = "Jour férié"; vacOpts[2].text = "Malade"; vacOpts[3].text = "Récupération";
-        }
+        t.vopts.forEach((txt, i) => vacOpts[i].text = txt);
+
+        if(updateDb && user) db.ref('users/' + user.id + '/lang').set(currentLang);
         renderTable();
     }
 
@@ -250,24 +263,32 @@
         const pin = document.getElementById('loginPin').value;
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
+            const t = translations[currentLang];
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("Validation requise.");
+                if (!d.active && d.role !== 'admin') return alert(translations[d.lang || 'fr'].alerts.wait);
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = "Salut " + user.prenom;
+                
+                // Charger la langue préférée
+                if(user.lang) {
+                    document.getElementById('langSelect').value = user.lang;
+                    toggleLang(false);
+                }
+                
                 document.getElementById('print-name').innerText = user.nom + " " + user.prenom;
                 if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
                 syncData();
-            } else alert("Erreur identifiants.");
+            } else alert(t.alerts.login_err);
         });
     }
 
     async function saveData() {
+        const t = translations[currentLang];
         const d = document.getElementById('dateInput').value;
         const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
         const sH = document.getElementById('startHome').checked, eH = document.getElementById('endHome').checked;
-        if(!d) return alert("Date ?");
+        if(!d) return;
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
         let total = (h2 * 60 + m2) - (h1 * 60 + m1);
         total -= (l === "Wemmel" ? 45 : 30);
@@ -276,10 +297,11 @@
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ 
             date: d, location: l, minutes: total, start: s, end: e, isVacation: false 
         });
-        alert("Sauvegardé.");
+        alert(t.alerts.saved);
     }
 
     async function saveVacation() {
+        const t = translations[currentLang];
         const sD = new Date(document.getElementById('vacStart').value), eD = new Date(document.getElementById('vacEnd').value);
         let curr = new Date(sD);
         while(curr <= eD) {
@@ -292,7 +314,7 @@
             }
             curr.setDate(curr.getDate() + 1);
         }
-        alert("Congés enregistrés.");
+        alert(t.alerts.v_saved);
     }
 
     function renderTable() {
@@ -300,7 +322,9 @@
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         let totalM = 0, totalD = 0, vacUsed = 0;
         
-        entries.forEach(e => { if(e.isVacation && (e.location === "Congés légaux" || e.location === "Wettelijk verlof")) vacUsed++; });
+        // Calcul solde basé sur les options bilingues
+        const vLegaux = ["Congés légaux", "Wettelijk verlof"];
+        entries.forEach(e => { if(e.isVacation && vLegaux.includes(e.location)) vacUsed++; });
         const bal = 28 - vacUsed;
         document.getElementById('vac-balance').innerText = bal + " " + (currentLang === 'fr' ? 'jours' : 'dagen');
         document.getElementById('hist-vac-balance').innerText = bal;
@@ -343,7 +367,7 @@
             for(let id in all) {
                 const u = all[id]; if(!u.active) pending++;
                 list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; text-align:left;">
-                    <b>${u.nom} ${u.prenom}</b> (${u.role})
+                    <b>${u.nom} ${u.prenom}</b> [${u.lang.toUpperCase()}]
                     <div style="display:flex; gap:10px; margin-top:10px;">
                         ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px;">Activer</button>` : ''}
                         <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px;">Rôle</button>
@@ -357,11 +381,12 @@
 
     function sendEmail() {
         const mLabel = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
+        const t = translations[currentLang];
         let mailBody = `WORKLOG - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel}\n\n`;
-        mailBody += `Solde congés restants : ${document.getElementById('hist-vac-balance').innerText} ${currentLang==='fr'?'jours':'dagen'}\n`;
-        mailBody += `Total mois : ${document.getElementById('total-month-work').innerText}\n`;
-        mailBody += `Différence : ${document.getElementById('total-month-diff').innerText}\n\n`;
-        mailBody += `DATE\tLIEU\tREEL\t+/-\n`;
+        mailBody += `${t.fvac} ${document.getElementById('hist-vac-balance').innerText} ${t.days}\n`;
+        mailBody += `${t.total} ${document.getElementById('total-month-work').innerText}\n`;
+        mailBody += `${t.diff} ${document.getElementById('total-month-diff').innerText}\n\n`;
+        mailBody += `${t.date}\t${t.loc}\t${t.real}\t+/-\n`;
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         for (let i = 1; i <= new Date(y, m + 1, 0).getDate(); i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
@@ -385,10 +410,17 @@
     function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
-        db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Demande envoyée."); showAuth('login');
+        const lang = document.getElementById('regLang').value;
+        db.ref('users/'+uId).set({ 
+            nom: document.getElementById('regNom').value.trim().toUpperCase(), 
+            prenom: document.getElementById('regPrenom').value.trim(), 
+            pin: document.getElementById('regPin').value, 
+            lang: lang,
+            role: "user", active: false 
+        });
+        alert(lang === 'fr' ? "Demande envoyée." : "Aanvraag verzonden."); showAuth('login');
     }
-    async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
+    async function deleteEntry(k) { if(confirm(translations[currentLang].alerts.del)) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>
 </body>
 </html>

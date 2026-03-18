@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V17</title>
+    <title>Dräger WorkLog V18</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -42,7 +42,6 @@
         .btn-exp { flex: 1; padding: 12px 5px; border-radius: 10px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .btn-lang { flex: 0 0 50px; background: var(--primary); color: white; border: none; font-size: 1.2em; }
         
-        /* Style spécifique pour la rangée des filtres */
         .filter-row { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; }
         .filter-row select { margin-bottom: 0; flex: 1; }
     </style>
@@ -279,9 +278,13 @@
         const selMonth = parseInt(document.getElementById('selectMonth').value);
         const selYear = parseInt(document.getElementById('selectYear').value);
         let csv = "Date;Lieu;Travail Debut;Travail Fin;Net\n";
+        
         entries.forEach(e => {
-            const eDate = new Date(e.date);
-            if(eDate.getMonth() === selMonth && eDate.getFullYear() === selYear) {
+            const dateParts = e.date.split('-');
+            const eYear = parseInt(dateParts[0]);
+            const eMonth = parseInt(dateParts[1]) - 1; // 0-indexed
+
+            if(eYear === selYear && eMonth === selMonth) {
                 let [h1, m1] = e.start.split(':').map(Number);
                 let [h2, m2] = e.end.split(':').map(Number);
                 let s = (h1 * 60 + m1) + (e.homeS ? 30 : 0);
@@ -291,9 +294,10 @@
                 csv += `${e.date};${e.location};${sStr};${fStr};${formatT(e.minutes)}\n`;
             }
         });
+        
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-        link.download = `Dräger_${currentUserId}_${selMonth+1}_${selYear}.csv`; link.click();
+        link.download = `Draeger_${currentUserId}_${selMonth+1}_${selYear}.csv`; link.click();
     }
 
     function formatT(min) {
@@ -322,7 +326,8 @@
         const ySel = document.getElementById('selectYear');
         const currentY = parseInt(ySel.value) || new Date().getFullYear();
         ySel.innerHTML = '';
-        for(let y = 2024; y <= 2030; y++) {
+        // CORRECTION : Plage d'années de 2020 à 2100
+        for(let y = 2020; y <= 2100; y++) {
             ySel.innerHTML += `<option value="${y}" ${y==currentY?'selected':''}>${y}</option>`;
         }
     }

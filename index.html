@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V25</title>
+    <title>Dräger WorkLog V26</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -117,15 +117,15 @@
                 <div style="flex:1;"><label id="txt-lbl-end">Départ</label><input type="time" id="endTime" value="16:30"></div>
             </div>
             <div class="check-row">
-                <div class="check-item" onclick="document.getElementById('homeStart').click()"><input type="checkbox" id="homeStart" onclick="event.stopPropagation()"><label id="txt-lbl-hs">Départ Domicile (+30m)</label></div>
-                <div class="check-item" onclick="document.getElementById('homeEnd').click()"><input type="checkbox" id="homeEnd" onclick="event.stopPropagation()"><label id="txt-lbl-he">Retour Domicile (+30m)</label></div>
+                <div class="check-item" onclick="document.getElementById('homeStart').click()"><input type="checkbox" id="homeStart" onclick="event.stopPropagation()"><label id="txt-lbl-hs">Départ Domicile</label></div>
+                <div class="check-item" onclick="document.getElementById('homeEnd').click()"><input type="checkbox" id="homeEnd" onclick="event.stopPropagation()"><label id="txt-lbl-he">Retour Domicile</label></div>
             </div>
             <label id="txt-lbl-loc">Lieu d'intervention</label>
             <select id="location">
-                <option value="Wemmel">Wemmel (-45m pause)</option>
-                <option value="Client">Client (-30m pause)</option>
-                <option value="INEOS">INEOS (-30m pause)</option>
-                <option value="Esso">Esso (-30m pause)</option>
+                <option value="Wemmel">Wemmel</option>
+                <option value="Client">Client</option>
+                <option value="INEOS">INEOS</option>
+                <option value="Esso">Esso</option>
             </select>
             <button class="btn-main" id="txt-btn-save" onclick="saveData()">Enregistrer la journée</button>
         </div>
@@ -182,8 +182,8 @@
         fr: {
             st_work: "Journée de travail", st_vac: "Congés", login_btn: "Se connecter", logout: "Déconnexion", 
             rem_label: "Reste à prester cette semaine", con_label: "Congés légaux restants", 
-            lbl_date: "Date", lbl_start: "Arrivée", lbl_end: "Départ", lbl_hs: "Départ Domicile (+30m)", 
-            lbl_he: "Retour Domicile (+30m)", lbl_loc: "Lieu", lbl_vac_cat: "Catégorie", 
+            lbl_date: "Date", lbl_start: "Arrivée", lbl_end: "Départ", lbl_hs: "Départ Domicile", 
+            lbl_he: "Retour Domicile", lbl_loc: "Lieu", lbl_vac_cat: "Catégorie", 
             lbl_vac_start: "Du (Inclus)", lbl_vac_end: "Au (Inclus)", btn_save: "Enregistrer la journée", 
             btn_save_vac: "Enregistrer", btn_print: "🖨️ Générer le rapport PDF", 
             nav_ptr: "➕ POINTER", nav_cal: "📅 CALENDRIER", 
@@ -195,8 +195,8 @@
         nl: {
             st_work: "Werkdag", st_vac: "Verlof", login_btn: "Inloggen", logout: "Uitloggen", 
             rem_label: "Nog te presteren deze week", con_label: "Wettelijke vakantie", 
-            lbl_date: "Datum", lbl_start: "Aankomst", lbl_end: "Vertrek", lbl_hs: "Vertrek Huis (+30m)", 
-            lbl_he: "Terug Huis (+30m)", lbl_loc: "Locatie", lbl_vac_cat: "Categorie", 
+            lbl_date: "Datum", lbl_start: "Aankomst", lbl_end: "Vertrek", lbl_hs: "Vertrek Huis", 
+            lbl_he: "Terug Huis", lbl_loc: "Locatie", lbl_vac_cat: "Categorie", 
             lbl_vac_start: "Van (Inclusief)", lbl_vac_end: "Tot (Inclusief)", btn_save: "Dag opslaan", 
             btn_save_vac: "Opslaan", btn_print: "🖨️ PDF-rapport genereren", 
             nav_ptr: "➕ INVOER", nav_cal: "📅 KALENDER", 
@@ -232,11 +232,10 @@
         document.getElementById('txt-table-head').innerHTML = t.table_head;
         
         const catSel = document.getElementById('vacCategory');
-        const currentVal = catSel.value;
         catSel.innerHTML = '';
         t.cats.forEach((c, i) => {
             const opt = document.createElement('option');
-            opt.value = ui.fr.cats[i]; // On garde la valeur FR en base pour la logique
+            opt.value = ui.fr.cats[i]; 
             opt.innerText = c;
             catSel.appendChild(opt);
         });
@@ -286,6 +285,8 @@
 
         const [h1, m1] = sTime.split(':').map(Number);
         const [h2, m2] = eTime.split(':').map(Number);
+        
+        // Logique de calcul invisible pour l'utilisateur
         let finalMin = (h2 * 60 + m2) - (h1 * 60 + m1) - (loc === "Wemmel" ? 45 : 30) - (isHS ? 30 : 0) - (isHE ? 30 : 0);
 
         if(confirm(ui[lang].confirm_calc.replace('{t}', formatT(finalMin)))) {
@@ -314,9 +315,7 @@
             for(let d of workDays) {
                 const ds = d.toISOString().split('T')[0];
                 const dObj = new Date(d);
-                // Règle 8h lun-jeu, 7h ven
                 const dayMinutes = (dObj.getDay() === 5) ? 420 : 480;
-                
                 await db.ref('users/'+currentUserId+'/entries/'+ds.replace(/-/g, '')).set({
                     date: ds, location: cat, minutes: dayMinutes, isVacation: true
                 });

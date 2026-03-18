@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V53 - Officiel</title>
+    <title>Dräger WorkLog V54 - FULL OPTIONS</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -11,9 +11,11 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; color: #333; }
         
+        /* LOGIN */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
         
+        /* CONTAINER */
         .container { padding: 10px 15px 140px 15px; max-width: 800px; margin: auto; display: none; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
@@ -22,11 +24,16 @@
 
         .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 18px; border: none; border-radius: 16px; font-weight: 700; font-size: 1.1em; cursor: pointer; margin-bottom: 10px; }
         
-        .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); display: flex; justify-content: space-around; align-items: center; }
-        .info-item { flex: 1; }
-        .info-item span { font-size: 0.7em; font-weight: bold; color: #64748b; text-transform: uppercase; }
-        .info-item b { font-size: 1.5em; color: var(--primary); display: block; }
+        /* INFO CARDS */
+        .info-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
+        .info-week b { font-size: 2em; color: var(--primary); display: block; }
+        
+        .vacation-badge { background: var(--emerald); color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; font-weight: bold; }
+        .vacation-badge span { display: block; font-size: 0.8em; opacity: 0.9; }
+        .vacation-badge b { font-size: 1.8em; }
 
+        /* TABS */
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; position: relative; }
         .tab.active { color: var(--secondary); }
@@ -34,21 +41,27 @@
         .badge { position: absolute; top: -5px; right: 25%; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 2px solid white; }
 
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 15px; }
-        .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; }
+        .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; cursor: pointer; }
         .sub-tab.active { background: white; color: var(--primary); }
 
+        /* TABLE */
         table { width: 100%; border-collapse: collapse; font-size: 0.75em; table-layout: fixed; }
         th { padding: 10px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: center; }
         td { padding: 12px 4px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; }
         .weekend { background: #f8fafc !important; }
 
+        /* OPTIONS TRAJET */
         .toggle-container { background: #f0f7ff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #d0e3ff; }
         .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         
+        /* IMPRESSION */
+        #pdf-header { display: none; }
         @media print {
-            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, select, input { display: none !important; }
+            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, select, input, .lang-switch { display: none !important; }
             .container { display: block !important; padding: 0; width: 100%; }
-            #pdf-header { display: block !important; border-bottom: 2.5px solid black; margin-bottom: 20px; padding-bottom: 10px; }
+            #pdf-header { display: block !important; border-bottom: 3px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+            .card { box-shadow: none; border: none; }
+            .print-footer { display: block !important; margin-top: 20px; font-weight: bold; border-top: 1px solid #000; padding-top: 10px; }
         }
     </style>
 </head>
@@ -60,7 +73,7 @@
         <input type="text" id="loginUser" placeholder="User">
         <input type="password" id="loginPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleAuth()">LOGIN</button>
-        <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
+        <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Créer Compte</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
         <h2>Inscriptions</h2>
@@ -69,58 +82,69 @@
         <input type="text" id="regUser" placeholder="User">
         <input type="password" id="regPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleRegister()">VALIDER</button>
-        <button class="btn-main" style="background:#ccc; margin-top:10px;" onclick="showAuth('login')">RETOUR</button>
+        <button class="btn-main" style="background:#ccc;" onclick="showAuth('login')">RETOUR</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    <div id="pdf-header" style="display:none;">
+    <div id="pdf-header">
         <h1 id="print-name">--</h1>
         <p>Service Engineer - Logistic Support RSS</p>
-        <p style="font-weight:bold; margin-top:10px;">Résumé Mensuel des Prestations</p>
+        <h3 id="print-month-title">Résumé Mensuel</h3>
     </div>
 
     <div id="saisie" class="content active">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <div class="info-header">
             <b id="welcome-msg" style="color:var(--primary)">...</b>
-            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Déconnexion</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="langSelect" onchange="toggleLang()" style="margin:0; padding:5px; width:auto;" class="lang-switch">
+                    <option value="fr">FR 🇫🇷</option>
+                    <option value="nl">NL 🇧🇪</option>
+                </select>
+                <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Logout</button>
+            </div>
         </div>
 
         <div class="sub-tabs">
-            <button class="sub-tab active" id="btn-w" onclick="switchSubTab('work')">HEURES</button>
-            <button class="sub-tab" id="btn-v" onclick="switchSubTab('vacation')">CONGÉS</button>
+            <button class="sub-tab active" id="btn-w" onclick="switchSubTab('work')">HEURES / UREN</button>
+            <button class="sub-tab" id="btn-v" onclick="switchSubTab('vacation')">CONGÉS / VERLOF</button>
         </div>
 
         <div id="form-work">
-            <div class="info-week">
-                <div class="info-item"><span>Reste Semaine</span><b id="stat-remaining-week">39h00</b></div>
-                <div class="info-item" style="border-left: 1px solid #eee;"><span>Solde Congés</span><b id="vac-balance">28 j</b></div>
-            </div>
+            <div class="info-week"><span id="txt-rem-week">Reste à prester (Semaine)</span><b id="stat-remaining-week">39h00</b></div>
             <div class="card">
-                <label>Date</label><input type="date" id="dateInput">
+                <label id="lbl-date">Date</label><input type="date" id="dateInput">
                 <div style="display:flex; gap:10px;">
-                    <div style="flex:1;"><label>Départ Maison/Site</label><input type="time" id="startTime" value="08:00"></div>
-                    <div style="flex:1;"><label>Retour Maison/Site</label><input type="time" id="endTime" value="16:30"></div>
+                    <div style="flex:1;"><label id="lbl-start">Départ Maison/Site</label><input type="time" id="startTime" value="08:00"></div>
+                    <div style="flex:1;"><label id="lbl-end">Retour Maison/Site</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
-                <label>Lieu</label>
+                <label id="lbl-loc">Lieu / Locatie</label>
                 <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
                 
                 <div class="toggle-container">
-                    <div class="toggle-row"><span>Départ de la maison ? (-30m)</span><input type="checkbox" id="startHome" style="width:22px; height:22px;"></div>
-                    <div class="toggle-row"><span>Retour à la maison ? (-30m)</span><input type="checkbox" id="endHome" style="width:22px; height:22px;"></div>
+                    <div class="toggle-row"><span id="txt-sh">Départ de la maison ? (-30m)</span><input type="checkbox" id="startHome" style="width:24px; height:24px;"></div>
+                    <div class="toggle-row"><span id="txt-eh">Retour à la maison ? (-30m)</span><input type="checkbox" id="endHome" style="width:24px; height:24px;"></div>
                 </div>
-
-                <button class="btn-main" onclick="saveData()">ENREGISTRER PRESTATION</button>
+                <button class="btn-main" onclick="saveData()" id="btn-save-work">ENREGISTRER</button>
             </div>
         </div>
 
         <div id="form-vacation" style="display:none;">
+            <div class="vacation-badge">
+                <span id="txt-vac-title">SOLDE CONGÉS LÉGAUX</span>
+                <b id="vac-balance">28 jours</b>
+            </div>
             <div class="card">
-                <label>Type de congé</label>
-                <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
-                <label>Du</label><input type="date" id="vacStart">
-                <label>Au</label><input type="date" id="vacEnd">
-                <button class="btn-main" onclick="saveVacation()">ENREGISTRER CONGÉS</button>
+                <label id="lbl-vtype">Type</label>
+                <select id="vacCategory">
+                    <option value="Congés légaux">Congés légaux / Wettelijk verlof</option>
+                    <option value="Jour férié">Jour férié / Feestdag</option>
+                    <option value="Malade">Malade / Ziek</option>
+                    <option value="Récupération">Récupération / Inhaalrust</option>
+                </select>
+                <label id="lbl-vfrom">Du</label><input type="date" id="vacStart">
+                <label id="lbl-vto">Au</label><input type="date" id="vacEnd">
+                <button class="btn-main" onclick="saveVacation()" id="btn-save-vac">VALIDER</button>
             </div>
         </div>
     </div>
@@ -133,30 +157,38 @@
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:15%">Date</th><th style="width:50%">Lieu (H)</th><th style="width:15%">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
+                    <tr><th style="width:15%">Date</th><th style="width:50%">Lieu (H)</th><th style="width:15%" id="th-real">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-        <div class="card" style="border-top: 4px solid var(--primary); display:flex; justify-content:space-between; font-weight:bold;">
-            <span>Total: <span id="total-month-work">0h00</span></span>
-            <span>+/- : <span id="total-month-diff">0h00</span></span>
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;">
+                <span>Total: <span id="total-month-work">0h00</span></span>
+                <span>+/- : <span id="total-month-diff">0h00</span></span>
+            </div>
+            <div style="color:var(--emerald); font-weight:bold; border-top:1px solid #eee; pt:10px;">
+                <span id="txt-final-vac">Solde Congés restant :</span> <span id="hist-vac-balance">28</span> jours
+            </div>
         </div>
         <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
-        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 ENVOYER RECAP EXCEL</button>
+        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 EXPORT EXCEL</button>
+        <div class="print-footer" style="display:none;">
+            Note: Solde congés restant au <span id="print-date"></span> : <span id="print-vac-bal"></span> jours.
+        </div>
     </div>
 
     <div id="admin" class="content" style="display:none;">
         <div class="card">
-            <h3 style="color:var(--primary);">Gestion Admin</h3>
+            <h3 style="color:var(--primary);">Administration</h3>
             <div id="user-list"></div>
         </div>
     </div>
 </div>
 
 <nav class="tabs">
-    <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">➕</span>POINTAGE</button>
-    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📅</span>TABLEAU</button>
+    <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">➕</span><span id="nav-p">POINTAGE</span></button>
+    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📅</span><span id="nav-t">TABLEAU</span></button>
     <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)">
         <span class="tab-icon">⚙️</span>ADMIN
         <div id="notif-badge" class="badge">0</div>
@@ -167,7 +199,30 @@
     const firebaseConfig = { apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", authDomain: "worklog-fc54b.firebaseapp.com", databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "worklog-fc54b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let user = null, entries = [];
+    let user = null, entries = [], currentLang = 'fr';
+
+    const translations = {
+        fr: { remW: "Reste Semaine", vacT: "SOLDE CONGÉS LÉGAUX", save: "ENREGISTRER", date: "Date", start: "Départ Maison/Site", end: "Retour Maison/Site", loc: "Lieu", sh: "Départ Maison (-30m)", eh: "Retour Maison (-30m)", real: "Réel", navP: "POINTAGE", navT: "TABLEAU", fvac: "Solde Congés restant :" },
+        nl: { remW: "Week overschot", vacT: "WETTELIJK VERLOFSALDO", save: "OPSLAAN", date: "Datum", start: "Vertrek Huis/Site", end: "Terug Huis/Site", loc: "Locatie", sh: "Vertrek Huis (-30m)", eh: "Terug Huis (-30m)", real: "Echt", navP: "TIJDREGISTRATIE", navT: "TABEL", fvac: "Resterend verlofsaldo :" }
+    };
+
+    function toggleLang() {
+        currentLang = document.getElementById('langSelect').value;
+        const t = translations[currentLang];
+        document.getElementById('txt-rem-week').innerText = t.remW;
+        document.getElementById('txt-vac-title').innerText = t.vacT;
+        document.getElementById('btn-save-work').innerText = t.save;
+        document.getElementById('lbl-date').innerText = t.date;
+        document.getElementById('lbl-start').innerText = t.start;
+        document.getElementById('lbl-end').innerText = t.end;
+        document.getElementById('lbl-loc').innerText = t.loc;
+        document.getElementById('txt-sh').innerText = t.sh;
+        document.getElementById('txt-eh').innerText = t.eh;
+        document.getElementById('th-real').innerText = t.real;
+        document.getElementById('nav-p').innerText = t.navP;
+        document.getElementById('nav-t').innerText = t.navT;
+        document.getElementById('txt-final-vac').innerText = t.fvac;
+    }
 
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -175,7 +230,7 @@
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("Validation requise.");
+                if (!d.active && d.role !== 'admin') return alert("En attente de validation admin.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
@@ -183,7 +238,7 @@
                 document.getElementById('print-name').innerText = user.nom + " " + user.prenom;
                 if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
                 syncData();
-            } else alert("Identifiants incorrects.");
+            } else alert("Erreur.");
         });
     }
 
@@ -191,22 +246,18 @@
         const d = document.getElementById('dateInput').value;
         const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
         const sH = document.getElementById('startHome').checked, eH = document.getElementById('endHome').checked;
-        if(!d) return alert("Choisissez une date.");
+        if(!d) return alert("Date manquante");
 
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
-        let totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
-
-        // Déduction Pause Fixe
-        totalMinutes -= (l === "Wemmel" ? 45 : 30);
-        
-        // Logique Trajet Maison : -30m par trajet coché
-        if(sH) totalMinutes -= 30;
-        if(eH) totalMinutes -= 30;
+        let total = (h2 * 60 + m2) - (h1 * 60 + m1);
+        total -= (l === "Wemmel" ? 45 : 30); // Pause
+        if(sH) total -= 30; // Trajet maison départ
+        if(eH) total -= 30; // Trajet maison retour
 
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ 
-            date: d, location: l, minutes: totalMinutes, start: s, end: e, isVacation: false 
+            date: d, location: l, minutes: total, start: s, end: e, isVacation: false 
         });
-        alert("Pointage enregistré !");
+        alert("Pointage sauvé.");
     }
 
     async function saveVacation() {
@@ -217,35 +268,38 @@
                 const ds = curr.toISOString().split('T')[0];
                 const goal = (curr.getDay() === 5 ? 420 : 480);
                 await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ 
-                    date: ds, location: document.getElementById('vacCategory').value, minutes: goal, start: "N/A", end: "N/A", isVacation: true 
+                    date: ds, location: document.getElementById('vacCategory').value, minutes: goal, start: "CONGÉ", end: "CONGÉ", isVacation: true 
                 });
             }
             curr.setDate(curr.getDate() + 1);
         }
-        alert("Congés enregistrés !");
+        alert("Vacances enregistrées.");
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         let totalM = 0, totalD = 0, vacUsed = 0;
-        const daysInMonth = new Date(y, m + 1, 0).getDate();
         
-        // Calcul solde global (sur toutes les entrées, pas juste le mois)
-        entries.forEach(e => { if(e.isVacation && e.location === "Congés légaux") vacUsed++; });
-        document.getElementById('vac-balance').innerText = (28 - vacUsed) + " j";
+        // Calcul solde global sur toutes les années/mois stockés
+        entries.forEach(e => { if(e.isVacation && e.location.includes("Congés légaux")) vacUsed++; });
+        const bal = 28 - vacUsed;
+        document.getElementById('vac-balance').innerText = bal + " jours";
+        document.getElementById('hist-vac-balance').innerText = bal;
+        document.getElementById('print-vac-bal').innerText = bal;
+        document.getElementById('print-date').innerText = new Date().toLocaleDateString();
 
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
             const e = entries.find(x => x.date === ds);
             const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
-            
             if(e) { totalM += e.minutes; totalD += (e.minutes - goal); }
 
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td style="font-weight:bold">${i}/${m+1}</td>
-                <td>${e ? e.location + (e.start !== 'N/A' ? ' ('+e.start+'-'+e.end+')' : '') : ''}</td>
+                <td>${e ? e.location + (e.start !== 'CONGÉ' ? ' ('+e.start+'-'+e.end+')' : '') : ''}</td>
                 <td>${e ? formatT(e.minutes) : ''}</td>
                 <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
                 <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer">🗑️</span>` : ''}</td>
@@ -273,11 +327,11 @@
             for(let id in all) {
                 const u = all[id]; if(!u.active) pending++;
                 list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; text-align:left;">
-                    <b>${u.nom} ${u.prenom}</b> (${u.role})
+                    <b>${u.nom} ${u.prenom}</b><br>Role: ${u.role} | Active: ${u.active}
                     <div style="display:flex; gap:10px; margin-top:10px;">
-                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px;">Valider</button>` : ''}
-                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px;">Rôle</button>
-                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px;">🗑️</button>
+                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px;">Activer</button>` : ''}
+                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px;">Switch Role</button>
+                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px;">Suppr.</button>
                     </div></div>`;
             }
             document.getElementById('notif-badge').innerText = pending;
@@ -287,7 +341,9 @@
 
     function sendEmail() {
         const mLabel = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
-        let mailBody = `PRESTATIONS - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel}\n\nDATE\tLIEU\tREEL\tDIFF\n`;
+        let mailBody = `WORKLOG - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel}\n\n`;
+        mailBody += `Solde congés restants : ${document.getElementById('hist-vac-balance').innerText} jours\n\n`;
+        mailBody += `DATE\tLIEU\tREEL\t+/-\n`;
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         for (let i = 1; i <= new Date(y, m + 1, 0).getDate(); i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
@@ -312,7 +368,7 @@
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
         db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Demande envoyée."); showAuth('login');
+        alert("Enregistré. En attente de validation."); showAuth('login');
     }
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>

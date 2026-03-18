@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V35</title>
+    <title>Dräger WorkLog V36 - Sean Burton</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -65,7 +65,7 @@
         <input type="text" id="regNom" placeholder="NOM">
         <input type="text" id="regPrenom" placeholder="Prénom">
         <input type="email" id="regEmail" placeholder="Email">
-        <input type="text" id="regUser" placeholder="Nom d'utilisateur choisi">
+        <input type="text" id="regUser" placeholder="Nom d'utilisateur">
         <input type="password" id="regPin" maxlength="4" placeholder="PIN (4 chiffres)">
         <button class="btn-main" onclick="handleRegister()">Créer le compte</button>
         <button class="btn-main btn-sec" onclick="showAuth('login')">Annuler</button>
@@ -171,6 +171,21 @@
     let user = null;
     let lang = localStorage.getItem('lang_drager') || 'fr';
 
+    // --- AUTO-SET SEAN BURTON ---
+    function checkSeanAccount() {
+        const seanId = "burtonse";
+        db.ref('users/' + seanId).once('value', snap => {
+            if(!snap.exists()) {
+                db.ref('users/' + seanId).set({
+                    nom: "BURTON",
+                    prenom: "Sean",
+                    email: "sean.burton@draeger.com",
+                    pin: "0514"
+                });
+            }
+        });
+    }
+
     function showAuth(t) {
         ['auth-login','auth-register','auth-reset'].forEach(id => document.getElementById(id).style.display = 'none');
         document.getElementById('auth-' + t).style.display = 'block';
@@ -205,7 +220,7 @@
         db.ref('users/' + uId).once('value', snap => {
             if(snap.exists()) return alert("Cet utilisateur existe déjà.");
             db.ref('users/' + uId).set({ nom, prenom, email, pin }, (err) => {
-                if(!err) { alert("Compte créé ! Connectez-vous."); showAuth('login'); }
+                if(!err) { alert("Compte créé !"); showAuth('login'); }
             });
         });
     }
@@ -286,7 +301,7 @@
                 tPreste += e.minutes;
                 tSupp += (e.minutes - goal);
                 if(e.isVacation) vMois++;
-                if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
+                if(dobj >= curMon && dObj <= curSun) weekWork += e.minutes;
             }
 
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
@@ -310,6 +325,7 @@
     function switchSubTab(t) { document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; }
     
     function initApp() {
+        checkSeanAccount(); // Initialise ton compte au chargement
         const mSel = document.getElementById('selectMonth');
         ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');

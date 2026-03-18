@@ -88,10 +88,10 @@
         <div id="conge-type-group" class="input-group" style="display:none; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
             <label id="lbl-subconge">Précision de l'absence</label>
             <select id="subCongeType">
-                <option value="ANNUEL" id="opt-annuel">🌴 Congé Annuel (Décompté)</option>
-                <option value="FERIE" id="opt-ferie">🇧🇪 Jour Férié (Non décompté)</option>
-                <option value="REPORTE" id="opt-reporte">⏳ Congé Reporté/Récup (Non décompté)</option>
-                <option value="MALADIE" id="opt-maladie">🤒 Maladie (Non décompté)</option>
+                <option value="ANNUEL" id="opt-annuel">🌴 Congé Annuel</option>
+                <option value="FERIE" id="opt-ferie">🇧🇪 Jour Férié</option>
+                <option value="REPORTE" id="opt-reporte">⏳ Congé Reporté/Récup</option>
+                <option value="MALADIE" id="opt-maladie">🤒 Maladie</option>
             </select>
         </div>
 
@@ -272,7 +272,7 @@
                 if (d.getDay() !== 0 && d.getDay() !== 6) {
                     const dStr = d.toISOString().split('T')[0];
                     await db.ref('users/' + currentUserId + '/entries/' + dStr.replace(/-/g, '')).set({
-                        date: dStr, location: "CONGE", subType: subType, minutes: 468, start: "08:00", end: "16:30"
+                        date: dStr, location: "CONGE", subType: subType, minutes: 0, start: "", end: ""
                     });
                 }
             }
@@ -307,18 +307,44 @@
             const entry = entries.find(e => e.date === dStr);
             const dObj = new Date(y, m, i);
             const dNum = dObj.getDay();
+            
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
-            if(entry) { tMin += entry.minutes; tSupp += (entry.minutes - goal); }
+            let diffVal = 0;
+            let netDisplay = "-";
+            let diffDisplay = "-";
             let rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
             let info = "-";
-            if (entry && entry.location === 'CONGE') {
-                const isFuture = dStr >= new Date().toISOString().split('T')[0];
-                if(entry.subType === "ANNUEL") {
-                    rClass = isFuture ? 'planned-row' : 'holiday-row';
-                    info = isFuture ? t.planned.toUpperCase() : "CONGE";
-                } else { rClass = 'other-conge-row'; info = entry.subType; }
-            } else if (entry) { info = entry.location + ' ' + entry.start + '-' + entry.end; }
-            tBody.innerHTML += `<tr class="${rClass}"><td>${t.days[dNum]} ${i}</td><td style="text-align:left;">${info}</td><td>${entry ? formatT(entry.minutes) : '-'}</td><td style="color:${(entry && (entry.minutes-goal)>0) ? 'green' : (entry && (entry.minutes-goal)<0 ? 'red' : 'black')}">${entry ? formatT(entry.minutes - goal) : '-'}</td><td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer;color:red;">✕</span></td></tr>`;
+            
+            if (entry) {
+                if (entry.location === 'CONGE') {
+                    // NEUTRE : Diff = 0, Net = Texte du congé
+                    diffVal = 0;
+                    diffDisplay = "0h00";
+                    netDisplay = entry.subType === "ANNUEL" ? "CONGE" : entry.subType;
+                    
+                    const isFuture = dStr >= new Date().toISOString().split('T')[0];
+                    if(entry.subType === "ANNUEL") {
+                        rClass = isFuture ? 'planned-row' : 'holiday-row';
+                    } else { rClass = 'other-conge-row'; }
+                    info = netDisplay;
+                } else {
+                    // TRAVAIL : Calcul normal
+                    diffVal = entry.minutes - goal;
+                    tMin += entry.minutes;
+                    tSupp += diffVal;
+                    netDisplay = formatT(entry.minutes);
+                    diffDisplay = formatT(diffVal);
+                    info = entry.location + ' ' + entry.start + '-' + entry.end;
+                }
+            }
+            
+            tBody.innerHTML += `<tr class="${rClass}">
+                <td>${t.days[dNum]} ${i}</td>
+                <td style="text-align:left;">${info}</td>
+                <td>${netDisplay}</td>
+                <td style="color:${diffVal > 0 ? 'green' : (diffVal < 0 ? 'red' : 'black')}">${diffDisplay}</td>
+                <td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer;color:red;">✕</span></td>
+            </tr>`;
         }
         document.getElementById('tableFoot').innerHTML = `<tr class="total-row"><td colspan="2">${t.total}</td><td>${formatT(tMin)}</td><td>${formatT(tSupp)}</td><td class="no-print"></td></tr>`;
     }
@@ -327,9 +353,8 @@
         const m = parseInt(document.getElementById('selectMonth').value);
         const y = parseInt(document.getElementById('selectYear').value);
         const t = translations[lang];
-        let csvContent = "\uFEFF"; // BOM pour UTF-8 (Excel)
+        let csvContent = "\uFEFF"; 
         csvContent += `${t.thDate};${t.thInfo};${t.thNet};${t.thDiff}\n`;
-
         const daysInMonth = new Date(y, m + 1, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
             const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -338,22 +363,29 @@
             const dNum = dObj.getDay();
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
             
-            let info = entry ? (entry.location === 'CONGE' ? entry.subType : entry.location + " " + entry.start + "-" + entry.end) : "-";
-            let net = entry ? formatT(entry.minutes) : "-";
-            let diff = entry ? formatT(entry.minutes - goal) : "-";
+            let info = "-";
+            let net = "-";
+            let diff = "-";
             
+            if(entry) {
+                if(entry.location === 'CONGE') {
+                    info = entry.subType;
+                    net = entry.subType;
+                    diff = "0h00";
+                } else {
+                    info = entry.location + " " + entry.start + "-" + entry.end;
+                    net = formatT(entry.minutes);
+                    diff = formatT(entry.minutes - goal);
+                }
+            }
             csvContent += `${t.days[dNum]} ${i};${info};${net};${diff}\n`;
         }
-
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
         link.setAttribute("download", `WorkLog_${t.months[m]}_${y}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
     }
 
     function formatT(min) {

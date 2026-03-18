@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V52</title>
+    <title>Dräger WorkLog V53 - Officiel</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -22,8 +22,10 @@
 
         .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 18px; border: none; border-radius: 16px; font-weight: 700; font-size: 1.1em; cursor: pointer; margin-bottom: 10px; }
         
-        .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
-        .info-week b { font-size: 2em; color: var(--primary); display: block; }
+        .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); display: flex; justify-content: space-around; align-items: center; }
+        .info-item { flex: 1; }
+        .info-item span { font-size: 0.7em; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        .info-item b { font-size: 1.5em; color: var(--primary); display: block; }
 
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; position: relative; }
@@ -38,15 +40,15 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.75em; table-layout: fixed; }
         th { padding: 10px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: center; }
         td { padding: 12px 4px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; }
-        
+        .weekend { background: #f8fafc !important; }
+
         .toggle-container { background: #f0f7ff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #d0e3ff; }
         .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .toggle-row:last-child { margin-bottom: 0; }
         
         @media print {
             .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, select, input { display: none !important; }
             .container { display: block !important; padding: 0; width: 100%; }
-            #pdf-header { display: block !important; border-bottom: 2px solid #000; margin-bottom: 20px; }
+            #pdf-header { display: block !important; border-bottom: 2.5px solid black; margin-bottom: 20px; padding-bottom: 10px; }
         }
     </style>
 </head>
@@ -81,7 +83,7 @@
     <div id="saisie" class="content active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b id="welcome-msg" style="color:var(--primary)">...</b>
-            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Logout</button>
+            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Déconnexion</button>
         </div>
 
         <div class="sub-tabs">
@@ -90,39 +92,35 @@
         </div>
 
         <div id="form-work">
-            <div class="info-week"><span>Reste à prester (39h)</span><b id="stat-remaining-week">39h00</b></div>
+            <div class="info-week">
+                <div class="info-item"><span>Reste Semaine</span><b id="stat-remaining-week">39h00</b></div>
+                <div class="info-item" style="border-left: 1px solid #eee;"><span>Solde Congés</span><b id="vac-balance">28 j</b></div>
+            </div>
             <div class="card">
                 <label>Date</label><input type="date" id="dateInput">
                 <div style="display:flex; gap:10px;">
-                    <div style="flex:1;"><label>Départ Maison / Client</label><input type="time" id="startTime" value="08:00"></div>
-                    <div style="flex:1;"><label>Retour Maison / Client</label><input type="time" id="endTime" value="16:30"></div>
+                    <div style="flex:1;"><label>Départ Maison/Site</label><input type="time" id="startTime" value="08:00"></div>
+                    <div style="flex:1;"><label>Retour Maison/Site</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
                 <label>Lieu</label>
                 <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
                 
                 <div class="toggle-container">
-                    <div class="toggle-row">
-                        <span>Départ de la maison ?</span>
-                        <input type="checkbox" id="startHome" style="width:22px; height:22px;">
-                    </div>
-                    <div class="toggle-row">
-                        <span>Retour à la maison ?</span>
-                        <input type="checkbox" id="endHome" style="width:22px; height:22px;">
-                    </div>
-                    <small style="color:var(--secondary); font-size:0.7em;">(-30 min par trajet activé)</small>
+                    <div class="toggle-row"><span>Départ de la maison ? (-30m)</span><input type="checkbox" id="startHome" style="width:22px; height:22px;"></div>
+                    <div class="toggle-row"><span>Retour à la maison ? (-30m)</span><input type="checkbox" id="endHome" style="width:22px; height:22px;"></div>
                 </div>
 
-                <button class="btn-main" onclick="saveData()">ENREGISTRER</button>
+                <button class="btn-main" onclick="saveData()">ENREGISTRER PRESTATION</button>
             </div>
         </div>
 
         <div id="form-vacation" style="display:none;">
             <div class="card">
-                <label>Type</label>
+                <label>Type de congé</label>
                 <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
                 <label>Du</label><input type="date" id="vacStart">
                 <label>Au</label><input type="date" id="vacEnd">
-                <button class="btn-main" onclick="saveVacation()">VALIDER CONGÉS</button>
+                <button class="btn-main" onclick="saveVacation()">ENREGISTRER CONGÉS</button>
             </div>
         </div>
     </div>
@@ -135,7 +133,7 @@
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:15%">Date</th><th style="width:45%">Lieu (H)</th><th style="width:20%">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
+                    <tr><th style="width:15%">Date</th><th style="width:50%">Lieu (H)</th><th style="width:15%">Réel</th><th style="width:10%">+/-</th><th class="delete-col" style="width:10%"></th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -145,12 +143,12 @@
             <span>+/- : <span id="total-month-diff">0h00</span></span>
         </div>
         <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
-        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 EXPORT EXCEL (EMAIL)</button>
+        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 ENVOYER RECAP EXCEL</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
         <div class="card">
-            <h3 style="color:var(--primary);">Admin - Utilisateurs</h3>
+            <h3 style="color:var(--primary);">Gestion Admin</h3>
             <div id="user-list"></div>
         </div>
     </div>
@@ -177,18 +175,15 @@
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("Validation requise par l'admin.");
+                if (!d.active && d.role !== 'admin') return alert("Validation requise.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "Salut " + user.prenom;
                 document.getElementById('print-name').innerText = user.nom + " " + user.prenom;
-                if(user.role === 'admin') { 
-                    document.getElementById('nav-admin').style.display = 'block'; 
-                    loadAdminList(); 
-                }
+                if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
                 syncData();
-            } else alert("Erreur.");
+            } else alert("Identifiants incorrects.");
         });
     }
 
@@ -196,30 +191,50 @@
         const d = document.getElementById('dateInput').value;
         const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
         const sH = document.getElementById('startHome').checked, eH = document.getElementById('endHome').checked;
-        if(!d) return alert("Date ?");
+        if(!d) return alert("Choisissez une date.");
 
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
-        let minutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+        let totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
 
-        // Déduction Pause (45 min Wemmel, 30 min Client)
-        minutes -= (l === "Wemmel" ? 45 : 30);
+        // Déduction Pause Fixe
+        totalMinutes -= (l === "Wemmel" ? 45 : 30);
         
-        // Logique Trajet Domicile : -30 min par trajet
-        if(sH) minutes -= 30;
-        if(eH) minutes -= 30;
+        // Logique Trajet Maison : -30m par trajet coché
+        if(sH) totalMinutes -= 30;
+        if(eH) totalMinutes -= 30;
 
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ 
-            date: d, location: l, minutes: minutes, start: s, end: e, startHome: sH, endHome: eH 
+            date: d, location: l, minutes: totalMinutes, start: s, end: e, isVacation: false 
         });
-        alert("Sauvegardé !");
+        alert("Pointage enregistré !");
+    }
+
+    async function saveVacation() {
+        const sD = new Date(document.getElementById('vacStart').value), eD = new Date(document.getElementById('vacEnd').value);
+        let curr = new Date(sD);
+        while(curr <= eD) {
+            if(curr.getDay() !== 0 && curr.getDay() !== 6) {
+                const ds = curr.toISOString().split('T')[0];
+                const goal = (curr.getDay() === 5 ? 420 : 480);
+                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ 
+                    date: ds, location: document.getElementById('vacCategory').value, minutes: goal, start: "N/A", end: "N/A", isVacation: true 
+                });
+            }
+            curr.setDate(curr.getDate() + 1);
+        }
+        alert("Congés enregistrés !");
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let totalM = 0, totalD = 0;
+        let totalM = 0, totalD = 0, vacUsed = 0;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
         
+        // Calcul solde global (sur toutes les entrées, pas juste le mois)
+        entries.forEach(e => { if(e.isVacation && e.location === "Congés légaux") vacUsed++; });
+        document.getElementById('vac-balance').innerText = (28 - vacUsed) + " j";
+
         for (let i = 1; i <= daysInMonth; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
@@ -230,7 +245,7 @@
 
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td style="font-weight:bold">${i}/${m+1}</td>
-                <td>${e ? e.location + ' ('+e.start+'-'+e.end+')' : ''}</td>
+                <td>${e ? e.location + (e.start !== 'N/A' ? ' ('+e.start+'-'+e.end+')' : '') : ''}</td>
                 <td>${e ? formatT(e.minutes) : ''}</td>
                 <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
                 <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer">🗑️</span>` : ''}</td>
@@ -246,7 +261,7 @@
         const startWeek = new Date(now); startWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
         startWeek.setHours(0,0,0,0);
         let weekWork = 0;
-        entries.forEach(e => { if(new Date(e.date) >= startWeek) weekWork += e.minutes; });
+        entries.forEach(e => { if(new Date(e.date) >= startWeek && !e.isVacation) weekWork += e.minutes; });
         const rem = 2340 - weekWork;
         document.getElementById('stat-remaining-week').innerText = rem <= 0 ? "OK" : formatT(rem);
     }
@@ -258,21 +273,21 @@
             for(let id in all) {
                 const u = all[id]; if(!u.active) pending++;
                 list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; text-align:left;">
-                    <div style="display:flex; justify-content:space-between;"><b>${u.nom} ${u.prenom}</b><span>${u.role}</span></div>
+                    <b>${u.nom} ${u.prenom}</b> (${u.role})
                     <div style="display:flex; gap:10px; margin-top:10px;">
-                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Valider</button>` : ''}
-                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Rôle</button>
-                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); border:none; border-radius:8px; width:40px; color:white;">🗑️</button>
+                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px;">Valider</button>` : ''}
+                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px;">Rôle</button>
+                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px;">🗑️</button>
                     </div></div>`;
             }
-            const badge = document.getElementById('notif-badge');
-            badge.innerText = pending; badge.style.display = pending > 0 ? 'block' : 'none';
+            document.getElementById('notif-badge').innerText = pending;
+            document.getElementById('notif-badge').style.display = pending > 0 ? 'block' : 'none';
         });
     }
 
     function sendEmail() {
         const mLabel = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
-        let mailBody = `RECAP - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel}\n\nDATE\tLIEU\tREEL\tDIFF\n`;
+        let mailBody = `PRESTATIONS - ${user.nom} ${user.prenom}\nPERIODE : ${mLabel}\n\nDATE\tLIEU\tREEL\tDIFF\n`;
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         for (let i = 1; i <= new Date(y, m + 1, 0).getDate(); i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
@@ -297,7 +312,7 @@
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
         db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Enregistré ! Attendez la validation."); showAuth('login');
+        alert("Demande envoyée."); showAuth('login');
     }
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>

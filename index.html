@@ -21,20 +21,17 @@
         
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-        /* LOGIN */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 25px; width: 80%; max-width: 300px; text-align: center; }
         .pin-input { width: 100%; border: 2px solid #ddd; border-radius: 12px; padding: 15px; font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; outline: none; }
 
         .container { padding: calc(var(--safe-top) + 20px) 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
 
-        /* HEADER & TABS */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .tabs { display: flex; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(env(safe-area-inset-bottom) + 10px) 10px; border-top: 1px solid #ccc; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 12px; color: #888; display: flex; flex-direction: column; align-items: center; }
         .tab.active { color: var(--secondary); font-weight: bold; }
 
-        /* UI ELEMENTS */
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #444; }
@@ -47,9 +44,10 @@
         .stat-box { background: white; padding: 15px; border-radius: 15px; text-align: center; }
         .stat-box b { display: block; font-size: 1.4em; color: var(--primary); }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-        th, td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+        th, td { padding: 10px 4px; text-align: center; border-bottom: 1px solid #eee; }
         .weekend { color: #ccc; background: #fafafa; }
+        .holiday-row { color: var(--secondary); font-weight: bold; background: #f0f7ff; }
         .diff-pos { color: #27ae60; font-weight: bold; }
         .diff-neg { color: #e74c3c; }
 
@@ -100,10 +98,10 @@
             <div id="conge-fields" style="display:none;">
                 <div class="input-group"><label id="l-abstype">Type d'absence</label>
                     <select id="subCongeType">
-                        <option value="ANNUEL">ANNUEL</option>
-                        <option value="FERIE">FERIE</option>
-                        <option value="MALADIE">MALADIE</option>
-                        <option value="RECU">RECUP</option>
+                        <option value="ANNUEL">🌴 Congé Annuel</option>
+                        <option value="FERIE">🇧🇪 Jour Férié</option>
+                        <option value="MALADIE">🤒 Maladie</option>
+                        <option value="RECU">⏳ Récupération</option>
                     </select>
                 </div>
                 <div class="input-group"><label id="l-from">Du</label><input type="date" id="dateStart"></div>
@@ -124,7 +122,14 @@
                 <select id="selectYear" onchange="renderTable()" style="flex:1;"></select>
             </div>
             <table id="tableData">
-                <thead><tr><th id="th-day">Jour</th><th id="th-det">Détails</th><th>+/-</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th id="th-day">Jour</th>
+                        <th id="th-det">Détails</th>
+                        <th id="th-pres">Prestation</th>
+                        <th>+/-</th>
+                    </tr>
+                </thead>
                 <tbody id="tableBody"></tbody>
             </table>
             <div style="display:flex; justify-content: space-between;" class="no-print">
@@ -148,9 +153,16 @@
     let entries = []; const currentUserId = "burtonse";
     let lang = localStorage.getItem('lang') || 'fr';
 
+    const absLabels = {
+        ANNUEL: { fr: "🌴 Congé", nl: "🌴 Verlof" },
+        FERIE: { fr: "🇧🇪 Férié", nl: "🇧🇪 Feestdag" },
+        MALADIE: { fr: "🤒 Maladie", nl: "🤒 Ziekte" },
+        RECU: { fr: "⏳ Récup", nl: "⏳ Inhaalrust" }
+    };
+
     const dict = {
-        fr: { l_title: "Dräger - RSS - Heures", l_sub: "Entrez votre code PIN", l_btn: "Se connecter", t_appname: "Prestations", l_activity: "Activité", o_work: "🛠 Travail", o_conge: "🌴 Congé", l_date: "Date", l_start: "Début", l_end: "Fin", l_loc: "Lieu", l_abstype: "Type d'absence", l_from: "Du", l_to: "Au", b_save: "Enregistrer", l_stat_c: "Solde Congés", l_stat_h: "Heures +/-", th_day: "Jour", th_det: "Détails", b_pin: "Changer PIN", nav_1: "➕ Pointer", nav_2: "📅 Calendrier" },
-        nl: { l_title: "Dräger - RSS - Uren", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof", l_date: "Datum", l_start: "Start", l_end: "Einde", l_loc: "Locatie", l_abstype: "Type afwezigheid", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Uren +/-", th_day: "Dag", th_det: "Details", b_pin: "PIN wijzigen", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
+        fr: { l_title: "Dräger - RSS - Heures", l_sub: "Entrez votre code PIN", l_btn: "Se connecter", t_appname: "Prestations", l_activity: "Activité", o_work: "🛠 Travail", o_conge: "🌴 Congé / Absence", l_date: "Date", l_start: "Début", l_end: "Fin", l_loc: "Lieu", l_abstype: "Type d'absence", l_from: "Du", l_to: "Au", b_save: "Enregistrer", l_stat_c: "Solde Congés", l_stat_h: "Heures +/-", th_day: "Jour", th_det: "Lieu", th_pres: "Prestation", b_pin: "Changer PIN", nav_1: "➕ Pointer", nav_2: "📅 Calendrier" },
+        nl: { l_title: "Dräger - RSS - Uren", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof / Afwezigheid", l_date: "Datum", l_start: "Start", l_end: "Einde", l_loc: "Locatie", l_abstype: "Type afwezigheid", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Uren +/-", th_day: "Dag", th_det: "Locatie", th_pres: "Werktijd", b_pin: "PIN wijzigen", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
     };
 
     function toggleLang() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); applyLang(); }
@@ -224,13 +236,23 @@
             const dObj = new Date(y, m, i);
             const dNum = dObj.getDay();
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
-            let diff = 0, rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '', info = "-";
+            let diff = 0, rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '', info = "-", prest = "-";
+            
             if (e) {
-                if (e.location !== 'CONGE') { diff = e.minutes - goal; total += diff; info = e.location; }
-                else { info = e.subType; if(e.subType === "ANNUEL") conge++; }
+                if (e.location !== 'CONGE') { 
+                    diff = e.minutes - goal; 
+                    total += diff; 
+                    info = e.location;
+                    prest = `${e.start} - ${e.end}`; 
+                }
+                else { 
+                    info = absLabels[e.subType] ? absLabels[e.subType][lang] : e.subType;
+                    rClass = 'holiday-row';
+                    if(e.subType === "ANNUEL") conge++;
+                }
             }
             const dClass = diff > 0 ? 'diff-pos' : (diff < 0 ? 'diff-neg' : '');
-            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td class="${dClass}">${e ? formatT(diff) : '-'}</td></tr>`;
+            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td>${prest}</td><td class="${dClass}">${e ? formatT(diff) : '-'}</td></tr>`;
         }
         document.getElementById('stat-conge').innerText = (28 - conge);
         document.getElementById('stat-hours').innerText = formatT(total);
@@ -246,6 +268,14 @@
         const table = document.getElementById("tableData");
         const wb = XLSX.utils.table_to_book(table);
         XLSX.writeFile(wb, `WorkLog_${currentUserId}.xlsx`);
+    }
+
+    function changePinPrompt() {
+        const currentPin = prompt(lang === 'fr' ? "Code actuel :" : "Huidige code :");
+        if (currentPin === localStorage.getItem('userPin')) {
+            const newPin = prompt(lang === 'fr' ? "Nouveau code (4 chiffres) :" : "Nieuwe code (4 cijfers) :");
+            if (newPin && newPin.length === 4) { localStorage.setItem('userPin', newPin); alert("OK"); }
+        }
     }
 
     function openTab(id, btn) {

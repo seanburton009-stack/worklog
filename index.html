@@ -23,7 +23,7 @@
 
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 25px; width: 80%; max-width: 300px; text-align: center; }
-        .login-input { width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; }
+        .login-input { width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; text-transform: lowercase; }
         .pin-input { width: 100%; border: 2px solid #ddd; border-radius: 12px; padding: 15px; font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; outline: none; }
 
         .container { padding: calc(var(--safe-top) + 20px) 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
@@ -45,8 +45,8 @@
         .stat-box { background: white; padding: 15px; border-radius: 15px; text-align: center; }
         .stat-box b { display: block; font-size: 1.4em; color: var(--primary); }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
-        th, td { padding: 10px 4px; text-align: center; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
+        th, td { padding: 10px 2px; text-align: center; border-bottom: 1px solid #eee; }
         .weekend { color: #ccc; background: #fafafa; }
         .holiday-row { color: var(--secondary); font-weight: bold; background: #f0f7ff; }
         .diff-pos { color: #27ae60; font-weight: bold; }
@@ -60,13 +60,13 @@
 <div id="login-overlay">
     <div class="box">
         <h2 id="l-title">Dräger - RSS</h2>
-        <div id="first-setup-fields" style="display:none;">
-            <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">Configuration initiale</p>
-            <input type="text" id="setupUser" class="login-input" placeholder="Utilisateur (ex: burtonse)">
+        <div id="user-selection">
+            <input type="text" id="userInput" class="login-input" placeholder="Utilisateur (ex: burtonse)">
         </div>
         <p id="l-sub">Entrez votre code PIN</p>
         <input type="password" id="userPin" class="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••">
         <button id="l-btn" class="btn-main" onclick="handleAuth()">Se connecter</button>
+        <p id="login-msg" style="font-size: 0.7em; color: #666; margin-top: 10px;"></p>
     </div>
 </div>
 
@@ -74,7 +74,7 @@
     <div class="header no-print">
         <h2 id="t-appname">WorkLog</h2>
         <div style="display:flex; align-items:center; gap:15px;">
-            <span id="displayUser" style="font-size:0.8em; color:var(--primary); font-weight:bold;"></span>
+            <span id="displayUser" style="font-size:0.8em; color:var(--primary); font-weight:bold; text-transform: uppercase;"></span>
             <button onclick="toggleLang()" style="border:none; background:none; font-size:1.5em;">🌐</button>
         </div>
     </div>
@@ -139,8 +139,8 @@
                 <button class="btn-export" onclick="exportExcel()">📊 Excel</button>
                 <button class="btn-print" onclick="window.print()">📄 PDF / Print</button>
             </div>
-            <button class="btn-main" style="margin-top:20px; background:#aaa;" onclick="changePinPrompt()" id="b-pin">Changer PIN</button>
-            <button class="btn-main" style="margin-top:10px; background:#e74c3c;" onclick="logout()">🔒 Déconnexion (Reset)</button>
+            <button class="btn-main" style="margin-top:20px; background:#aaa;" onclick="changePinPrompt()" id="b-pin">Changer mon PIN</button>
+            <button class="btn-main" style="margin-top:10px; background:#555;" onclick="softLogout()">🔒 Quitter (Écran Accueil)</button>
         </div>
     </div>
 </div>
@@ -156,7 +156,7 @@
     const db = firebase.database();
     
     let entries = [];
-    let currentUserId = localStorage.getItem('userId') || "";
+    let currentUserId = "";
     let lang = localStorage.getItem('lang') || 'fr';
 
     const absLabels = {
@@ -171,58 +171,58 @@
         nl: { l_title: "Dräger - RSS", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof / Afwezigheid", l_date: "Datum", l_start: "Start", l_end: "Einde", l_loc: "Locatie", l_abstype: "Type afwezigheid", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Uren +/-", th_day: "Dag", th_det: "Locatie", th_pres: "Werktijd", b_pin: "PIN wijzigen", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
     };
 
-    function toggleLang() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); applyLang(); }
-    function applyLang() {
-        Object.keys(dict[lang]).forEach(id => {
-            let el = document.getElementById(id.replace(/_/g, '-'));
-            if(el) el.innerText = dict[lang][id];
-        });
-        renderTable();
-    }
-
     function initApp() {
         applyLang();
-        const savedPin = localStorage.getItem('userPin');
-        if (!savedPin || !currentUserId) {
-            document.getElementById('first-setup-fields').style.display = 'block';
-            document.getElementById('l-sub').innerText = "Créez votre utilisateur et PIN";
+        const lastUser = localStorage.getItem('lastLoggedUser');
+        if(lastUser) {
+            document.getElementById('userInput').value = lastUser;
+            document.getElementById('login-msg').innerText = "Bon retour, " + lastUser;
         }
-        if(currentUserId) document.getElementById('displayUser').innerText = currentUserId;
     }
 
     function handleAuth() {
-        const inputPin = document.getElementById('userPin').value;
-        const savedPin = localStorage.getItem('userPin');
+        const user = document.getElementById('userInput').value.trim().toLowerCase();
+        const pin = document.getElementById('userPin').value;
+        
+        if(!user || pin.length !== 4) {
+            alert("Utilisateur et PIN (4 chiffres) requis");
+            return;
+        }
 
-        if (!savedPin || !currentUserId) {
-            // Premier enregistrement
-            const newUser = document.getElementById('setupUser').value.trim().toLowerCase();
-            if (newUser && inputPin.length === 4) {
-                localStorage.setItem('userId', newUser);
-                localStorage.setItem('userPin', inputPin);
-                currentUserId = newUser;
-                location.reload();
-            } else {
-                alert("Veuillez remplir l'utilisateur et un PIN de 4 chiffres.");
+        const storedPin = localStorage.getItem('pin_' + user);
+
+        if (!storedPin) {
+            // Nouvel utilisateur ou premier PIN pour cet user
+            if(confirm("Créer un nouveau profil pour " + user + " avec ce PIN ?")) {
+                localStorage.setItem('pin_' + user, pin);
+                loginSuccess(user);
             }
         } else {
-            // Connexion normale
-            if (inputPin === savedPin) { 
-                document.getElementById('login-overlay').style.display = 'none'; 
-                document.getElementById('mainContainer').style.display = 'block'; 
-                loadData(); 
-            } else { 
-                alert("Code PIN incorrect"); 
+            // Vérification
+            if (pin === storedPin) {
+                loginSuccess(user);
+            } else {
+                alert("Code PIN incorrect pour cet utilisateur");
                 document.getElementById('userPin').value = "";
             }
         }
     }
 
-    function logout() {
-        if(confirm("Cela effacera votre session sur ce téléphone. Continuer ?")) {
-            localStorage.clear();
-            location.reload();
-        }
+    function loginSuccess(user) {
+        currentUserId = user;
+        localStorage.setItem('lastLoggedUser', user);
+        document.getElementById('displayUser').innerText = user;
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        loadData();
+    }
+
+    function softLogout() {
+        // On cache juste l'interface et on vide le PIN, mais on garde le nom d'utilisateur pour le suivant
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('userPin').value = "";
+        currentUserId = "";
     }
 
     function loadData() {
@@ -265,13 +265,11 @@
             const dNum = dObj.getDay();
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
             let diff = 0, rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '', info = "-", prest = "-";
-            
             if (e) {
                 if (e.location !== 'CONGE') { 
                     diff = e.minutes - goal; total += diff; info = e.location;
-                    prest = `${e.start} - ${e.end}`; 
-                }
-                else { 
+                    prest = `${e.start}-${e.end}`; 
+                } else { 
                     info = absLabels[e.subType] ? absLabels[e.subType][lang] : e.subType;
                     rClass = 'holiday-row';
                     if(e.subType === "ANNUEL") conge++;
@@ -297,11 +295,23 @@
     }
 
     function changePinPrompt() {
-        const currentPin = prompt(lang === 'fr' ? "Code actuel :" : "Huidige code :");
-        if (currentPin === localStorage.getItem('userPin')) {
-            const newPin = prompt(lang === 'fr' ? "Nouveau code (4 chiffres) :" : "Nieuwe code (4 cijfers) :");
-            if (newPin && newPin.length === 4) { localStorage.setItem('userPin', newPin); alert("OK"); }
+        const currentPin = prompt("PIN actuel :");
+        if (currentPin === localStorage.getItem('pin_' + currentUserId)) {
+            const newPin = prompt("Nouveau PIN (4 chiffres) :");
+            if (newPin && newPin.length === 4) {
+                localStorage.setItem('pin_' + currentUserId, newPin);
+                alert("PIN mis à jour !");
+            }
         }
+    }
+
+    function toggleLang() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); applyLang(); }
+    function applyLang() {
+        Object.keys(dict[lang]).forEach(id => {
+            let el = document.getElementById(id.replace(/_/g, '-'));
+            if(el) el.innerText = dict[lang][id];
+        });
+        renderTable();
     }
 
     function openTab(id, btn) {

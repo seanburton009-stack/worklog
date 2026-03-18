@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V32</title>
+    <title>Dräger WorkLog V33</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -52,15 +52,13 @@
         .col-diff { width: 60px; }
         .col-del { width: 35px; }
 
-        /* Style pour les week-ends grisés */
         .weekend { background: #f1f5f9 !important; color: #94a3b8; }
         .det-text { color: #64748b; font-weight: normal; font-size: 0.85em; display: block; }
 
-        /* DESIGN PDF / IMPRESSION */
         #pdf-header, #pdf-footer { display: none; }
 
         @media print {
-            .tabs, .btn-main, .delete-col, #login-overlay, .sub-tabs, .filter-row, .stat-grid, #nav-ptr, .logout-row { display: none !important; }
+            .tabs, .btn-main, .delete-col, #login-overlay, .sub-tabs, .filter-row, .stat-grid, #nav-ptr, .top-bar { display: none !important; }
             #pdf-header { display: block !important; margin-bottom: 30px; text-align: left; }
             #pdf-header h1 { margin: 0; font-size: 22px; }
             #pdf-header .resume-title { margin-top: 10px; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 5px; }
@@ -82,23 +80,24 @@
 
 <div id="pdf-header">
     <h1>BURTON, Sean</h1>
-    <p>Service Engineer - Logistic Support RSS</p>
+    <p id="txt-job-title">Service Engineer - Logistic Support RSS</p>
     <p class="resume-title" id="pdf-dynamic-title">Résumé du mois</p>
 </div>
 
 <div id="login-overlay">
     <div class="box">
         <h2 style="color:var(--primary);">Dräger - RSS</h2>
-        <input type="text" id="userInput" placeholder="Utilisateur">
+        <input type="text" id="userInput" placeholder="Utilisateur / Gebruiker">
         <input type="password" id="userPin" maxlength="4" placeholder="PIN">
-        <button class="btn-main" onclick="handleAuth()">Connexion</button>
+        <button class="btn-main" id="btn-login" onclick="handleAuth()">Connexion / Inloggen</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
     <div id="saisie" class="content active">
-        <div class="logout-row" style="display:flex; justify-content:space-between; margin-bottom:20px;">
-             <button onclick="softLogout()" style="border:none; background:none; color:#64748b; font-weight:bold;">Déconnexion</button>
+        <div class="top-bar" style="display:flex; justify-content:space-between; margin-bottom:20px;">
+             <button id="btn-logout" onclick="softLogout()" style="border:none; background:none; color:#64748b; font-weight:bold; cursor:pointer;">🚪 Déconnexion</button>
+             <button onclick="toggleLang()" style="border:none; background:var(--primary); color:white; padding:8px 12px; border-radius:10px; font-weight:bold; cursor:pointer;">🌐 FR / NL</button>
         </div>
         
         <div class="sub-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
@@ -107,52 +106,47 @@
         </div>
 
         <div id="compteur-travail" class="info-week">
-            <span>Reste à prester (Semaine)</span>
+            <span id="txt-rem-week">Reste à prester (Semaine)</span>
             <b id="stat-remaining-ptr">--h--</b>
         </div>
-        <div id="compteur-conges-total" class="info-week conges" style="display:none;">
-            <span>Solde annuel restants</span>
+        <div id="compteur-conges-total" class="info-week conges" style="display:none; border-top-color: var(--emerald);">
+            <span id="txt-rem-vac">Solde annuel restants</span>
             <b id="stat-vac-count-total">28</b>
         </div>
 
         <div id="form-work" class="card">
-            <label>Date</label><input type="date" id="dateInput">
+            <label id="lbl-date">Date</label><input type="date" id="dateInput">
             <div style="display:flex; gap:15px;">
-                <div style="flex:1;"><label>Arrivée</label><input type="time" id="startTime" value="08:00"></div>
-                <div style="flex:1;"><label>Départ</label><input type="time" id="endTime" value="16:30"></div>
+                <div style="flex:1;"><label id="lbl-arr">Arrivée</label><input type="time" id="startTime" value="08:00"></div>
+                <div style="flex:1;"><label id="lbl-dep">Départ</label><input type="time" id="endTime" value="16:30"></div>
             </div>
-            <label>Lieu</label>
+            <label id="lbl-loc">Lieu</label>
             <select id="location">
                 <option value="Wemmel">Wemmel</option>
                 <option value="Client">Client</option>
                 <option value="INEOS">INEOS</option>
                 <option value="Esso">Esso</option>
             </select>
-            <button class="btn-main" onclick="saveData()">Enregistrer</button>
+            <button class="btn-main" id="btn-save-work" onclick="saveData()">Enregistrer</button>
         </div>
 
         <div id="form-vacation" class="card" style="display:none;">
-            <label>Catégorie</label>
-            <select id="vacCategory">
-                <option value="Congés légaux">Congés légaux</option>
-                <option value="Jour férié">Jour férié</option>
-                <option value="Jour reporté">Jour reporté</option>
-                <option value="Malade">Malade</option>
-            </select>
-            <label>Du</label><input type="date" id="vacStart">
-            <label>Au</label><input type="date" id="vacEnd">
-            <button class="btn-main" onclick="saveVacation()">Enregistrer</button>
+            <label id="lbl-cat">Catégorie</label>
+            <select id="vacCategory"></select>
+            <label id="lbl-from">Du</label><input type="date" id="vacStart">
+            <label id="lbl-to">Au</label><input type="date" id="vacEnd">
+            <button class="btn-main" id="btn-save-vac" onclick="saveVacation()">Enregistrer</button>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="stat-grid">
             <div class="info-week" style="border-top-color: var(--secondary);">
-                <span>Heures Supp (Mois)</span>
+                <span id="txt-stat-over">Heures Supp (Mois)</span>
                 <b id="stat-month-over">0h00</b>
             </div>
             <div class="info-week" style="border-top-color: var(--emerald);">
-                <span>Congés pris (Mois)</span>
+                <span id="txt-stat-vac">Congés pris (Mois)</span>
                 <b id="stat-month-vac">0</b>
             </div>
         </div>
@@ -166,8 +160,8 @@
                 <thead>
                     <tr>
                         <th class="col-date">Date</th>
-                        <th class="col-det">Détails</th>
-                        <th class="col-reel">Réel</th>
+                        <th id="th-det">Détails</th>
+                        <th id="th-real">Réel</th>
                         <th class="col-diff">+/-</th>
                         <th class="col-del delete-col"></th>
                     </tr>
@@ -175,12 +169,12 @@
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-        <button class="btn-main" onclick="window.print()">🖨️ Générer le rapport PDF</button>
+        <button class="btn-main" id="btn-print" onclick="window.print()">🖨️ Générer le rapport PDF</button>
 
         <div id="pdf-footer">
             <div class="footer-grid">
-                <span>TOTAL PRESTÉ SUR LE MOIS : <span id="pdf-total-preste">0h00</span></span>
-                <span>TOTAL HEURES SUPP : <span id="pdf-total-supp">0h00</span></span>
+                <span><span id="txt-pdf-tot">TOTAL PRESTÉ SUR LE MOIS</span> : <span id="pdf-total-preste">0h00</span></span>
+                <span><span id="txt-pdf-supp">TOTAL HEURES SUPP</span> : <span id="pdf-total-supp">0h00</span></span>
             </div>
         </div>
     </div>
@@ -198,16 +192,77 @@
     
     let entries = [];
     let currentUserId = "";
-    const monthsArr = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    let lang = localStorage.getItem('lang_drager') || 'fr';
 
-    function switchSubTab(type) {
-        document.querySelectorAll('.sub-tab').forEach(b => { b.style.background = 'none'; b.style.color = '#64748b'; });
-        const activeBtn = document.getElementById(type === 'work' ? 'btn-work-tab' : 'btn-vac-tab');
-        activeBtn.style.background = 'white'; activeBtn.style.color = '#003366';
-        document.getElementById('form-work').style.display = type === 'work' ? 'block' : 'none';
-        document.getElementById('compteur-travail').style.display = type === 'work' ? 'block' : 'none';
-        document.getElementById('form-vacation').style.display = type === 'vacation' ? 'block' : 'none';
-        document.getElementById('compteur-conges-total').style.display = type === 'vacation' ? 'block' : 'none';
+    const translations = {
+        fr: {
+            job: "Service Engineer - Logistic Support RSS", login: "Connexion", user: "Utilisateur", logout: "🚪 Déconnexion",
+            work: "Travail", vac: "Congés", rem_week: "Reste à prester (Semaine)", rem_vac: "Solde annuel restant",
+            date: "Date", arr: "Arrivée", dep: "Départ", loc: "Lieu", cat: "Catégorie", from: "Du", to: "Au",
+            save: "Enregistrer", stat_over: "Heures Supp (Mois)", stat_vac: "Congés pris (Mois)",
+            th_det: "Détails", th_real: "Réel", btn_print: "🖨️ Générer le rapport PDF",
+            pdf_res: "Résumé du mois de", pdf_tot: "TOTAL PRESTÉ SUR LE MOIS", pdf_supp: "TOTAL HEURES SUPP",
+            months: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
+            vac_cats: ["Congés légaux", "Jour férié", "Jour reporté", "Malade"],
+            nav_ptr: "➕ POINTER", nav_cal: "📅 TABLEAU"
+        },
+        nl: {
+            job: "Service Engineer - Logistic Support RSS", login: "Inloggen", user: "Gebruiker", logout: "🚪 Uitloggen",
+            work: "Werk", vac: "Verlof", rem_week: "Nog te presteren (Week)", rem_vac: "Jaarlijks saldo resterend",
+            date: "Datum", arr: "Aankomst", dep: "Vertrek", loc: "Locatie", cat: "Categorie", from: "Van", to: "Tot",
+            save: "Opslaan", stat_over: "Overuren (Maand)", stat_vac: "Verlof genomen (Maand)",
+            th_det: "Details", th_real: "Werkelijk", btn_print: "🖨️ PDF Rapport genereren",
+            pdf_res: "Overzicht van de maand", pdf_tot: "TOTAAL GEPRESTEERD DEZE MAAND", pdf_supp: "TOTAAL OVERUREN",
+            months: ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"],
+            vac_cats: ["Wettelijk verlof", "Feestdag", "Inhaalrust", "Ziek"],
+            nav_ptr: "➕ INVOEREN", nav_cal: "📅 OVERZICHT"
+        }
+    };
+
+    function toggleLang() {
+        lang = (lang === 'fr') ? 'nl' : 'fr';
+        localStorage.setItem('lang_drager', lang);
+        applyLang();
+        renderTable();
+    }
+
+    function applyLang() {
+        const t = translations[lang];
+        document.getElementById('txt-job-title').innerText = t.job;
+        document.getElementById('btn-logout').innerText = t.logout;
+        document.getElementById('btn-work-tab').innerText = t.work;
+        document.getElementById('btn-vac-tab').innerText = t.vac;
+        document.getElementById('txt-rem-week').innerText = t.rem_week;
+        document.getElementById('txt-rem-vac').innerText = t.rem_vac;
+        document.getElementById('lbl-date').innerText = t.date;
+        document.getElementById('lbl-arr').innerText = t.arr;
+        document.getElementById('lbl-dep').innerText = t.dep;
+        document.getElementById('lbl-loc').innerText = t.loc;
+        document.getElementById('lbl-cat').innerText = t.cat;
+        document.getElementById('lbl-from').innerText = t.from;
+        document.getElementById('lbl-to').innerText = t.to;
+        document.getElementById('btn-save-work').innerText = t.save;
+        document.getElementById('btn-save-vac').innerText = t.save;
+        document.getElementById('txt-stat-over').innerText = t.stat_over;
+        document.getElementById('txt-stat-vac').innerText = t.stat_vac;
+        document.getElementById('th-det').innerText = t.th_det;
+        document.getElementById('th-real').innerText = t.th_real;
+        document.getElementById('btn-print').innerText = t.btn_print;
+        document.getElementById('txt-pdf-tot').innerText = t.pdf_tot;
+        document.getElementById('txt-pdf-supp').innerText = t.pdf_supp;
+        document.getElementById('nav-ptr').innerText = t.nav_ptr;
+        document.getElementById('nav-cal').innerText = t.nav_cal;
+
+        const vCat = document.getElementById('vacCategory');
+        const currentVal = vCat.value;
+        vCat.innerHTML = '';
+        t.vac_cats.forEach(c => vCat.innerHTML += `<option value="${c}">${c}</option>`);
+        
+        const mSel = document.getElementById('selectMonth');
+        const curM = mSel.value;
+        mSel.innerHTML = '';
+        t.months.forEach((m, i) => mSel.innerHTML += `<option value="${i}">${m}</option>`);
+        mSel.value = curM;
     }
 
     function handleAuth() {
@@ -222,23 +277,35 @@
         });
     }
 
+    function softLogout() {
+        currentUserId = "";
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('userInput').value = "";
+        document.getElementById('userPin').value = "";
+    }
+
     async function saveData() {
         const dateStr = document.getElementById('dateInput').value;
         const sTime = document.getElementById('startTime').value;
         const eTime = document.getElementById('endTime').value;
         const loc = document.getElementById('location').value;
+        if(!dateStr) return alert("Date ?");
         const [h1, m1] = sTime.split(':').map(Number);
         const [h2, m2] = eTime.split(':').map(Number);
         let finalMin = (h2 * 60 + m2) - (h1 * 60 + m1) - (loc === "Wemmel" ? 45 : 30);
         await db.ref('users/'+currentUserId+'/entries/'+dateStr.replace(/-/g, '')).set({
             date: dateStr, location: loc, minutes: finalMin, start: sTime, end: eTime, isVacation: false
         });
-        alert("Enregistré !");
+        alert(lang === 'fr' ? "Enregistré !" : "Opgeslagen !");
     }
 
     async function saveVacation() {
-        const start = new Date(document.getElementById('vacStart').value);
-        const end = new Date(document.getElementById('vacEnd').value);
+        const startInput = document.getElementById('vacStart').value;
+        const endInput = document.getElementById('vacEnd').value;
+        if(!startInput || !endInput) return alert("Dates ?");
+        const start = new Date(startInput);
+        const end = new Date(endInput);
         const cat = document.getElementById('vacCategory').value;
         let curr = new Date(start);
         while(curr <= end) {
@@ -251,22 +318,23 @@
             }
             curr.setDate(curr.getDate() + 1);
         }
-        alert("Congés enregistrés !");
+        alert(lang === 'fr' ? "Congés enregistrés !" : "Verlof opgeslagen !");
     }
 
     function renderTable() {
         const selMonth = parseInt(document.getElementById('selectMonth').value || new Date().getMonth());
         const selYear = parseInt(document.getElementById('selectYear').value || new Date().getFullYear());
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        
-        document.getElementById('pdf-dynamic-title').innerText = `Résumé du mois de ${monthsArr[selMonth]} ${selYear}`;
+        const t = translations[lang];
+
+        document.getElementById('pdf-dynamic-title').innerText = `${t.pdf_res} ${t.months[selMonth]} ${selYear}`;
 
         let totalPresteMois = 0, totalSuppMois = 0, congesMois = 0, congesLegauxTotal = 0, weekWork = 0;
         const now = new Date();
         const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
         const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
 
-        entries.forEach(e => { if(e.location === 'Congés légaux') congesLegauxTotal++; });
+        entries.forEach(e => { if(e.location.includes("Congé") || e.location.includes("verlof")) congesLegauxTotal++; });
 
         const days = new Date(selYear, selMonth + 1, 0).getDate();
         for (let i = 1; i <= days; i++) {
@@ -279,17 +347,14 @@
             if(e) { 
                 totalPresteMois += e.minutes;
                 totalSuppMois += (e.minutes - goal);
-                if(e.location === 'Congés légaux') congesMois++;
+                if(e.location.includes("Congé") || e.location.includes("verlof")) congesMois++;
                 if(dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
             }
 
             let detailHTML = "";
             if(e) {
-                if(!e.isVacation && e.start && e.end) {
-                    detailHTML = `<b>${e.location}</b> <span class="det-text">(${e.start}-${e.end})</span>`;
-                } else {
-                    detailHTML = `<b>${e.location}</b> <span class="det-text">(Journée)</span>`;
-                }
+                const suffix = (!e.isVacation && e.start && e.end) ? `(${e.start}-${e.end})` : `(${lang === 'fr' ? 'Journée' : 'Dag'})`;
+                detailHTML = `<b>${e.location}</b> <span class="det-text">${suffix}</span>`;
             }
 
             const isWE = (dayIdx === 0 || dayIdx === 6);
@@ -302,28 +367,26 @@
             </tr>`;
         }
         
-        // Mise à jour des compteurs et du pied de page PDF
         document.getElementById('stat-month-over').innerText = formatT(totalSuppMois);
         document.getElementById('stat-month-vac').innerText = congesMois;
         document.getElementById('stat-remaining-ptr').innerText = (2340 - weekWork) <= 0 ? "OK ✅" : formatT(2340 - weekWork);
         document.getElementById('stat-vac-count-total').innerText = (28 - congesLegauxTotal);
-        
         document.getElementById('pdf-total-preste').innerText = formatT(totalPresteMois);
         document.getElementById('pdf-total-supp').innerText = formatT(totalSuppMois);
     }
 
-    async function deleteEntry(dateKey) { if(confirm("Supprimer ?")) await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove(); }
+    async function deleteEntry(dateKey) { if(confirm(lang === 'fr' ? "Supprimer ?" : "Verwijderen ?")) await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove(); }
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); renderTable(); }
-    
+    function switchSubTab(type) { document.querySelectorAll('.sub-tab').forEach(b => { b.classList.remove('active'); b.style.background = 'none'; b.style.color = '#64748b'; }); const activeBtn = document.getElementById(type === 'work' ? 'btn-work-tab' : 'btn-vac-tab'); activeBtn.classList.add('active'); activeBtn.style.background = 'white'; activeBtn.style.color = '#003366'; document.getElementById('form-work').style.display = type === 'work' ? 'block' : 'none'; document.getElementById('compteur-travail').style.display = type === 'work' ? 'block' : 'none'; document.getElementById('form-vacation').style.display = type === 'vacation' ? 'block' : 'none'; document.getElementById('compteur-conges-total').style.display = type === 'vacation' ? 'block' : 'none'; }
+
     function initApp() { 
         const mSel = document.getElementById('selectMonth');
-        monthsArr.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        translations[lang].months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
         for(let y = 2020; y <= 2100; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
+        applyLang();
     }
-    
-    function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
 </script>
 </body>
 </html>

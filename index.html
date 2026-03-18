@@ -29,7 +29,7 @@
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-export { background: var(--draeger-orange); color: white; margin-top: 20px; border: 2px solid #e67e22; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 8px 4px; text-align: center; }
         tr.total-row { background: #eee; font-weight: bold; }
         .weekend { background: #f9f9f9; color: #ccc; }
@@ -95,12 +95,12 @@
             </div>
 
             <div class="input-group">
-                <label>Lieu</label>
+                <label>Lieu (Pause déduite automatiquement)</label>
                 <select id="location">
-                    <option value="Wemmel">Wemmel</option>
-                    <option value="Esso">Esso</option>
-                    <option value="INEOS">INEOS</option>
-                    <option value="Autre">Autre / Client</option>
+                    <option value="Wemmel">Wemmel (Pause 45m)</option>
+                    <option value="Esso">Esso (Pause 30m)</option>
+                    <option value="INEOS">INEOS (Pause 30m)</option>
+                    <option value="Client">Client / Autre (Pause 30m)</option>
                 </select>
             </div>
 
@@ -128,7 +128,7 @@
         
         <table>
             <thead>
-                <tr><th style="width:65px;">Date</th><th>Lieu / Heures</th><th>Total</th><th>Diff</th><th class="no-print" style="width:30px;"></th></tr>
+                <tr><th style="width:65px;">Date</th><th>Lieu / Heures</th><th>Net</th><th>Diff</th><th class="no-print" style="width:30px;"></th></tr>
             </thead>
             <tbody id="tableBody"></tbody>
             <tfoot id="tableFoot"></tfoot>
@@ -211,9 +211,16 @@
             const hStart = document.getElementById('homeStart').checked;
             const hEnd = document.getElementById('homeEnd').checked;
             
+            // Calcul Durée brute
             let diff = (new Date(`${d}T${e}`) - new Date(`${d}T${s}`)) / 60000;
+            
+            // Déduction Trajets Maison (30m par trajet)
             if (hStart) diff -= 30;
             if (hEnd) diff -= 30;
+            
+            // Déduction Pause (Wemmel = 45m, reste = 30m)
+            const pause = (loc === "Wemmel") ? 45 : 30;
+            diff -= pause;
             
             await db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).set({
                 date: d, location: loc, minutes: diff, start: s, end: e, hStart: hStart, hEnd: hEnd
@@ -263,7 +270,304 @@
 
             tbody.innerHTML += `<tr class="${rClass}">
                 <td>${daysFr[dNum]} ${i}</td>
-                <td style="font-size:0.9em;">${displayLoc}</td>
+                <td style="font-size:0.85em; text-align:left;">${displayLoc}</td>
+                <td>${entry ? formatT(entry.minutes) : '-'}</td>
+                <td style="color:${(entry && (entry.minutes-goal)>0) ? 'green' : (entry && (entry.minutes-goal)<0 ? 'red' : 'black')}">${entry ? formatT(entry.minutes - goal) : '-'}</td>
+                <td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer; color:red;">✕</span></td>
+            </tr>`;
+        }
+        document.getElementById('tableFoot').innerHTML = `<tr class="total-row"><td colspan="2">TOTAL MOIS</td><td>${formatT(tMin)}</td><td>${formatT(tSupp)}</td><td class="no-print"></td></tr>`;
+    }
+
+    function deleteEntry(d) { if(confirm("Supprimer ?")) db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).remove(); }
+    function openTab(id, btn) { 
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active')); 
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active'); btn.classList.add('active');
+    }
+
+    const mSel = document.getElementById('selectMonth');
+    ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"].forEach((m, i) => mSel.innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
+    const ySel = document.getElementById('selectYear');
+    [2025, 2026].forEach(y => ySel.innerHTML += `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`);
+    document.getElementById('date').valueAsDate = new Date();
+    document.getElementById('dateStart').valueAsDate = new Date();
+    document.getElementById('dateEnd').valueAsDate = new Date();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dräger WorkLog - Expert Plus</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root { --primary: #003366; --secondary: #3498db; --success: #27ae60; --danger: #e74c3c; --draeger-orange: #ff9a00; --draeger-blue: #005596; --draeger-bg: #fff9f0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: white; padding: 30px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; }
+        .container { background: white; padding: 15px; border-radius: 15px; width: 100%; max-width: 600px; display: none; box-sizing: border-box; }
+        .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+        .tab { flex: 1; padding: 12px; text-align: center; border: none; background: none; font-weight: bold; color: #777; cursor: pointer; }
+        .tab.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
+        .content { display: none; }
+        .content.active { display: block; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85em; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
+        
+        .travel-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .check-card { background: var(--draeger-bg); border: 1px solid #f39c12; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.75em; font-weight: bold; }
+        .check-card input { width: 18px; height: 18px; margin: 0; }
+        .check-card.active { background: #ffeaa7; border-width: 2px; }
+
+        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-export { background: var(--draeger-orange); color: white; margin-top: 20px; border: 2px solid #e67e22; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 8px 4px; text-align: center; }
+        tr.total-row { background: #eee; font-weight: bold; }
+        .weekend { background: #f9f9f9; color: #ccc; }
+        .holiday-row { background: #eef7ff; color: #005596; font-weight: bold; }
+        .planned-row { background: #f0faff; color: #3498db; font-style: italic; }
+        .counter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 0.85em; }
+        .badge-rem { background: var(--success); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
+
+        @media print {
+            .tabs, .btn-main, .input-group, .travel-options, select, #login-overlay, .no-print, .btn-export { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { display: block !important; width: 100%; max-width: none; border: none; box-shadow: none; }
+            .content { display: block !important; }
+            table { font-size: 10pt; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <h2 style="color:var(--primary);">WorkLog Cloud</h2>
+        <input type="text" id="loginUser" placeholder="ID (ex: burtonse)">
+        <input type="password" id="loginPass" placeholder="PIN" style="margin-top:10px;">
+        <button class="btn-main" onclick="checkLogin()">Connexion</button>
+    </div>
+</div>
+
+<div class="container" id="mainContainer">
+    <div class="tabs no-print">
+        <button class="tab active" onclick="openTab('saisie', this)">Saisie</button>
+        <button class="tab" onclick="openTab('historique', this)">Tableau & PDF</button>
+    </div>
+
+    <div id="saisie" class="content active">
+        <div class="input-group">
+            <label>Type d'entrée</label>
+            <select id="entryType" onchange="togglePeriod()">
+                <option value="WORK">Journée de travail</option>
+                <option value="CONGE">🌴 Congé / Férié / Maladie</option>
+            </select>
+        </div>
+
+        <div id="date-single" class="input-group">
+            <label>Date</label><input type="date" id="date">
+        </div>
+
+        <div id="date-period" class="input-group" style="display:none;">
+            <label>Du (Début)</label><input type="date" id="dateStart">
+            <label style="margin-top:10px;">Au (Fin)</label><input type="date" id="dateEnd">
+        </div>
+
+        <div id="work-fields">
+            <div class="travel-options">
+                <div class="check-card" id="cardHomeStart" onclick="toggleCheck('homeStart')">
+                    <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
+                    🏠 Départ Maison
+                </div>
+                <div class="check-card" id="cardHomeEnd" onclick="toggleCheck('homeEnd')">
+                    <input type="checkbox" id="homeEnd" onclick="event.stopPropagation()">
+                    🏠 Retour Maison
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Lieu (Pause déduite automatiquement)</label>
+                <select id="location">
+                    <option value="Wemmel">Wemmel (Pause 45m)</option>
+                    <option value="Esso">Esso (Pause 30m)</option>
+                    <option value="INEOS">INEOS (Pause 30m)</option>
+                    <option value="Client">Client / Autre (Pause 30m)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="input-group" style="flex:1;"><label>Début (Départ)</label><input type="time" id="startTime" value="08:00"></div>
+                <div class="input-group" style="flex:1;"><label>Fin (Arrivée)</label><input type="time" id="endTime" value="16:30"></div>
+            </div>
+        </div>
+        <button class="btn-main" id="btn-save" onclick="saveData()">Enregistrer & Sync</button>
+    </div>
+
+    <div id="historique" class="content">
+        <div class="counter-grid">
+            <div>✅ Pris: <b id="stat-taken">0</b></div>
+            <div>🗓️ Prévus: <b id="stat-planned">0</b></div>
+            <div style="grid-column: span 2; border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">
+                🎯 Reste à poser: <b id="stat-left" class="badge-rem">28</b>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;" class="no-print">
+            <select id="selectMonth" style="flex: 2;" onchange="renderTable()"></select>
+            <select id="selectYear" style="flex: 1;" onchange="renderTable()"></select>
+        </div>
+        
+        <table>
+            <thead>
+                <tr><th style="width:65px;">Date</th><th>Lieu / Heures</th><th>Net</th><th>Diff</th><th class="no-print" style="width:30px;"></th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+            <tfoot id="tableFoot"></tfoot>
+        </table>
+        
+        <button class="btn-main btn-export no-print" onclick="window.print()">
+            📄 EXPORTER EN PDF / IMPRIMER
+        </button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw",
+        authDomain: "worklog-fc54b.firebaseapp.com",
+        databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/",
+        projectId: "worklog-fc54b",
+        storageBucket: "worklog-fc54b.firebasestorage.app",
+        messagingSenderId: "1031734193051",
+        appId: "1:1031734193051:web:6a8df0f57aa4d63796cf3e"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let entries = [];
+    let currentUserId = "";
+
+    function checkLogin() {
+        const u = document.getElementById('loginUser').value.toLowerCase();
+        if(u === "burtonse") {
+            currentUserId = u;
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            loadData();
+        }
+    }
+
+    function toggleCheck(id) {
+        const cb = document.getElementById(id);
+        cb.checked = !cb.checked;
+        document.getElementById('card' + id.charAt(0).toUpperCase() + id.slice(1)).classList.toggle('active', cb.checked);
+    }
+
+    function togglePeriod() {
+        const isConge = document.getElementById('entryType').value === "CONGE";
+        document.getElementById('date-single').style.display = isConge ? "none" : "block";
+        document.getElementById('date-period').style.display = isConge ? "block" : "none";
+        document.getElementById('work-fields').style.display = isConge ? "none" : "block";
+    }
+
+    function loadData() {
+        db.ref('users/' + currentUserId + '/entries').on('value', (snap) => {
+            const data = snap.val();
+            entries = data ? Object.values(data) : [];
+            renderTable();
+            updateStats();
+        });
+    }
+
+    async function saveData() {
+        const type = document.getElementById('entryType').value;
+        const btn = document.getElementById('btn-save');
+        if (type === "CONGE") {
+            let start = new Date(document.getElementById('dateStart').value);
+            let end = new Date(document.getElementById('dateEnd').value);
+            if (!start || !end || start > end) return;
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                if (d.getDay() !== 0 && d.getDay() !== 6) {
+                    const dStr = d.toISOString().split('T')[0];
+                    await db.ref('users/' + currentUserId + '/entries/' + dStr.replace(/-/g, '')).set({
+                        date: dStr, location: "CONGE", minutes: 468, start: "08:00", end: "16:30"
+                    });
+                }
+            }
+        } else {
+            const d = document.getElementById('date').value;
+            const s = document.getElementById('startTime').value;
+            const e = document.getElementById('endTime').value;
+            const loc = document.getElementById('location').value;
+            const hStart = document.getElementById('homeStart').checked;
+            const hEnd = document.getElementById('homeEnd').checked;
+            
+            // Calcul Durée brute
+            let diff = (new Date(`${d}T${e}`) - new Date(`${d}T${s}`)) / 60000;
+            
+            // Déduction Trajets Maison (30m par trajet)
+            if (hStart) diff -= 30;
+            if (hEnd) diff -= 30;
+            
+            // Déduction Pause (Wemmel = 45m, reste = 30m)
+            const pause = (loc === "Wemmel") ? 45 : 30;
+            diff -= pause;
+            
+            await db.ref('users/' + currentUserId + '/entries/' + d.replace(/-/g, '')).set({
+                date: d, location: loc, minutes: diff, start: s, end: e, hStart: hStart, hEnd: hEnd
+            });
+        }
+        btn.innerText = "✅ Synchronisé !";
+        setTimeout(() => btn.innerText = "Enregistrer & Sync", 2000);
+    }
+
+    function updateStats() {
+        const curY = new Date().getFullYear().toString();
+        const todayStr = new Date().toISOString().split('T')[0];
+        const congesYear = entries.filter(e => e.date.startsWith(curY) && e.location === "CONGE");
+        const taken = congesYear.filter(e => e.date < todayStr).length;
+        const planned = congesYear.filter(e => e.date >= todayStr).length;
+        document.getElementById('stat-taken').innerText = taken;
+        document.getElementById('stat-planned').innerText = planned;
+        document.getElementById('stat-left').innerText = Math.max(0, 28 - (taken + planned));
+    }
+
+    function formatT(min) {
+        const h = Math.floor(Math.abs(min) / 60);
+        const m = Math.round(Math.abs(min) % 60);
+        return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`;
+    }
+
+    function renderTable() {
+        const m = parseInt(document.getElementById('selectMonth').value);
+        const y = parseInt(document.getElementById('selectYear').value);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        let tMin = 0; let tSupp = 0;
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const daysFr = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const entry = entries.find(e => e.date === dStr);
+            const dObj = new Date(y, m, i);
+            const dNum = dObj.getDay();
+            let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
+            if(entry) { tMin += entry.minutes; tSupp += (entry.minutes - goal); }
+            let rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '';
+            if (entry && entry.location === 'CONGE') { rClass = (dStr >= todayStr) ? 'planned-row' : 'holiday-row'; }
+            
+            let displayLoc = entry ? (entry.location === 'CONGE' ? (dStr >= todayStr ? 'PREVU' : 'CONGE') : entry.location + ' ' + entry.start + '-' + entry.end) : '-';
+
+            tbody.innerHTML += `<tr class="${rClass}">
+                <td>${daysFr[dNum]} ${i}</td>
+                <td style="font-size:0.85em; text-align:left;">${displayLoc}</td>
                 <td>${entry ? formatT(entry.minutes) : '-'}</td>
                 <td style="color:${(entry && (entry.minutes-goal)>0) ? 'green' : (entry && (entry.minutes-goal)<0 ? 'red' : 'black')}">${entry ? formatT(entry.minutes - goal) : '-'}</td>
                 <td class="no-print"><span onclick="deleteEntry('${dStr}')" style="cursor:pointer; color:red;">✕</span></td>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V47</title>
+    <title>Dräger WorkLog V48</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -18,9 +18,9 @@
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
         input, select { width: 100%; padding: 14px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 15px; display: block; background: #fff; }
-        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.75em; color: var(--primary); text-transform: uppercase; }
+        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.75em; color: var(--primary); text-transform: uppercase; text-align: left; }
 
-        .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 18px; border: none; border-radius: 16px; font-weight: 700; font-size: 1.1em; cursor: pointer; }
+        .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 18px; border: none; border-radius: 16px; font-weight: 700; font-size: 1.1em; cursor: pointer; margin-bottom: 10px; }
         
         .info-week { background: white; border-top: 6px solid var(--primary); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
         .info-week b { font-size: 2em; color: var(--primary); display: block; }
@@ -36,25 +36,24 @@
         .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; }
         .sub-tab.active { background: white; color: var(--primary); }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
-        th { padding: 8px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: left; }
-        td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        /* TABLEAU CENTRÉ */
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; table-layout: fixed; }
+        th { padding: 10px 4px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; text-align: center; }
+        td { padding: 12px 4px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; word-wrap: break-word; }
         .weekend { background: #f8fafc !important; }
 
         .lang-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8em; }
 
-        /* PRINT STYLES */
         #pdf-header { display: none; }
         @media print {
             body { background: white; padding: 0; }
             .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation, .lang-btn, #selectMonth, #selectYear { display: none !important; }
-            .container { display: block !important; padding: 0; }
+            .container { display: block !important; padding: 0; width: 100%; max-width: 100%; }
             .card { box-shadow: none; border: none; padding: 0; margin: 0; }
             #pdf-header { display: block !important; margin-bottom: 20px; border-bottom: 2.5px solid black; padding-bottom: 10px; }
             #pdf-header h1 { margin: 0; font-size: 22px; color: #000; }
-            #pdf-header p { margin: 3px 0; font-size: 14px; }
-            table { font-size: 10pt; }
-            th { border-bottom: 1px solid #000; color: #000; }
+            table { font-size: 10pt; width: 100%; }
+            th, td { text-align: center !important; }
         }
     </style>
 </head>
@@ -69,7 +68,7 @@
         <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
-        <h2 id="t-reg-title">Inscriptions</h2>
+        <h2>Inscriptions</h2>
         <input type="text" id="regNom" placeholder="NOM / NAAM">
         <input type="text" id="regPrenom" placeholder="Prénom / Voornaam">
         <input type="text" id="regUser" placeholder="User">
@@ -137,7 +136,15 @@
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
             <table>
-                <thead><tr><th>Date</th><th>Lieu (Horaires)</th><th style="text-align:right">Réel</th><th style="text-align:right">+/-</th><th class="delete-col"></th></tr></thead>
+                <thead>
+                    <tr>
+                        <th style="width:15%">Date</th>
+                        <th style="width:50%">Lieu (Horaires)</th>
+                        <th style="width:15%">Réel</th>
+                        <th style="width:10%">+/-</th>
+                        <th class="delete-col" style="width:10%"></th>
+                    </tr>
+                </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -145,7 +152,8 @@
             <span>Total: <span id="total-month-work">0h00</span></span>
             <span>+/- : <span id="total-month-diff">0h00</span></span>
         </div>
-        <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER RAPPORT PDF</button>
+        <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
+        <button class="btn-main" style="background:var(--emerald);" onclick="sendEmail()">📧 ENVOYER PAR EMAIL</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
@@ -173,26 +181,6 @@
         NL: { rem: "Nog te presteren (39u)", save: "OPSLAAN", date: "Datum", arr: "Aankomst", dep: "Vertrek", loc: "Locatie", vac: "Verlof Saldo", type: "Type", from: "Van", to: "Tot", val: "BEVESTIGEN", pt: "TIJDREG.", hist: "OVERZICHT", adm: "ADMIN" }
     };
 
-    function toggleLang() {
-        currentLang = currentLang === 'FR' ? 'NL' : 'FR';
-        document.getElementById('lang-label').innerText = currentLang === 'FR' ? 'NL' : 'FR';
-        const t = translations[currentLang];
-        document.getElementById('t-rem-txt').innerText = t.rem;
-        document.getElementById('b-save').innerText = t.save;
-        document.getElementById('l-date').innerText = t.date;
-        document.getElementById('l-arr').innerText = t.arr;
-        document.getElementById('l-dep').innerText = t.dep;
-        document.getElementById('l-loc').innerText = t.loc;
-        document.getElementById('t-vac-txt').innerText = t.vac;
-        document.getElementById('l-type').innerText = t.type;
-        document.getElementById('l-from').innerText = t.from;
-        document.getElementById('l-to').innerText = t.to;
-        document.getElementById('b-vac').innerText = t.val;
-        document.getElementById('n-point').innerText = t.pt;
-        document.getElementById('n-hist').innerText = t.hist;
-        document.getElementById('n-adm').innerText = t.adm;
-    }
-
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
         const pin = document.getElementById('loginPin').value;
@@ -211,13 +199,6 @@
         });
     }
 
-    function syncData() {
-        db.ref('users/' + user.id + '/entries').on('value', snap => {
-            entries = snap.val() ? Object.values(snap.val()) : [];
-            renderTable();
-        });
-    }
-
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
@@ -225,9 +206,9 @@
         const now = new Date();
         const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
         const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
-        const days = new Date(y, m + 1, 0).getDate();
+        const daysCount = new Date(y, m + 1, 0).getDate();
         
-        for (let i = 1; i <= days; i++) {
+        for (let i = 1; i <= daysCount; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
             const e = entries.find(x => x.date === ds);
@@ -237,15 +218,13 @@
                 if(e.isVacation && e.location === "Congés légaux") vacCount++;
                 if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
             }
-            
             const formatLoc = e ? `${e.location} ${e.start !== 'N/A' ? '('+e.start+'-'+e.end+')' : ''}` : '';
-            
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td style="font-weight:600">${i}/${m+1}</td>
                 <td>${formatLoc}</td>
-                <td style="text-align:right">${e ? formatT(e.minutes) : ''}</td>
-                <td style="text-align:right; color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
-                <td class="delete-col" style="text-align:right">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer">🗑️</span>` : ''}</td>
+                <td>${e ? formatT(e.minutes) : ''}</td>
+                <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
+                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer">🗑️</span>` : ''}</td>
             </tr>`;
         }
         document.getElementById('total-month-work').innerText = formatT(totalM);
@@ -255,6 +234,25 @@
         document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "OK" : formatT(remWeek);
     }
 
+    function sendEmail() {
+        const month = document.getElementById('selectMonth').options[document.getElementById('selectMonth').selectedIndex].text;
+        const year = document.getElementById('selectYear').value;
+        const subject = encodeURIComponent(`Prestations WorkLog - ${user.nom} ${user.prenom} - ${month} ${year}`);
+        let bodyText = `Bonjour,\n\nVoici le résumé de mes prestations pour ${month} ${year}:\n\n`;
+        bodyText += `Total preste: ${document.getElementById('total-month-work').innerText}\n`;
+        bodyText += `Solde (+/-): ${document.getElementById('total-month-diff').innerText}\n\n`;
+        bodyText += `Envoyé via Dräger WorkLog App.`;
+        
+        window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
+    }
+
+    function syncData() {
+        db.ref('users/' + user.id + '/entries').on('value', snap => {
+            entries = snap.val() ? Object.values(snap.val()) : [];
+            renderTable();
+        });
+    }
+
     async function saveData() {
         const d = document.getElementById('dateInput').value;
         const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
@@ -262,7 +260,7 @@
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
         let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, isVacation: false, start: s, end: e });
-        alert("Saved!");
+        alert("Enregistré !");
     }
 
     async function saveVacation() {
@@ -275,7 +273,7 @@
             }
             curr.setDate(curr.getDate() + 1);
         }
-        alert("Verlof Saved!");
+        alert("Congés enregistrés !");
     }
 
     function loadAdminList() {
@@ -284,17 +282,37 @@
             list.innerHTML = ""; let pending = 0;
             for(let id in all) {
                 const u = all[id]; if(!u.active) pending++;
-                list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; flex-direction:column; gap:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;"><b>${u.nom} ${u.prenom}</b><span>${u.role}</span></div>
-                    <div style="display:flex; gap:10px;">
+                list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; text-align:left;">
+                    <div style="display:flex; justify-content:space-between;"><b>${u.nom} ${u.prenom}</b><span>${u.role}</span></div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
                         ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Approuver</button>` : ''}
-                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Switch Role</button>
+                        <button onclick="db.ref('users/${id}/role').set('${u.role==='admin'?'user':'admin'}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Role Switch</button>
                         <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px; width:40px;">🗑️</button>
                     </div></div>`;
             }
             const badge = document.getElementById('notif-badge');
             if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; } else { badge.style.display = 'none'; }
         });
+    }
+
+    function toggleLang() {
+        currentLang = currentLang === 'FR' ? 'NL' : 'FR';
+        document.getElementById('lang-label').innerText = currentLang === 'FR' ? 'NL' : 'FR';
+        const t = translations[currentLang];
+        document.getElementById('t-rem-txt').innerText = t.rem;
+        document.getElementById('b-save').innerText = t.save;
+        document.getElementById('l-date').innerText = t.date;
+        document.getElementById('l-arr').innerText = t.arr;
+        document.getElementById('l-dep').innerText = t.dep;
+        document.getElementById('l-loc').innerText = t.loc;
+        document.getElementById('t-vac-txt').innerText = t.vac;
+        document.getElementById('l-type').innerText = t.type;
+        document.getElementById('l-from').innerText = t.from;
+        document.getElementById('l-to').innerText = t.to;
+        document.getElementById('b-vac').innerText = t.val;
+        document.getElementById('n-point').innerText = t.pt;
+        document.getElementById('n-hist').innerText = t.hist;
+        document.getElementById('n-adm').innerText = t.adm;
     }
 
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
@@ -316,7 +334,7 @@
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
         db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Check!"); showAuth('login');
+        alert("Demande envoyée."); showAuth('login');
     }
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>

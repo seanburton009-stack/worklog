@@ -7,11 +7,11 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="WorkLog">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2618/2618311.png">
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root { 
@@ -19,200 +19,169 @@
             --safe-top: env(safe-area-inset-top);
         }
         
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: var(--bg); margin: 0; padding: 0; 
-            -webkit-tap-highlight-color: transparent;
-        }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-        /* LOGIN OVERLAY */
-        #login-overlay { 
-            position: fixed; inset: 0; background: var(--primary); 
-            display: flex; justify-content: center; align-items: center; z-index: 2000; 
-        }
-        .box { 
-            background: white; padding: 30px; border-radius: 25px; 
-            width: 80%; max-width: 300px; text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        }
-        .pin-input {
-            width: 100%; border: 2px solid #ddd; border-radius: 12px;
-            padding: 15px; font-size: 24px; text-align: center;
-            letter-spacing: 10px; margin-bottom: 20px; outline: none; background: #f9f9f9;
-        }
+        /* LOGIN */
+        #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .box { background: white; padding: 30px; border-radius: 25px; width: 80%; max-width: 300px; text-align: center; }
+        .pin-input { width: 100%; border: 2px solid #ddd; border-radius: 12px; padding: 15px; font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; outline: none; }
 
-        .container { padding: calc(var(--safe-top) + 20px) 15px 100px 15px; max-width: 600px; margin: auto; display: none; }
+        .container { padding: calc(var(--safe-top) + 20px) 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
 
-        /* TABS */
-        .tabs { 
-            display: flex; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            padding: 10px 10px calc(env(safe-area-inset-bottom) + 10px) 10px;
-            border-top: 1px solid #ccc; z-index: 1000;
-        }
+        /* HEADER & TABS */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .tabs { display: flex; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(env(safe-area-inset-bottom) + 10px) 10px; border-top: 1px solid #ccc; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 12px; color: #888; display: flex; flex-direction: column; align-items: center; }
         .tab.active { color: var(--secondary); font-weight: bold; }
 
-        /* CARDS & INPUTS */
+        /* UI ELEMENTS */
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #444; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; }
-
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-outline { background: none; border: 1px solid #ccc; color: #666; padding: 10px; border-radius: 10px; margin-top: 10px; width: 100%; font-size: 0.9em; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-        th, td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #eee; }
+        .btn-export { background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 0.8em; margin-top: 10px; width: 48%; cursor: pointer; }
+        .btn-print { background: #8e44ad; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 0.8em; margin-top: 10px; width: 48%; cursor: pointer; }
         
         .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-box { background: white; padding: 15px; border-radius: 15px; text-align: center; }
         .stat-box b { display: block; font-size: 1.4em; color: var(--primary); }
 
+        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        th, td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #eee; }
         .weekend { color: #ccc; background: #fafafa; }
-        .holiday-row { color: var(--secondary); font-weight: bold; background: #f0f7ff; }
         .diff-pos { color: #27ae60; font-weight: bold; }
         .diff-neg { color: #e74c3c; }
+
+        @media print { .tabs, .no-print, .btn-main, .header, #login-overlay { display: none !important; } .container { display: block !important; padding: 0; } }
     </style>
 </head>
 <body onload="initApp()">
 
 <div id="login-overlay">
     <div class="box">
-        <h2 id="login-title" style="color:var(--primary); margin:0 0 10px 0;">Dräger - RSS - Heures</h2>
-        <p id="login-sub" style="color: #666; font-size: 0.9em; margin-bottom: 20px;">Entrez votre code PIN</p>
-        
+        <h2 id="l-title">Dräger - RSS - Heures</h2>
+        <p id="l-sub">Entrez votre code PIN</p>
         <input type="password" id="userPin" class="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••">
-        
-        <button id="login-btn" class="btn-main" onclick="handleAuth()">Se connecter</button>
-        <p id="loginError" style="color: red; font-size: 0.8em; margin-top: 10px; display: none;">Code PIN incorrect</p>
+        <button id="l-btn" class="btn-main" onclick="handleAuth()">Se connecter</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
+    <div class="header no-print">
+        <h2 id="t-appname">WorkLog</h2>
+        <button onclick="toggleLang()" style="border:none; background:none; font-size:1.5em;">🌐</button>
+    </div>
+
     <div id="saisie" class="content active">
-        <h2 style="margin-top:0;">Pointer</h2>
         <div class="card">
             <div class="input-group">
-                <label>Activité</label>
+                <label id="l-activity">Activité</label>
                 <select id="entryType" onchange="toggleForm()">
-                    <option value="WORK">🛠 Travail</option>
-                    <option value="CONGE">🌴 Congé / Absence</option>
+                    <option value="WORK" id="o-work">🛠 Travail</option>
+                    <option value="CONGE" id="o-conge">🌴 Congé / Absence</option>
                 </select>
             </div>
             <div id="work-fields">
-                <div class="input-group"><label>Date</label><input type="date" id="date"></div>
+                <div class="input-group"><label id="l-date">Date</label><input type="date" id="date"></div>
                 <div style="display:flex; gap:10px;">
-                    <div class="input-group" style="flex:1;"><label>Début</label><input type="time" id="startTime" value="08:00"></div>
-                    <div class="input-group" style="flex:1;"><label>Fin</label><input type="time" id="endTime" value="16:30"></div>
+                    <div class="input-group" style="flex:1;"><label id="l-start">Début</label><input type="time" id="startTime" value="08:00"></div>
+                    <div class="input-group" style="flex:1;"><label id="l-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
                 <div class="input-group">
-                    <label>Lieu</label>
+                    <label id="l-loc">Lieu</label>
                     <select id="location">
-                        <option value="Wemmel">Wemmel (45m pause)</option>
-                        <option value="Client">Client (30m pause)</option>
-                        <option value="Esso">Esso (30m pause)</option>
+                        <option value="Wemmel">Wemmel (45m)</option>
+                        <option value="Client">Client (30m)</option>
+                        <option value="Esso">Esso (30m)</option>
                     </select>
                 </div>
             </div>
             <div id="conge-fields" style="display:none;">
-                <div class="input-group"><label>Type d'absence</label>
+                <div class="input-group"><label id="l-abstype">Type d'absence</label>
                     <select id="subCongeType">
-                        <option value="ANNUEL">🌴 Congé Annuel</option>
-                        <option value="FERIE">🇧🇪 Jour Férié</option>
-                        <option value="MALADIE">🤒 Maladie</option>
-                        <option value="RECU">⏳ Récupération</option>
+                        <option value="ANNUEL">ANNUEL</option>
+                        <option value="FERIE">FERIE</option>
+                        <option value="MALADIE">MALADIE</option>
+                        <option value="RECU">RECUP</option>
                     </select>
                 </div>
-                <div class="input-group"><label>Du</label><input type="date" id="dateStart"></div>
-                <div class="input-group"><label>Au</label><input type="date" id="dateEnd"></div>
+                <div class="input-group"><label id="l-from">Du</label><input type="date" id="dateStart"></div>
+                <div class="input-group"><label id="l-to">Au</label><input type="date" id="dateEnd"></div>
             </div>
-            <button class="btn-main" onclick="saveData()">Enregistrer</button>
+            <button class="btn-main" id="b-save" onclick="saveData()">Enregistrer</button>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="stat-banner">
-            <div class="stat-box">Solde Congés<b id="stat-conge">28</b></div>
-            <div class="stat-box">Heures Suppl.<b id="stat-hours">0h00</b></div>
+            <div class="stat-box"><span id="l-stat-c">Solde Congés</span><b id="stat-conge">28</b></div>
+            <div class="stat-box"><span id="l-stat-h">Heures +/-</span><b id="stat-hours">0h00</b></div>
         </div>
         <div class="card">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="display:flex; gap:10px; margin-bottom:15px;" class="no-print">
                 <select id="selectMonth" onchange="renderTable()" style="flex:2;"></select>
                 <select id="selectYear" onchange="renderTable()" style="flex:1;"></select>
             </div>
-            <table>
-                <thead><tr><th>Jour</th><th>Détails</th><th>+/-</th></tr></thead>
+            <table id="tableData">
+                <thead><tr><th id="th-day">Jour</th><th id="th-det">Détails</th><th>+/-</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
-            <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-            <button class="btn-outline" onclick="changePinPrompt()">⚙️ Changer mon code PIN</button>
-            <button class="btn-outline" style="color:red; border-color:#ffcccc;" onclick="location.reload()">🔒 Se déconnecter</button>
+            <div style="display:flex; justify-content: space-between;" class="no-print">
+                <button class="btn-export" onclick="exportExcel()">📊 Excel</button>
+                <button class="btn-print" onclick="window.print()">📄 PDF / Print</button>
+            </div>
+            <button class="btn-main" style="margin-top:20px; background:#aaa;" onclick="changePinPrompt()" id="b-pin">Changer PIN</button>
         </div>
     </div>
 </div>
 
-<nav class="tabs">
-    <button class="tab active" onclick="openTab('saisie', this)"><span>➕ Pointer</span></button>
-    <button class="tab" onclick="openTab('historique', this)"><span>📅 Calendrier</span></button>
+<nav class="tabs no-print">
+    <button class="tab active" onclick="openTab('saisie', this)"><span id="nav-1">➕ Pointer</span></button>
+    <button class="tab" onclick="openTab('historique', this)"><span id="nav-2">📅 Calendrier</span></button>
 </nav>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", authDomain: "worklog-fc54b.firebaseapp.com", databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "worklog-fc54b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    let entries = [];
-    const currentUserId = "burtonse";
+    let entries = []; const currentUserId = "burtonse";
+    let lang = localStorage.getItem('lang') || 'fr';
 
-    // INITIALISATION : Vérifie si un PIN existe déjà
+    const dict = {
+        fr: { l_title: "Dräger - RSS - Heures", l_sub: "Entrez votre code PIN", l_btn: "Se connecter", t_appname: "Prestations", l_activity: "Activité", o_work: "🛠 Travail", o_conge: "🌴 Congé", l_date: "Date", l_start: "Début", l_end: "Fin", l_loc: "Lieu", l_abstype: "Type d'absence", l_from: "Du", l_to: "Au", b_save: "Enregistrer", l_stat_c: "Solde Congés", l_stat_h: "Heures +/-", th_day: "Jour", th_det: "Détails", b_pin: "Changer PIN", nav_1: "➕ Pointer", nav_2: "📅 Calendrier" },
+        nl: { l_title: "Dräger - RSS - Uren", l_sub: "Voer uw pincode in", l_btn: "Inloggen", t_appname: "Prestaties", l_activity: "Activiteit", o_work: "🛠 Werk", o_conge: "🌴 Verlof", l_date: "Datum", l_start: "Start", l_end: "Einde", l_loc: "Locatie", l_abstype: "Type afwezigheid", l_from: "Van", l_to: "Tot", b_save: "Opslaan", l_stat_c: "Verlofsaldo", l_stat_h: "Uren +/-", th_day: "Dag", th_det: "Details", b_pin: "PIN wijzigen", nav_1: "➕ Invoer", nav_2: "📅 Kalender" }
+    };
+
+    function toggleLang() { lang = (lang === 'fr' ? 'nl' : 'fr'); localStorage.setItem('lang', lang); applyLang(); }
+    function applyLang() {
+        Object.keys(dict[lang]).forEach(id => {
+            let el = document.getElementById(id.replace(/_/g, '-'));
+            if(el) el.innerText = dict[lang][id];
+        });
+        renderTable();
+    }
+
     function initApp() {
+        applyLang();
         const savedPin = localStorage.getItem('userPin');
         if (!savedPin) {
-            document.getElementById('login-title').innerText = "Configuration";
-            document.getElementById('login-sub').innerText = "Créez votre code PIN à 4 chiffres";
-            document.getElementById('login-btn').innerText = "Enregistrer le PIN";
+            document.getElementById('l-title').innerText = "Configuration";
+            document.getElementById('l-sub').innerText = (lang === 'fr' ? "Créez votre code PIN" : "Maak uw pincode aan");
         }
     }
 
     function handleAuth() {
         const inputPin = document.getElementById('userPin').value;
         const savedPin = localStorage.getItem('userPin');
-
         if (!savedPin) {
-            // Création du PIN
-            if (inputPin.length === 4) {
-                localStorage.setItem('userPin', inputPin);
-                alert("PIN enregistré !");
-                location.reload();
-            } else {
-                alert("Le PIN doit faire 4 chiffres.");
-            }
+            if (inputPin.length === 4) { localStorage.setItem('userPin', inputPin); location.reload(); }
         } else {
-            // Vérification du PIN
-            if (inputPin === savedPin) {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-                loadData();
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-                document.getElementById('userPin').value = "";
-            }
-        }
-    }
-
-    function changePinPrompt() {
-        const currentPin = prompt("Entrez votre code PIN actuel :");
-        if (currentPin === localStorage.getItem('userPin')) {
-            const newPin = prompt("Entrez votre NOUVEAU code PIN (4 chiffres) :");
-            if (newPin && newPin.length === 4 && !isNaN(newPin)) {
-                localStorage.setItem('userPin', newPin);
-                alert("Code PIN modifié avec succès !");
-            } else {
-                alert("Erreur : Le PIN doit être composé de 4 chiffres.");
-            }
-        } else {
-            alert("Code actuel incorrect.");
+            if (inputPin === savedPin) { 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                document.getElementById('mainContainer').style.display = 'block'; 
+                loadData(); 
+            } else { alert("PIN Error"); }
         }
     }
 
@@ -231,54 +200,40 @@
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 if (d.getDay() !== 0 && d.getDay() !== 6) {
                     const dStr = d.toISOString().split('T')[0];
-                    await db.ref('users/'+currentUserId+'/entries/'+dStr.replace(/-/g,'')).set({
-                        date: dStr, location: "CONGE", subType: document.getElementById('subCongeType').value, minutes: 0
-                    });
+                    await db.ref('users/'+currentUserId+'/entries/'+dStr.replace(/-/g,'')).set({ date: dStr, location: "CONGE", subType: document.getElementById('subCongeType').value, minutes: 0 });
                 }
             }
         } else {
             const d = document.getElementById('date').value;
             let diff = (new Date(`${d}T${document.getElementById('endTime').value}`) - new Date(`${d}T${document.getElementById('startTime').value}`)) / 60000;
             diff -= (document.getElementById('location').value === "Wemmel" ? 45 : 30);
-            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({
-                date: d, location: document.getElementById('location').value, minutes: diff, 
-                start: document.getElementById('startTime').value, end: document.getElementById('endTime').value
-            });
+            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ date: d, location: document.getElementById('location').value, minutes: diff, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value });
         }
-        alert("Enregistré !");
+        alert("OK");
     }
 
     function renderTable() {
         const m = parseInt(document.getElementById('selectMonth').value);
         const y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let totalSuppMinutes = 0, congePris = 0;
-        const daysInMonth = new Date(y, m + 1, 0).getDate();
-
-        for (let i = 1; i <= daysInMonth; i++) {
+        let total = 0, conge = 0;
+        const days = new Date(y, m + 1, 0).getDate();
+        for (let i = 1; i <= days; i++) {
             const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-            const entry = entries.find(e => e.date === dStr);
+            const e = entries.find(x => x.date === dStr);
             const dObj = new Date(y, m, i);
             const dNum = dObj.getDay();
             let goal = (dNum === 0 || dNum === 6) ? 0 : (dNum === 5 ? 420 : 480);
             let diff = 0, rClass = (dNum === 0 || dNum === 6) ? 'weekend' : '', info = "-";
-
-            if (entry) {
-                if (entry.location !== 'CONGE') {
-                    diff = entry.minutes - goal; 
-                    totalSuppMinutes += diff;
-                    info = entry.location;
-                } else { 
-                    info = entry.subType; 
-                    rClass = 'holiday-row';
-                    if(entry.subType === "ANNUEL") congePris++;
-                }
+            if (e) {
+                if (e.location !== 'CONGE') { diff = e.minutes - goal; total += diff; info = e.location; }
+                else { info = e.subType; if(e.subType === "ANNUEL") conge++; }
             }
-            const diffClass = diff > 0 ? 'diff-pos' : (diff < 0 ? 'diff-neg' : '');
-            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td class="${diffClass}">${entry ? formatT(diff) : '-'}</td></tr>`;
+            const dClass = diff > 0 ? 'diff-pos' : (diff < 0 ? 'diff-neg' : '');
+            tBody.innerHTML += `<tr class="${rClass}"><td>${i}</td><td>${info}</td><td class="${dClass}">${e ? formatT(diff) : '-'}</td></tr>`;
         }
-        document.getElementById('stat-conge').innerText = (28 - congePris);
-        document.getElementById('stat-hours').innerText = formatT(totalSuppMinutes);
+        document.getElementById('stat-conge').innerText = (28 - conge);
+        document.getElementById('stat-hours').innerText = formatT(total);
     }
 
     function formatT(min) {
@@ -287,11 +242,16 @@
         return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`;
     }
 
+    function exportExcel() {
+        const table = document.getElementById("tableData");
+        const wb = XLSX.utils.table_to_book(table);
+        XLSX.writeFile(wb, `WorkLog_${currentUserId}.xlsx`);
+    }
+
     function openTab(id, btn) {
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).style.display = 'block';
-        btn.classList.add('active');
+        document.getElementById(id).style.display = 'block'; btn.classList.add('active');
     }
 
     function toggleForm() {
@@ -302,7 +262,7 @@
 
     const mNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
     mNames.forEach((n, i) => document.getElementById('selectMonth').innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
-    [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y==2026?'selected':''}>${y}</option>`);
+    [2025, 2026].forEach(y => document.getElementById('selectYear').innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`);
     document.getElementById('date').valueAsDate = new Date();
     document.getElementById('dateStart').valueAsDate = new Date();
     document.getElementById('dateEnd').valueAsDate = new Date();

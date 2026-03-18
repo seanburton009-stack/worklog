@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V22</title>
+    <title>Dräger WorkLog V23</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -39,9 +39,10 @@
             font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 94, 184, 0.3);
         }
 
-        .info-week { background: white; border-left: 5px solid var(--primary); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: var(--shadow); }
-        .info-week span { font-size: 0.8em; color: #64748b; font-weight: 600; }
-        .info-week b { font-size: 1.8em; color: var(--primary); display: block; }
+        /* Centrage du compteur demandé */
+        .info-week { background: white; border-top: 5px solid var(--primary); padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: var(--shadow); text-align: center; }
+        .info-week span { font-size: 0.85em; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .info-week b { font-size: 2.2em; color: var(--primary); display: block; margin-top: 5px; }
 
         .tabs { display: flex; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: fixed; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #e1e8ed; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 11px; color: #94a3b8; text-align: center; }
@@ -61,7 +62,7 @@
 
         #print-header { display: none; }
         @media print {
-            .tabs, .export-bar, .filter-row, .stat-banner, .btn-main, .delete-col, #login-overlay, .info-week, .btn-lang, .logout-link { display: none !important; }
+            .tabs, .logout-link, .btn-lang, #txt-btn-save, .delete-col, #login-overlay, .info-week, .filter-row, .stat-banner { display: none !important; }
             body { background: white; }
             .container { display: block !important; padding: 0; width: 100%; }
             .card { box-shadow: none; border: none; padding: 0; }
@@ -97,18 +98,24 @@
              <button onclick="softLogout()" class="logout-link" style="border:none; background:none; color:#64748b; font-weight:bold; cursor:pointer;" id="txt-logout">Déconnexion</button>
              <button class="btn-lang" onclick="toggleLang()" style="border:none; background:var(--primary); color:white; padding:8px 12px; border-radius:10px; cursor:pointer;">🌐 FR/NL</button>
         </div>
+        
         <div class="info-week">
             <span id="txt-rem-label">Reste à prester cette semaine</span>
             <b id="stat-remaining-ptr">--h--</b>
         </div>
+
         <div class="card">
-            <label id="txt-lbl-date">Date de prestation</label>
+            <h3 style="margin-top:0; color:var(--primary); font-size:1.1em; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:15px;" id="txt-title-work">Journée de travail</h3>
+            
+            <label id="txt-lbl-date">Date</label>
             <input type="date" id="dateInput">
-            <div id="time-fields" style="display:flex; gap:15px;">
+            
+            <div style="display:flex; gap:15px;">
                 <div style="flex:1;"><label id="txt-lbl-start">Arrivée</label><input type="time" id="startTime" value="08:00"></div>
                 <div style="flex:1;"><label id="txt-lbl-end">Départ</label><input type="time" id="endTime" value="16:30"></div>
             </div>
-            <div class="check-row" id="travel-checks">
+
+            <div class="check-row">
                 <div class="check-item" onclick="document.getElementById('homeStart').click()">
                     <input type="checkbox" id="homeStart" onclick="event.stopPropagation()">
                     <label id="txt-lbl-hs">Départ Domicile (+30m)</label>
@@ -118,14 +125,16 @@
                     <label id="txt-lbl-he">Retour Domicile (+30m)</label>
                 </div>
             </div>
+
             <label id="txt-lbl-loc">Lieu d'intervention</label>
-            <select id="location" onchange="toggleVacationMode()">
+            <select id="location">
                 <option value="Wemmel">Wemmel (-45m pause)</option>
                 <option value="Client">Client (-30m pause)</option>
                 <option value="INEOS">INEOS (-30m pause)</option>
                 <option value="Esso">Esso (-30m pause)</option>
                 <option value="Vacation" id="opt-vacation">Congé / Verlof</option>
             </select>
+            
             <button class="btn-main" id="txt-btn-save" onclick="saveData()">Enregistrer la journée</button>
         </div>
     </div>
@@ -168,9 +177,9 @@
 
     const ui = {
         fr: {
-            login_btn: "Se connecter", logout: "Déconnexion", rem_label: "Reste à prester cette semaine", 
-            lbl_date: "Date de prestation", lbl_start: "Arrivée", lbl_end: "Départ", 
-            lbl_hs: "Départ Domicile (+30m)", lbl_he: "Retour Domicile (+30m)", lbl_loc: "Lieu d'intervention", 
+            title_work: "Journée de travail", login_btn: "Se connecter", logout: "Déconnexion", 
+            rem_label: "Reste à prester cette semaine", lbl_date: "Date", lbl_start: "Arrivée", lbl_end: "Départ", 
+            lbl_hs: "Départ Domicile (+30m)", lbl_he: "Retour Domicile (+30m)", lbl_loc: "Lieu", 
             btn_save: "Enregistrer la journée", btn_print: "🖨️ Générer le rapport PDF", stat_bal: "Balance Mensuelle",
             stat_con: "Congés Restants", nav_ptr: "➕ POINTER", nav_cal: "📅 CALENDRIER", 
             table_head: "<th>Date</th><th style='text-align:left;'>Détails</th><th>Réel</th><th>+/-</th><th class='delete-col'></th>",
@@ -179,8 +188,8 @@
             opt_vac: "Congé", months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
         },
         nl: {
-            login_btn: "Inloggen", logout: "Uitloggen", rem_label: "Nog te presteren deze week", 
-            lbl_date: "Datum", lbl_start: "Aankomst", lbl_end: "Vertrek", 
+            title_work: "Werkdag", login_btn: "Inloggen", logout: "Uitloggen", 
+            rem_label: "Nog te presteren deze week", lbl_date: "Datum", lbl_start: "Aankomst", lbl_end: "Vertrek", 
             lbl_hs: "Vertrek Huis (+30m)", lbl_he: "Terug Huis (+30m)", lbl_loc: "Locatie", 
             btn_save: "Dag opslaan", btn_print: "🖨️ PDF-rapport genereren", stat_bal: "Maandelijkse Balans",
             stat_con: "Resterend Verlof", nav_ptr: "➕ INVOER", nav_cal: "📅 KALENDER", 
@@ -193,6 +202,7 @@
 
     function translateUI() {
         const t = ui[lang];
+        document.getElementById('txt-title-work').innerText = t.title_work;
         document.getElementById('txt-login-btn').innerText = lang === 'fr' ? t.login_btn : "Inloggen";
         document.getElementById('txt-logout').innerText = t.logout;
         document.getElementById('txt-rem-label').innerText = t.rem_label;
@@ -211,12 +221,6 @@
         document.getElementById('txt-table-head').innerHTML = t.table_head;
         document.getElementById('opt-vacation').innerText = t.opt_vac;
         updateMonthAndYearSelectors();
-    }
-
-    function toggleVacationMode() {
-        const isVac = document.getElementById('location').value === "Vacation";
-        document.getElementById('time-fields').style.display = isVac ? 'none' : 'flex';
-        document.getElementById('travel-checks').style.display = isVac ? 'none' : 'block';
     }
 
     function initApp() {

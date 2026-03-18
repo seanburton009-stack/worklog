@@ -3,32 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V38 - Admin Control</title>
+    <title>Dräger WorkLog V39 - Intégrale</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
-        :root { --primary: #003366; --secondary: #005eb8; --bg: #f4f7f9; --danger: #d9534f; --success: #28a745; --shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        :root { --primary: #003366; --secondary: #005eb8; --bg: #f4f7f9; --danger: #d9534f; --success: #28a745; --emerald: #2ecc71; --shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
         
+        /* Auth Overlay */
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
         .box { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 380px; text-align: center; box-shadow: var(--shadow); }
         
+        /* Layout */
         .container { padding: 20px 15px 120px 15px; max-width: 800px; margin: auto; display: none; }
         .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
+        /* Elements */
+        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.8em; color: var(--primary); text-transform: uppercase; text-align: left; }
         input, select { width: 100%; padding: 12px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 12px; }
         .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; }
         
-        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid #e1e8ed; }
-        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; }
+        .info-week { background: white; border-top: 5px solid var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
+        .info-week b { font-size: 1.6em; color: var(--primary); display: block; }
+
+        /* Tabs */
+        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
+        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; padding: 5px; cursor: pointer; }
         .tab.active { color: var(--secondary); font-weight: 800; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th { font-size: 0.7em; padding: 10px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
+        td { padding: 10px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.85em; }
+        .weekend { background: #f8fafc !important; }
 
         .user-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
         .pending { background: #fff5f5; border-left: 4px solid var(--danger); }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold; }
-        .badge-admin { background: #003366; color: white; }
+
+        @media print {
+            .tabs, .btn-main, .top-bar, #login-overlay, .delete-col, .sub-tabs { display: none !important; }
+            .container { display: block !important; padding: 0; }
+            #pdf-header { display: block !important; }
+        }
     </style>
 </head>
 <body onload="initApp()">
@@ -36,8 +55,8 @@
 <div id="login-overlay">
     <div class="box" id="auth-login">
         <h2 style="color:var(--primary);">Dräger RSS</h2>
-        <input type="text" id="loginUser" placeholder="Utilisateur (ex: burtonse)">
-        <input type="password" id="loginPin" maxlength="4" placeholder="PIN (ex: 0514)">
+        <input type="text" id="loginUser" placeholder="Utilisateur">
+        <input type="password" id="loginPin" maxlength="4" placeholder="PIN">
         <button class="btn-main" onclick="handleAuth()">Connexion</button>
         <div style="margin-top:15px;"><a onclick="showAuth('register')" style="font-size:0.8em; color:var(--secondary); cursor:pointer;">+ Créer un compte</a></div>
     </div>
@@ -46,28 +65,79 @@
         <h2>Nouveau Profil</h2>
         <input type="text" id="regNom" placeholder="NOM">
         <input type="text" id="regPrenom" placeholder="Prénom">
-        <input type="text" id="regUser" placeholder="Utilisateur choisi">
-        <input type="password" id="regPin" maxlength="4" placeholder="PIN (4 chiffres)">
+        <input type="text" id="regUser" placeholder="Utilisateur">
+        <input type="password" id="regPin" maxlength="4" placeholder="PIN">
         <button class="btn-main" onclick="handleRegister()">Demander l'accès</button>
         <button class="btn-main" style="background:#ccc; margin-top:10px;" onclick="showAuth('login')">Retour</button>
     </div>
 </div>
 
+<div id="pdf-header" style="display:none; padding: 20px;">
+    <h1 id="pdf-user-name">--</h1>
+    <p>Service Engineer - Logistic Support RSS</p>
+    <p id="pdf-title-date" style="font-weight:bold; border-bottom:2px solid black;">Résumé</p>
+</div>
+
 <div class="container" id="mainContainer">
     <div id="saisie" class="content active">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <b id="welcome-msg">...</b>
-            <button onclick="location.reload()" style="color:red; border:none; background:none; font-weight:bold;">Quitter</button>
+            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Déconnexion</button>
+            <button onclick="toggleLang()" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:8px;">🌐 FR/NL</button>
+        </div>
+
+        <div class="sub-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
+            <button class="sub-tab active" id="btn-work-tab" onclick="switchSubTab('work')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Travail</button>
+            <button class="sub-tab" id="btn-vac-tab" onclick="switchSubTab('vacation')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Congés</button>
+        </div>
+
+        <div class="info-week">
+            <span id="txt-rem-week">Reste à prester (Semaine)</span>
+            <b id="stat-remaining-ptr">--h--</b>
+        </div>
+
+        <div id="form-work" class="card">
+            <label>Date</label><input type="date" id="dateInput">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;"><label>Arrivée</label><input type="time" id="startTime" value="08:00"></div>
+                <div style="flex:1;"><label>Départ</label><input type="time" id="endTime" value="16:30"></div>
+            </div>
+            <label>Lieu</label>
+            <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
+            <button class="btn-main" onclick="saveData()">Enregistrer</button>
+        </div>
+
+        <div id="form-vacation" class="card" style="display:none;">
+            <label>Catégorie</label>
+            <select id="vacCategory">
+                <option>Congés légaux</option><option>Jour férié</option><option>Malade</option>
+            </select>
+            <label>Du</label><input type="date" id="vacStart">
+            <label>Au</label><input type="date" id="vacEnd">
+            <button class="btn-main" onclick="saveVacation()">Enregistrer Congés</button>
+        </div>
+    </div>
+
+    <div id="historique" class="content" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+            <div class="info-week" style="border-top-color:var(--secondary);"><span>Heures Supp</span><b id="stat-month-over">0h00</b></div>
+            <div class="info-week" style="border-top-color:var(--emerald);"><span>Congés pris</span><b id="stat-month-vac">0</b></div>
         </div>
         <div class="card">
-            <label>Date</label><input type="date" id="dateInput">
-            <button class="btn-main" onclick="saveData()">Enregistrer journée</button>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <select id="selectMonth" onchange="renderTable()"></select>
+                <select id="selectYear" onchange="renderTable()"></select>
+            </div>
+            <table>
+                <thead><tr><th>Date</th><th>Lieu</th><th>Réel</th><th>+/-</th><th class="delete-col"></th></tr></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
         </div>
+        <button class="btn-main" onclick="window.print()">🖨️ Générer PDF</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
         <div class="card">
-            <h3>Gestion des accès</h3>
+            <h3>Panel Admin (Utilisateurs)</h3>
             <div id="user-list"></div>
         </div>
     </div>
@@ -75,6 +145,7 @@
 
 <nav class="tabs">
     <button class="tab active" onclick="openTab('saisie', this)">➕ POINTER</button>
+    <button class="tab" onclick="openTab('historique', this)">📅 TABLEAU</button>
     <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)">⚙️ ADMIN</button>
 </nav>
 
@@ -84,30 +155,28 @@
     const db = firebase.database();
     
     let user = null;
+    let entries = [];
+    let lang = "fr";
 
     function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
 
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
         const pin = document.getElementById('loginPin').value;
-        
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (d.role !== 'admin' && d.active === false) {
-                    return alert("Votre compte est en attente de validation par l'administrateur.");
-                }
+                if (d.role !== 'admin' && d.active === false) return alert("Compte en attente de validation.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = user.prenom + " " + user.nom;
+                document.getElementById('pdf-user-name').innerText = user.nom + " " + user.prenom;
                 if(user.role === 'admin') {
                     document.getElementById('nav-admin').style.display = 'block';
                     loadAdminList();
                 }
-            } else {
-                alert("Identifiants incorrects.");
-            }
+                syncData();
+            } else alert("Identifiants incorrects.");
         });
     }
 
@@ -117,50 +186,114 @@
             nom: document.getElementById('regNom').value.trim().toUpperCase(),
             prenom: document.getElementById('regPrenom').value.trim(),
             pin: document.getElementById('regPin').value,
-            role: "user",
-            active: false 
+            role: "user", active: false 
         };
-        db.ref('users/'+uId).set(data).then(() => { 
-            alert("Demande envoyée ! Sean doit valider votre compte."); 
-            showAuth('login'); 
+        db.ref('users/'+uId).set(data).then(() => { alert("Demande envoyée !"); showAuth('login'); });
+    }
+
+    function syncData() {
+        db.ref('users/' + user.id + '/entries').on('value', snap => {
+            entries = snap.val() ? Object.values(snap.val()) : [];
+            renderTable();
         });
+    }
+
+    async function saveData() {
+        const d = document.getElementById('dateInput').value;
+        const s = document.getElementById('startTime').value;
+        const e = document.getElementById('endTime').value;
+        const l = document.getElementById('location').value;
+        if(!d) return;
+        const [h1, m1] = s.split(':').map(Number);
+        const [h2, m2] = e.split(':').map(Number);
+        let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
+        await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, start: s, end: e, isVacation: false });
+        alert("Enregistré !");
+    }
+
+    async function saveVacation() {
+        const sD = new Date(document.getElementById('vacStart').value);
+        const eD = new Date(document.getElementById('vacEnd').value);
+        const cat = document.getElementById('vacCategory').value;
+        let curr = new Date(sD);
+        while(curr <= eD) {
+            if(curr.getDay() !== 0 && curr.getDay() !== 6) {
+                const ds = curr.toISOString().split('T')[0];
+                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ date: ds, location: cat, minutes: (curr.getDay() === 5 ? 420 : 480), isVacation: true });
+            }
+            curr.setDate(curr.getDate() + 1);
+        }
+        alert("Congés enregistrés !");
+    }
+
+    function renderTable() {
+        const m = parseInt(document.getElementById('selectMonth').value);
+        const y = parseInt(document.getElementById('selectYear').value);
+        const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
+        const months = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+        document.getElementById('pdf-title-date').innerText = `Résumé ${months[m]} ${y}`;
+
+        let tSupp = 0, vCount = 0, weekWork = 0;
+        const now = new Date();
+        const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
+        const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
+
+        const days = new Date(y, m + 1, 0).getDate();
+        for (let i = 1; i <= days; i++) {
+            const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const dobj = new Date(y, m, i);
+            const e = entries.find(x => x.date === ds);
+            const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
+            
+            if(e) {
+                tSupp += (e.minutes - goal);
+                if(e.isVacation) vCount++;
+                if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
+            }
+
+            tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
+                <td>${i}/${m+1}</td>
+                <td>${e ? e.location : ''}</td>
+                <td>${e ? formatT(e.minutes) : ''}</td>
+                <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
+                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')">🗑️</span>` : ''}</td>
+            </tr>`;
+        }
+        document.getElementById('stat-month-over').innerText = formatT(tSupp);
+        document.getElementById('stat-month-vac').innerText = vCount;
+        document.getElementById('stat-remaining-ptr').innerText = (2340 - weekWork <= 0) ? "OK" : formatT(2340 - weekWork);
     }
 
     function loadAdminList() {
         db.ref('users').on('value', snap => {
             const all = snap.val();
-            const list = document.getElementById('user-list');
-            list.innerHTML = "";
+            const list = document.getElementById('user-list'); list.innerHTML = "";
             for(let id in all) {
                 const u = all[id];
-                list.innerHTML += `
-                    <div class="user-item ${!u.active && u.role !== 'admin' ? 'pending' : ''}">
-                        <div>
-                            <b>${u.nom} ${u.prenom}</b><br>
-                            <small>ID: ${id} | ${u.role}</small>
-                        </div>
-                        <div>
-                            ${(!u.active && u.role !== 'admin') ? `<button onclick="approveUser('${id}')" style="background:green; color:white; border:none; padding:5px; border-radius:5px;">✅ Valider</button>` : ''}
-                            <button onclick="deleteUser('${id}')" style="background:red; color:white; border:none; padding:5px; border-radius:5px; margin-left:5px;">🗑️</button>
-                        </div>
-                    </div>`;
+                list.innerHTML += `<div class="user-item ${!u.active && u.role !== 'admin' ? 'pending' : ''}">
+                    <div><b>${u.nom} ${u.prenom}</b><br><small>${id} | ${u.role}</small></div>
+                    <div>
+                        ${(!u.active && u.role !== 'admin') ? `<button onclick="approveUser('${id}')" style="background:green;color:white;border:none;padding:5px;border-radius:5px;">✅</button>` : ''}
+                        <button onclick="deleteUser('${id}')" style="background:red;color:white;border:none;padding:5px;border-radius:5px;">🗑️</button>
+                    </div>
+                </div>`;
             }
         });
     }
 
     function approveUser(id) { db.ref('users/'+id+'/active').set(true); }
     function deleteUser(id) { if(id !== 'burtonse' && confirm("Supprimer ?")) db.ref('users/'+id).remove(); }
-    function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.getElementById(id).style.display = 'block'; }
+    async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
+    function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
+    function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); }
+    function switchSubTab(t) { document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); }
 
     function initApp() {
-        // Forcer tes droits admin à chaque chargement pour être sûr
-        db.ref('users/burtonse').update({ 
-            nom: "BURTON", 
-            prenom: "Sean", 
-            pin: "0514", 
-            role: "admin", 
-            active: true 
-        });
+        db.ref('users/burtonse').update({ nom: "BURTON", prenom: "Sean", pin: "0514", role: "admin", active: true });
+        const mSel = document.getElementById('selectMonth');
+        ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        const ySel = document.getElementById('selectYear');
+        for(let y = 2024; y <= 2026; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }
 </script>
 </body>

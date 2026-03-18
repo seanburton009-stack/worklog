@@ -3,67 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V12</title>
+    <title>Dräger WorkLog V13</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
         :root { --primary: #003366; --secondary: #3498db; --bg: #f0f2f5; --danger: #e74c3c; --success: #27ae60; }
-        
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; overflow-x: hidden; }
-        
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
-        
         .container { padding: 20px 15px calc(100px + env(safe-area-inset-bottom)) 15px; max-width: 600px; margin: auto; display: none; }
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
-        
-        input, select { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; 
-            font-size: 16px; margin-bottom: 10px; background: #fff;
-            -webkit-appearance: none;
-        }
-
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; background: #fff; -webkit-appearance: none; }
         .check-row { display: flex; justify-content: space-around; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
         .check-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.85em; }
         .check-item input { width: 20px; height: 20px; margin: 0; }
-
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        
         .info-week { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; }
         .info-week b { font-size: 1.6em; letter-spacing: 1px; display: block; margin-top: 5px; }
-
-        .tabs { 
-            display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; 
-            padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; 
-            border-top: 1px solid #ccc; z-index: 1000; 
-        }
+        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #ccc; z-index: 1000; }
         .tab { flex: 1; border: none; background: none; font-size: 11px; color: #888; text-align: center; padding: 5px; }
         .tab.active { color: var(--secondary); font-weight: bold; }
-        
         .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-box { background: white; padding: 12px; border-radius: 15px; text-align: center; font-size: 0.8em; }
         .stat-box b { display: block; font-size: 1.2em; color: var(--primary); }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
         th, td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #eee; }
         .weekend { color: #ccc; background: #f9f9f9; }
         .diff-pos { color: var(--success); font-weight: bold; }
         .diff-neg { color: var(--danger); }
-        
         .export-bar { display: flex; gap: 8px; margin-bottom: 15px; align-items: center; }
         .btn-exp { flex: 1; padding: 12px 5px; border-radius: 10px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .btn-lang { flex: 0 0 50px; background: var(--primary); color: white; border: none; font-size: 1.2em; }
-
-        @media print {
-            .tabs, .export-bar, #btn-logout, .btn-del { display: none !important; }
-            .container { padding: 0; display: block !important; }
-            .card { box-shadow: none; border: 1px solid #eee; }
-        }
+        @media print { .tabs, .export-bar, #btn-logout, .btn-del { display: none !important; } .container { padding: 0; display: block !important; } .card { box-shadow: none; border: 1px solid #eee; } }
     </style>
 </head>
 <body onload="initApp()">
@@ -78,7 +53,6 @@
 </div>
 
 <div class="container" id="mainContainer">
-    
     <div id="saisie" class="content active">
         <div class="export-bar">
              <button onclick="softLogout()" class="btn-exp" style="flex:0 0 80px; background:#eee; border:none; color:#555;">Logout</button>
@@ -127,7 +101,7 @@
                 <button onclick="softLogout()" id="txt-btn-logout" style="background:#eee; border:none; padding:10px; border-radius:8px; font-size:11px;">Logout</button>
             </div>
             <table>
-                <thead><tr id="txt-table-head"><th>J</th><th style="text-align:left;">Lieu</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
+                <thead><tr id="txt-table-head"><th>J</th><th style="text-align:left;">Lieu & Heures</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -153,14 +127,14 @@
             login_user: "Utilisateur", login_btn: "Connexion", rem_label: "Reste à prester (Semaine)",
             lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", lbl_hs: "🏠 Départ Maison", lbl_he: "🏠 Retour Maison",
             lbl_loc: "Lieu", btn_save: "Enregistrer", btn_print: "🖨️ PDF", stat_bal: "Balance Mois",
-            stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu</th><th>Réel</th><th>+/-</th><th></th>",
+            stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu & Heures</th><th>Réel</th><th>+/-</th><th></th>",
             save_ok: "Enregistré !", done: "Objectif atteint ✅", del_confirm: "Supprimer ?", confirm_calc: "Total : {t} - Confirmer ?"
         },
         nl: {
             login_user: "Gebruiker", login_btn: "Inloggen", rem_label: "Nog te presteren (Week)",
             lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", lbl_hs: "🏠 Vertrek Huis", lbl_he: "🏠 Terug Huis",
             lbl_loc: "Locatie", btn_save: "Opslaan", btn_print: "🖨️ PDF", stat_bal: "Maand Balans",
-            stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie</th><th>Echt</th><th>+/-</th><th></th>",
+            stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie & Uren</th><th>Echt</th><th>+/-</th><th></th>",
             save_ok: "Opgeslagen!", done: "Doel bereikt ✅", del_confirm: "Verwijderen ?", confirm_calc: "Totaal : {t} - Bevestigen ?"
         }
     };
@@ -213,8 +187,10 @@
     async function saveData() {
         const dateStr = document.getElementById('dateInput').value;
         if(!dateStr) return;
-        const [h1, m1] = document.getElementById('startTime').value.split(':').map(Number);
-        const [h2, m2] = document.getElementById('endTime').value.split(':').map(Number);
+        const sTime = document.getElementById('startTime').value;
+        const eTime = document.getElementById('endTime').value;
+        const [h1, m1] = sTime.split(':').map(Number);
+        const [h2, m2] = eTime.split(':').map(Number);
         const loc = document.getElementById('location').value;
         const isHS = document.getElementById('homeStart').checked;
         const isHE = document.getElementById('homeEnd').checked;
@@ -224,7 +200,7 @@
         if(confirm(ui[lang].confirm_calc.replace('{t}', formatT(finalMin)))) {
             const key = dateStr.replace(/-/g, '');
             await db.ref('users/'+currentUserId+'/entries/'+key).set({
-                date: dateStr, location: loc, minutes: finalMin, homeS: isHS, homeE: isHE
+                date: dateStr, location: loc, minutes: finalMin, homeS: isHS, homeE: isHE, start: sTime, end: eTime
             });
             alert(ui[lang].save_ok);
         }
@@ -260,9 +236,11 @@
                 if(dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
             }
             const isWE = (dayIdx === 0 || dayIdx === 6);
+            const timeDisplay = e && e.start ? `<br><small style="color:#666;">(${e.start} - ${e.end})</small>` : '';
+            
             tBody.innerHTML += `<tr class="${isWE ? 'weekend' : ''}">
                 <td>${i}</td>
-                <td style="text-align:left;">${e ? (e.homeS?'🏠':'') + e.location + (e.homeE?'🏠':'') : ''}</td>
+                <td style="text-align:left;">${e ? (e.homeS?'🏠':'') + e.location + (e.homeE?'🏠':'') + timeDisplay : ''}</td>
                 <td><b>${e ? formatT(e.minutes) : '-'}</b></td>
                 <td class="${diff >= 0 ? 'diff-pos' : 'diff-neg'}">${e ? formatT(diff) : '-'}</td>
                 <td>${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer; color:red; font-size:1.2em;">🗑️</span>` : ''}</td>
@@ -274,8 +252,8 @@
     }
 
     function exportExcel() {
-        let csv = "Date;Lieu;Heures\n";
-        entries.forEach(e => { csv += `${e.date};${e.location};${formatT(e.minutes)}\n`; });
+        let csv = "Date;Lieu;Debut;Fin;Heures Net\n";
+        entries.forEach(e => { csv += `${e.date};${e.location};${e.start||''};${e.end||''};${formatT(e.minutes)}\n`; });
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);

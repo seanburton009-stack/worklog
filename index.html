@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V45 - Final Stable</title>
+    <title>Dräger WorkLog V46</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -15,20 +15,10 @@
         .box { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
         
         .container { padding: 10px 15px 140px 15px; max-width: 800px; margin: auto; display: none; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); overflow: hidden; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
         
-        /* FIX AFFICHAGE IPHONE : Largeur contrôlée */
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 15px; display: block; background: #fff; }
         label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.75em; color: var(--primary); text-transform: uppercase; }
-        input, select { 
-            width: 100% !important; 
-            max-width: 100%;
-            padding: 14px; 
-            border: 1.5px solid #e1e8ed; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            margin-bottom: 15px; 
-            display: block;
-        }
 
         .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 18px; border: none; border-radius: 16px; font-weight: 700; font-size: 1.1em; cursor: pointer; }
         
@@ -36,18 +26,23 @@
         .info-week b { font-size: 2em; color: var(--primary); display: block; }
 
         .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
-        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; }
+        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; font-weight: 700; position: relative; }
         .tab.active { color: var(--secondary); }
         .tab-icon { font-size: 20px; display: block; margin-bottom: 3px; }
 
+        /* Notification Badge */
+        .badge { position: absolute; top: -5px; right: 25%; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 2px solid white; }
+
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 15px; }
-        .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.9em; }
+        .sub-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.85em; }
         .sub-tab.active { background: white; color: var(--primary); }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
         th { padding: 8px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; }
         .weekend { background: #f8fafc !important; }
+
+        .lang-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8em; }
     </style>
 </head>
 <body onload="initApp()">
@@ -55,16 +50,16 @@
 <div id="login-overlay">
     <div class="box" id="auth-login">
         <h2 style="color:var(--primary);">Dräger RSS</h2>
-        <input type="text" id="loginUser" placeholder="Utilisateur / Gebruiker">
+        <input type="text" id="loginUser" placeholder="User">
         <input type="password" id="loginPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleAuth()">LOGIN</button>
-        <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Créer compte / Account maken</a></div>
+        <div style="margin-top:15px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer;">+ Account</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
-        <h2>Inscriptions</h2>
+        <h2 id="t-reg-title">Inscriptions</h2>
         <input type="text" id="regNom" placeholder="NOM / NAAM">
         <input type="text" id="regPrenom" placeholder="Prénom / Voornaam">
-        <input type="text" id="regUser" placeholder="Utilisateur">
+        <input type="text" id="regUser" placeholder="User">
         <input type="password" id="regPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleRegister()">VALIDER</button>
         <button class="btn-main" style="background:#ccc; margin-top:10px;" onclick="showAuth('login')">RETOUR</button>
@@ -75,7 +70,8 @@
     <div id="saisie" class="content active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b id="welcome-msg" style="color:var(--primary)">...</b>
-            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Quitter / Uitloggen</button>
+            <button class="lang-btn" onclick="toggleLang()">🌐 <span id="lang-label">NL</span></button>
+            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪</button>
         </div>
 
         <div class="sub-tabs">
@@ -85,32 +81,32 @@
 
         <div id="form-work">
             <div class="info-week">
-                <span>Reste à prester / Te presteren (39h)</span>
+                <span id="t-rem-txt">Reste à prester (39h)</span>
                 <b id="stat-remaining-week">39h00</b>
             </div>
             <div class="card">
-                <label>Date / Datum</label><input type="date" id="dateInput">
+                <label id="l-date">Date</label><input type="date" id="dateInput">
                 <div style="display:flex; gap:10px;">
-                    <div style="flex:1;"><label>Arrivée / Aankomst</label><input type="time" id="startTime" value="08:00"></div>
-                    <div style="flex:1;"><label>Départ / Vertrek</label><input type="time" id="endTime" value="16:30"></div>
+                    <div style="flex:1;"><label id="l-arr">Arrivée</label><input type="time" id="startTime" value="08:00"></div>
+                    <div style="flex:1;"><label id="l-dep">Départ</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
-                <label>Lieu / Locatie</label>
+                <label id="l-loc">Lieu</label>
                 <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
-                <button class="btn-main" onclick="saveData()">ENREGISTRER / OPSLAAN</button>
+                <button class="btn-main" id="b-save" onclick="saveData()">ENREGISTRER</button>
             </div>
         </div>
 
         <div id="form-vacation" style="display:none;">
             <div class="info-week" style="border-top-color:var(--emerald);">
-                <span>Solde Congés Légaux / Wettelijk verlof</span>
+                <span id="t-vac-txt">Solde Congés Légaux</span>
                 <b id="vac-allowance">28 j</b>
             </div>
             <div class="card">
-                <label>Type / Type</label>
+                <label id="l-type">Type</label>
                 <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
-                <label>Du / Van</label><input type="date" id="vacStart">
-                <label>Au / Tot</label><input type="date" id="vacEnd">
-                <button class="btn-main" onclick="saveVacation()">VALIDER / BEVESTIGEN</button>
+                <label id="l-from">Du</label><input type="date" id="vacStart">
+                <label id="l-to">Au</label><input type="date" id="vacEnd">
+                <button class="btn-main" id="b-vac" onclick="saveVacation()">VALIDER</button>
             </div>
         </div>
     </div>
@@ -122,35 +118,61 @@
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
             <table>
-                <thead><tr><th>Date</th><th>Lieu</th><th>Horaire</th><th>Réel</th><th>+/-</th><th class="delete-col"></th></tr></thead>
+                <thead><tr><th>Date</th><th>Lieu</th><th>H</th><th>Réel</th><th>+/-</th><th class="delete-col"></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-        <div class="card" style="border-top: 4px solid var(--primary); font-weight:800;">
-            <div style="display:flex; justify-content:space-between;">
-                <span>Total: <span id="total-month-work">0h00</span></span>
-                <span>+/- : <span id="total-month-diff">0h00</span></span>
-            </div>
+        <div class="card" style="border-top: 4px solid var(--primary); display:flex; justify-content:space-between; font-weight:bold;">
+            <span>Total: <span id="total-month-work">0h00</span></span>
+            <span>+/- : <span id="total-month-diff">0h00</span></span>
         </div>
-        <button class="btn-main" onclick="window.print()">🖨️ PDF RAPPORT</button>
+        <button class="btn-main" onclick="window.print()">🖨️ PDF</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
-        <div class="card"><h3>Admin - Users</h3><div id="user-list"></div></div>
+        <div class="card"><h3>Admin - Management</h3><div id="user-list"></div></div>
     </div>
 </div>
 
 <nav class="tabs">
-    <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">➕</span>POINTAGE</button>
-    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📅</span>TABLEAU</button>
-    <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)"><span class="tab-icon">⚙️</span>ADMIN</button>
+    <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">➕</span><span id="n-point">POINTAGE</span></button>
+    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📅</span><span id="n-hist">TABLEAU</span></button>
+    <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)">
+        <span class="tab-icon">⚙️</span><span id="n-adm">ADMIN</span>
+        <div id="notif-badge" class="badge">0</div>
+    </button>
 </nav>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", authDomain: "worklog-fc54b.firebaseapp.com", databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "worklog-fc54b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let user = null, entries = [];
+    let user = null, entries = [], currentLang = 'FR';
+
+    const translations = {
+        FR: { rem: "Reste à prester (39h)", save: "ENREGISTRER", date: "Date", arr: "Arrivée", dep: "Départ", loc: "Lieu", vac: "Solde Congés", type: "Type", from: "Du", to: "Au", val: "VALIDER", pt: "POINTAGE", hist: "TABLEAU", adm: "ADMIN" },
+        NL: { rem: "Nog te presteren (39u)", save: "OPSLAAN", date: "Datum", arr: "Aankomst", dep: "Vertrek", loc: "Locatie", vac: "Verlof Saldo", type: "Type", from: "Van", to: "Tot", val: "BEVESTIGEN", pt: "TIJDREG.", hist: "OVERZICHT", adm: "ADMIN" }
+    };
+
+    function toggleLang() {
+        currentLang = currentLang === 'FR' ? 'NL' : 'FR';
+        document.getElementById('lang-label').innerText = currentLang === 'FR' ? 'NL' : 'FR';
+        const t = translations[currentLang];
+        document.getElementById('t-rem-txt').innerText = t.rem;
+        document.getElementById('b-save').innerText = t.save;
+        document.getElementById('l-date').innerText = t.date;
+        document.getElementById('l-arr').innerText = t.arr;
+        document.getElementById('l-dep').innerText = t.dep;
+        document.getElementById('l-loc').innerText = t.loc;
+        document.getElementById('t-vac-txt').innerText = t.vac;
+        document.getElementById('l-type').innerText = t.type;
+        document.getElementById('l-from').innerText = t.from;
+        document.getElementById('l-to').innerText = t.to;
+        document.getElementById('b-vac').innerText = t.val;
+        document.getElementById('n-point').innerText = t.pt;
+        document.getElementById('n-hist').innerText = t.hist;
+        document.getElementById('n-adm').innerText = t.adm;
+    }
 
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -158,34 +180,64 @@
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("En attente de validation.");
+                if (!d.active && d.role !== 'admin') return alert("Validation requise.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = user.prenom + " " + user.nom;
-                if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
+                document.getElementById('welcome-msg').innerText = user.prenom;
+                if(user.role === 'admin') { 
+                    document.getElementById('nav-admin').style.display = 'block'; 
+                    loadAdminList(); 
+                }
                 syncData();
-            } else alert("Erreur PIN/User.");
+            } else alert("Erreur.");
         });
+    }
+
+    function loadAdminList() {
+        db.ref('users').on('value', snap => {
+            const all = snap.val(); const list = document.getElementById('user-list'); 
+            list.innerHTML = ""; let pending = 0;
+            for(let id in all) {
+                const u = all[id];
+                if(!u.active) pending++;
+                list.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; flex-direction:column; gap:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <b>${u.nom} ${u.prenom}</b>
+                        <span>${u.role}</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)" style="background:var(--emerald); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Approuver</button>` : ''}
+                        <button onclick="toggleRole('${id}', '${u.role}')" style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:8px; flex:1;">Role Switch</button>
+                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:8px; width:40px;">🗑️</button>
+                    </div>
+                </div>`;
+            }
+            const badge = document.getElementById('notif-badge');
+            if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; } else { badge.style.display = 'none'; }
+        });
+    }
+
+    function toggleRole(id, current) {
+        const newRole = current === 'admin' ? 'user' : 'admin';
+        db.ref(`users/${id}/role`).set(newRole);
     }
 
     function syncData() {
         db.ref('users/' + user.id + '/entries').on('value', snap => {
-            const data = snap.val();
-            entries = data ? Object.values(data) : [];
+            entries = snap.val() ? Object.values(snap.val()) : [];
             renderTable();
         });
     }
 
     async function saveData() {
         const d = document.getElementById('dateInput').value;
-        const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
-        const l = document.getElementById('location').value;
+        const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
         if(!d) return;
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
         let min = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
         await db.ref('users/'+user.id+'/entries/'+d.replace(/-/g, '')).set({ date: d, location: l, minutes: min, isVacation: false, start: s, end: e });
-        alert("Ok!");
+        alert("Saved!");
     }
 
     async function saveVacation() {
@@ -198,7 +250,7 @@
             }
             curr.setDate(curr.getDate() + 1);
         }
-        alert("Ok!");
+        alert("Verlof Saved!");
     }
 
     function renderTable() {
@@ -221,8 +273,8 @@
             }
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td>${i}/${m+1}</td>
-                <td>${e ? e.location : ''}</td>
-                <td>${(e && e.start && e.start !== "N/A") ? e.start + '-' + e.end : ''}</td>
+                <td>${e ? e.location.substring(0,5) : ''}</td>
+                <td>${(e && e.start && e.start !== "N/A") ? e.start : ''}</td>
                 <td>${e ? formatT(e.minutes) : ''}</td>
                 <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
                 <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')">🗑️</span>` : ''}</td>
@@ -233,22 +285,6 @@
         document.getElementById('vac-allowance').innerText = (28 - vacCount) + " j";
         const remWeek = 2340 - weekWork;
         document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "OK" : formatT(remWeek);
-    }
-
-    function loadAdminList() {
-        db.ref('users').on('value', snap => {
-            const all = snap.val(); const list = document.getElementById('user-list'); list.innerHTML = "";
-            for(let id in all) {
-                const u = all[id];
-                list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                    <span>${u.nom} ${u.prenom}</span>
-                    <div>
-                        ${!u.active ? `<button onclick="db.ref('users/${id}/active').set(true)">✅</button>` : ''}
-                        <button onclick="if(confirm('Supprimer?')) db.ref('users/${id}').remove()">🗑️</button>
-                    </div>
-                </div>`;
-            }
-        });
     }
 
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
@@ -262,7 +298,7 @@
     function initApp() {
         db.ref('users/burtonse').update({ nom: "BURTON", prenom: "Sean", pin: "0514", role: "admin", active: true });
         const mSel = document.getElementById('selectMonth');
-        ["Jan.","Fév.","Mar.","Avr.","Mai","Juin","Juil.","Août","Sept.","Oct.","Nov.","Déc."].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+        ["Jan","Fév","Mar","Avr","Mai","Jui","Juil","Aoû","Sep","Oct","Nov","Déc"].forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
         const ySel = document.getElementById('selectYear');
         for(let y = 2024; y <= 2026; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }
@@ -270,7 +306,7 @@
     function handleRegister() {
         const uId = document.getElementById('regUser').value.trim().toLowerCase();
         db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Demande envoyée."); showAuth('login');
+        alert("Check!"); showAuth('login');
     }
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>

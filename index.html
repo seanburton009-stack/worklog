@@ -3,36 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V43</title>
+    <title>Dräger WorkLog V44 - iOS Optimized</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #003366; --secondary: #005eb8; --bg: #f4f7f9; --danger: #d9534f; --success: #28a745; --emerald: #2ecc71; --shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        :root { 
+            --primary: #003366; 
+            --secondary: #005eb8; 
+            --bg: #f4f7f9; 
+            --danger: #d9534f; 
+            --emerald: #2ecc71; 
+            --shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 0; 
+            color: #333;
+            /* Gestion Safe Area iPhone */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
-        .box { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 380px; text-align: center; }
-        .container { padding: 20px 15px 120px 15px; max-width: 800px; margin: auto; display: none; }
-        .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
-        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.8em; color: var(--primary); text-transform: uppercase; text-align: left; }
-        input, select { width: 100%; padding: 12px; border: 1.5px solid #e1e8ed; border-radius: 12px; font-size: 16px; margin-bottom: 12px; }
-        .btn-main { width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; }
-        .info-week { background: white; border-top: 5px solid var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; box-shadow: var(--shadow); }
-        .info-week span { font-size: 0.9em; color: #64748b; font-weight: 600; }
-        .info-week b { font-size: 1.8em; color: var(--primary); display: block; }
-        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid #e1e8ed; z-index: 1000; }
-        .tab { flex: 1; border: none; background: none; font-size: 10px; color: #94a3b8; text-align: center; cursor: pointer; }
-        .tab.active { color: var(--secondary); font-weight: 800; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { font-size: 0.65em; padding: 8px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.8em; }
+        .box { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; text-align: center; }
+        
+        .container { 
+            padding: 20px 15px 140px 15px; /* Plus d'espace en bas pour le menu */
+            max-width: 800px; 
+            margin: auto; 
+            display: none; 
+        }
+
+        .card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: var(--shadow); }
+        
+        /* Agrandissement des contrôles pour iPhone */
+        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9em; color: var(--primary); text-transform: uppercase; text-align: left; }
+        input, select { 
+            width: 100%; 
+            padding: 16px; 
+            border: 1.5px solid #e1e8ed; 
+            border-radius: 14px; 
+            font-size: 17px; /* Évite le zoom automatique sur iPhone */
+            margin-bottom: 15px; 
+            background-color: #fff;
+        }
+
+        .btn-main { 
+            width: 100%; 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; 
+            padding: 18px; 
+            border: none; 
+            border-radius: 16px; 
+            font-weight: 700; 
+            font-size: 1.1em;
+            cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(0, 51, 102, 0.2);
+        }
+
+        .info-week { background: white; border-top: 6px solid var(--primary); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: var(--shadow); }
+        .info-week span { font-size: 1em; color: #64748b; font-weight: 600; }
+        .info-week b { font-size: 2.2em; color: var(--primary); display: block; margin-top: 5px; }
+
+        /* Menu de navigation du bas plus grand */
+        .tabs { 
+            display: flex; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            position: fixed; 
+            bottom: 0; left: 0; right: 0; 
+            padding: 15px 10px calc(15px + env(safe-area-inset-bottom)) 10px; 
+            border-top: 1px solid #e1e8ed; 
+            z-index: 1000; 
+        }
+        .tab { flex: 1; border: none; background: none; font-size: 12px; color: #94a3b8; text-align: center; cursor: pointer; font-weight: 600; }
+        .tab.active { color: var(--secondary); font-size: 13px; font-weight: 800; }
+        .tab-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        /* Sous-onglets plus larges */
+        .sub-tabs { display: flex; gap: 12px; margin-bottom: 20px; background: #e2e8f0; padding: 6px; border-radius: 15px; }
+        .sub-tab { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.95em; cursor: pointer; }
+        .sub-tab.active { background: white; color: var(--primary); box-shadow: var(--shadow); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { font-size: 0.7em; padding: 12px 5px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
+        td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.85em; }
         .weekend { background: #f8fafc !important; }
-        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+
         @media print {
-            .tabs, .btn-main, .top-bar, #login-overlay, .delete-col, .sub-tabs, #form-work, #form-vacation { display: none !important; }
+            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #form-work, #form-vacation { display: none !important; }
             .container { display: block !important; padding: 0; }
             #pdf-header, #pdf-footer { display: block !important; }
-            .card { box-shadow: none; border: 1px solid #eee; }
         }
     </style>
 </head>
@@ -40,61 +105,61 @@
 
 <div id="login-overlay">
     <div class="box" id="auth-login">
-        <h2 style="color:var(--primary);">Dräger RSS</h2>
+        <h2 style="color:var(--primary); margin-bottom:25px;">Dräger RSS</h2>
         <input type="text" id="loginUser" placeholder="Utilisateur">
-        <input type="password" id="loginPin" maxlength="4" placeholder="PIN">
+        <input type="password" id="loginPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleAuth()">Connexion</button>
-        <div style="margin-top:15px;"><a onclick="showAuth('register')" style="font-size:0.8em; color:var(--secondary); cursor:pointer;">+ Créer un compte</a></div>
+        <div style="margin-top:20px;"><a onclick="showAuth('register')" style="color:var(--secondary); cursor:pointer; font-weight:600;">+ Créer un compte</a></div>
     </div>
     <div class="box" id="auth-register" style="display:none;">
         <h2>Nouveau Profil</h2>
         <input type="text" id="regNom" placeholder="NOM">
         <input type="text" id="regPrenom" placeholder="Prénom">
         <input type="text" id="regUser" placeholder="Utilisateur">
-        <input type="password" id="regPin" maxlength="4" placeholder="PIN">
+        <input type="password" id="regPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleRegister()">Valider</button>
-        <button class="btn-main" style="background:#ccc; margin-top:5px;" onclick="showAuth('login')">Retour</button>
+        <button class="btn-main" style="background:#ccc; margin-top:10px;" onclick="showAuth('login')">Retour</button>
     </div>
 </div>
 
 <div id="pdf-header" style="display:none; padding: 20px;">
     <h1 id="pdf-user-name">--</h1>
     <p>Service Engineer - Logistic Support RSS</p>
-    <p id="pdf-title-date" style="font-weight:bold; border-bottom:2px solid black;">Résumé Mensuel des Prestations</p>
+    <p id="pdf-title-date" style="font-weight:bold; border-bottom:2px solid black;">Résumé Mensuel</p>
 </div>
 
 <div class="container" id="mainContainer">
     <div id="saisie" class="content active">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <b id="welcome-msg">...</b>
-            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Déconnexion</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <b id="welcome-msg" style="font-size: 1.2em;">...</b>
+            <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold; font-size:1em;">🚪 Quitter</button>
         </div>
 
-        <div class="sub-tabs" style="display: flex; gap: 10px; margin-bottom: 15px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
-            <button class="sub-tab active" id="btn-w" onclick="switchSubTab('work')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Saisie Heures</button>
-            <button class="sub-tab" id="btn-v" onclick="switchSubTab('vacation')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Congés</button>
+        <div class="sub-tabs">
+            <button class="sub-tab active" id="btn-w" onclick="switchSubTab('work')">HEURES</button>
+            <button class="sub-tab" id="btn-v" onclick="switchSubTab('vacation')">CONGÉS</button>
         </div>
 
         <div id="form-work">
             <div class="info-week">
-                <span id="txt-rem-week">Reste à prester cette semaine (Objectif 39h)</span>
+                <span>Reste à prester (Semaine)</span>
                 <b id="stat-remaining-week">39h00</b>
             </div>
             <div class="card">
                 <label>Date</label><input type="date" id="dateInput">
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:15px;">
                     <div style="flex:1;"><label>Arrivée</label><input type="time" id="startTime" value="08:00"></div>
                     <div style="flex:1;"><label>Départ</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
                 <label>Lieu</label>
                 <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
-                <button class="btn-main" onclick="saveData()">Enregistrer journée</button>
+                <button class="btn-main" onclick="saveData()">ENREGISTRER</button>
             </div>
         </div>
 
         <div id="form-vacation" style="display:none;">
             <div class="info-week" style="border-top-color:var(--emerald);">
-                <span>Solde Congés Légaux Restants</span>
+                <span>Solde Congés Légaux</span>
                 <b id="vac-allowance">28 j</b>
             </div>
             <div class="card">
@@ -102,14 +167,14 @@
                 <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
                 <label>Du</label><input type="date" id="vacStart">
                 <label>Au</label><input type="date" id="vacEnd">
-                <button class="btn-main" onclick="saveVacation()">Enregistrer Congés</button>
+                <button class="btn-main" onclick="saveVacation()">POSER CONGÉS</button>
             </div>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="card" style="padding: 10px;">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
                 <select id="selectMonth" onchange="renderTable()"></select>
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
@@ -118,24 +183,24 @@
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-        <div id="pdf-footer" class="card" style="border-top: 3px solid var(--primary);">
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                <span>Total Presté: <span id="total-month-work">0h00</span></span>
-                <span>Cumul Heures Supp: <span id="total-month-diff">0h00</span></span>
+        <div id="pdf-footer" class="card" style="border-top: 5px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1em;">
+                <span>Total: <span id="total-month-work">0h00</span></span>
+                <span>+/- : <span id="total-month-diff">0h00</span></span>
             </div>
         </div>
-        <button class="btn-main" onclick="window.print()" style="margin-top:10px;">🖨️ Générer Rapport PDF</button>
+        <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
     </div>
 
     <div id="admin" class="content" style="display:none;">
-        <div class="card"><h3>Administration des Utilisateurs</h3><div id="user-list"></div></div>
+        <div class="card"><h3>Gestion Utilisateurs</h3><div id="user-list"></div></div>
     </div>
 </div>
 
 <nav class="tabs">
-    <button class="tab active" onclick="openTab('saisie', this)">➕ SAISIE</button>
-    <button class="tab" onclick="openTab('historique', this)">📅 TABLEAU</button>
-    <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)">⚙️ ADMIN</button>
+    <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">➕</span>POINTAGE</button>
+    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📅</span>TABLEAU</button>
+    <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)"><span class="tab-icon">⚙️</span>ADMIN</button>
 </nav>
 
 <script>
@@ -144,30 +209,22 @@
     const db = firebase.database();
     let user = null, entries = [];
 
-    function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
-
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
         const pin = document.getElementById('loginPin').value;
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("Votre compte est en attente de validation.");
+                if (!d.active && d.role !== 'admin') return alert("Validation en attente.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = "Session : " + user.prenom + " " + user.nom;
+                document.getElementById('welcome-msg').innerText = user.prenom + " " + user.nom;
                 document.getElementById('pdf-user-name').innerText = user.nom + " " + user.prenom;
                 if(user.role === 'admin') { document.getElementById('nav-admin').style.display = 'block'; loadAdminList(); }
                 syncData();
-            } else alert("Erreur d'identification.");
+            } else alert("Erreur.");
         });
-    }
-
-    function handleRegister() {
-        const uId = document.getElementById('regUser').value.trim().toLowerCase();
-        db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
-        alert("Demande envoyée !"); showAuth('login');
     }
 
     function syncData() {
@@ -179,8 +236,7 @@
 
     async function saveData() {
         const d = document.getElementById('dateInput').value;
-        const s = document.getElementById('startTime').value;
-        const e = document.getElementById('endTime').value;
+        const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
         const l = document.getElementById('location').value;
         if(!d) return;
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
@@ -207,69 +263,44 @@
         const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
         let totalM = 0, totalD = 0, vacCount = 0, weekWork = 0;
-        
         const now = new Date();
         const curMon = new Date(now); curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); curMon.setHours(0,0,0,0);
         const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
-        
         const days = new Date(y, m + 1, 0).getDate();
         for (let i = 1; i <= days; i++) {
             const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dobj = new Date(y, m, i);
             const e = entries.find(x => x.date === ds);
             const goal = (dobj.getDay() >= 1 && dobj.getDay() <= 4) ? 480 : (dobj.getDay() === 5 ? 420 : 0);
-            
             if(e) {
                 totalM += e.minutes; totalD += (e.minutes - goal);
                 if(e.isVacation && e.location === "Congés légaux") vacCount++;
                 if(dobj >= curMon && dobj <= curSun) weekWork += e.minutes;
             }
-
             tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
                 <td>${i}/${m+1}</td>
                 <td>${e ? e.location : ''}</td>
-                <td>${(e && e.start && e.start !== "N/A") ? e.start + ' - ' + e.end : ''}</td>
-                <td>${e ? formatT(e.minutes) : '0h00'}</td>
+                <td>${(e && e.start && e.start !== "N/A") ? e.start + '-' + e.end : ''}</td>
+                <td>${e ? formatT(e.minutes) : ''}</td>
                 <td style="color:${(e && e.minutes-goal>=0)?'green':'red'}">${e ? formatT(e.minutes-goal) : ''}</td>
-                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer;">🗑️</span>` : ''}</td>
+                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')">🗑️</span>` : ''}</td>
             </tr>`;
         }
         document.getElementById('total-month-work').innerText = formatT(totalM);
         document.getElementById('total-month-diff').innerText = formatT(totalD);
         document.getElementById('vac-allowance').innerText = (28 - vacCount) + " j";
-        
         const remWeek = 2340 - weekWork;
-        document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "Objectif Atteint" : formatT(remWeek);
+        document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "OK" : formatT(remWeek);
     }
 
-    function loadAdminList() {
-        db.ref('users').on('value', snap => {
-            const all = snap.val(); const list = document.getElementById('user-list'); list.innerHTML = "";
-            for(let id in all) {
-                const u = all[id];
-                list.innerHTML += `<div class="user-item">
-                    <span><b>${u.nom} ${u.prenom}</b> (${u.role})</span>
-                    <div>
-                        ${!u.active ? `<button onclick="approveUser('${id}')" style="background:green;color:white;border:none;border-radius:5px;padding:5px;">✅</button>` : ''}
-                        <button onclick="deleteUser('${id}')" style="background:red;color:white;border:none;border-radius:5px;padding:5px;margin-left:5px;">🗑️</button>
-                    </div>
-                </div>`;
-            }
-        });
-    }
-
-    function approveUser(id) { db.ref('users/'+id+'/active').set(true); }
-    function deleteUser(id) { if(id !== 'burtonse' && confirm("Supprimer ?")) db.ref('users/'+id).remove(); }
-    async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); }
     function switchSubTab(t) { 
         document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; 
         document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; 
-        document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active')); 
-        document.getElementById(t === 'work' ? 'btn-w' : 'btn-v').classList.add('active');
+        document.getElementById('btn-w').classList.toggle('active', t==='work');
+        document.getElementById('btn-v').classList.toggle('active', t==='vacation');
     }
-
     function initApp() {
         db.ref('users/burtonse').update({ nom: "BURTON", prenom: "Sean", pin: "0514", role: "admin", active: true });
         const mSel = document.getElementById('selectMonth');
@@ -277,6 +308,13 @@
         const ySel = document.getElementById('selectYear');
         for(let y = 2024; y <= 2026; y++) ySel.innerHTML += `<option value="${y}" ${y==new Date().getFullYear()?'selected':''}>${y}</option>`;
     }
+    function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
+    function handleRegister() {
+        const uId = document.getElementById('regUser').value.trim().toLowerCase();
+        db.ref('users/'+uId).set({ nom: document.getElementById('regNom').value.trim().toUpperCase(), prenom: document.getElementById('regPrenom').value.trim(), pin: document.getElementById('regPin').value, role: "user", active: false });
+        alert("Envoyé."); showAuth('login');
+    }
+    async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
 </script>
 </body>
 </html>

@@ -3,117 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog</title>
+    <title>Dräger WorkLog V8</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --primary: #003366; --secondary: #3498db; --bg: #f0f2f5; --safe-top: env(safe-area-inset-top); }
+        :root { --primary: #003366; --secondary: #3498db; --bg: #f0f2f5; --danger: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; }
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .box { background: white; padding: 30px; border-radius: 25px; width: 80%; max-width: 300px; text-align: center; }
-        .container { padding: calc(var(--safe-top) + 20px) 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
+        .box { background: white; padding: 30px; border-radius: 20px; width: 80%; max-width: 300px; text-align: center; }
+        .container { padding: 20px 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .check-row { display: flex; justify-content: space-around; margin: 15px 0; background: #eef2f7; padding: 10px; border-radius: 10px; }
-        .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.85em; font-weight: bold; }
-        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; }
-        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid #ccc; }
-        .tab { flex: 1; border: none; background: none; font-size: 12px; color: #888; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .check-row { display: flex; justify-content: space-around; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .check-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.82em; }
+        .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        
+        .info-week { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; }
+        .info-week span { font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px; }
+        .info-week b { font-size: 1.6em; letter-spacing: 1px; }
+
+        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; border-top: 1px solid #ccc; }
+        .tab { flex: 1; border: none; background: none; font-size: 12px; color: #888; text-align: center; }
         .tab.active { color: var(--secondary); font-weight: bold; }
+        
         .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: white; padding: 10px; border-radius: 15px; text-align: center; font-size: 0.8em; }
+        .stat-box { background: white; padding: 12px; border-radius: 15px; text-align: center; font-size: 0.85em; }
         .stat-box b { display: block; font-size: 1.2em; color: var(--primary); }
-        .stat-highlight { grid-column: span 2; border: 2px solid var(--secondary); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.72em; }
-        th, td { padding: 8px 2px; text-align: center; border-bottom: 1px solid #eee; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
+        th, td { padding: 10px 2px; text-align: center; border-bottom: 1px solid #eee; }
+        .weekend { color: #ccc; background: #fdfdfd; }
         .diff-pos { color: #27ae60; font-weight: bold; }
         .diff-neg { color: #e74c3c; }
-        .holiday-row { background: #f0f7ff; font-weight: bold; }
+        .btn-del { border: none; background: none; color: var(--danger); font-size: 1.2em; cursor: pointer; padding: 5px; }
+        .lang-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5em; cursor: pointer; }
     </style>
 </head>
 <body onload="initApp()">
 
 <div id="login-overlay">
     <div class="box">
-        <h2>Dräger - RSS</h2>
-        <input type="text" id="userInput" class="login-input" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Utilisateur">
-        <input type="password" id="userPin" style="width:100%; padding:10px; margin-bottom:10px; text-align:center;" maxlength="4" placeholder="PIN">
-        <button class="btn-main" onclick="handleAuth()">Se connecter</button>
+        <h2 id="l-title">Dräger RSS</h2>
+        <input type="text" id="userInput" placeholder="Utilisateur / Gebruiker">
+        <input type="password" id="userPin" maxlength="4" placeholder="PIN">
+        <button class="btn-main" id="l-btn" onclick="handleAuth()">Connexion / Inloggen</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
+    <button class="lang-btn" onclick="toggleLang()">🌐</button>
+    
     <div id="saisie" class="content active">
+        <div class="info-week">
+            <span id="st-rem-ptr">Reste à prester (Semaine 39h) / Resterend Week</span>
+            <b id="stat-remaining-ptr">--h--</b>
+        </div>
+
         <div class="card">
-            <div class="input-group">
-                <label id="l-activity">Activité</label>
-                <select id="entryType" onchange="toggleForm()">
-                    <option value="WORK">🛠 Travail / Werk</option>
-                    <option value="CONGE">🌴 Absence / Verlof</option>
-                </select>
+            <label id="lbl-date">Date / Datum</label>
+            <input type="date" id="dateInput">
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;"><label id="lbl-start">Début / Start</label><input type="time" id="startTime" value="08:00"></div>
+                <div style="flex:1;"><label id="lbl-end">Fin / Einde</label><input type="time" id="endTime" value="16:30"></div>
             </div>
 
-            <div id="work-fields">
-                <div class="input-group"><label>Date</label><input type="date" id="date"></div>
-                <div style="display:flex; gap:10px;">
-                    <div class="input-group" style="flex:1;"><label id="l-start">Départ</label><input type="time" id="startTime" value="06:30"></div>
-                    <div class="input-group" style="flex:1;"><label id="l-end">Arrivée</label><input type="time" id="endTime" value="16:00"></div>
-                </div>
-
-                <div class="check-row">
-                    <div class="check-item"><input type="checkbox" id="homeStart"><label for="homeStart">🏠 Départ Maison</label></div>
-                    <div class="check-item"><input type="checkbox" id="homeEnd"><label for="homeEnd">🏠 Retour Maison</label></div>
-                </div>
-
-                <div class="input-group">
-                    <label id="l-loc">Lieu</label>
-                    <select id="location">
-                        <option value="Wemmel">Wemmel</option>
-                        <option value="Client">Client</option>
-                        <option value="Esso">Esso</option>
-                    </select>
-                </div>
+            <div class="check-row">
+                <div class="check-item"><input type="checkbox" id="homeStart"><label for="homeStart" id="lbl-hstart">🏠 Départ Maison</label></div>
+                <div class="check-item"><input type="checkbox" id="homeEnd"><label for="homeEnd" id="lbl-hend">🏠 Retour Maison</label></div>
             </div>
 
-            <div id="conge-fields" style="display:none;">
-                <select id="subCongeType" style="margin-bottom:10px;">
-                    <option value="ANNUEL">🌴 Congé</option>
-                    <option value="FERIE">🇧🇪 Férié</option>
-                    <option value="MALADIE">🤒 Maladie</option>
-                    <option value="RECU">⏳ Récup</option>
-                </select>
-                <input type="date" id="dateStart" style="margin-bottom:10px;">
-                <input type="date" id="dateEnd">
-            </div>
-            <button class="btn-main" onclick="saveData()" style="margin-top:15px;">Enregistrer / Opslaan</button>
+            <label id="lbl-loc">Lieu / Locatie</label>
+            <select id="location">
+                <option value="Wemmel">Wemmel (-45m pause)</option>
+                <option value="Client">Client (-30m pause)</option>
+                <option value="INEOS">INEOS (-30m pause)</option>
+                <option value="Esso">Esso (-30m pause)</option>
+            </select>
+            
+            <button class="btn-main" id="btn-save" onclick="saveData()">Enregistrer / Opslaan</button>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="stat-banner">
-            <div class="stat-box stat-highlight"><span id="l-stat-rem">Reste à faire (39h)</span><b id="stat-remaining">0h00</b></div>
-            <div class="stat-box"><span>Congés</span><b id="stat-conge">28</b></div>
-            <div class="stat-box"><span>Balance</span><b id="stat-hours">0h00</b></div>
+            <div class="stat-box"><span id="st-bal">Balance Mois / Balans Maand</span><b id="stat-balance">--</b></div>
+            <div class="stat-box"><span id="st-con">Congés / Verlof</span><b id="stat-conge">28</b></div>
         </div>
         <div class="card">
-            <select id="selectMonth" onchange="renderTable()" style="margin-bottom:10px;"></select>
-            <table id="tableData">
-                <thead><tr><th>J</th><th>Lieu</th><th>Presté</th><th>+/-</th></tr></thead>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <select id="selectMonth" onchange="renderTable()" style="margin:0; width:65%;"></select>
+                <button onclick="softLogout()" id="btn-logout" style="background:#eee; border:none; padding:8px; border-radius:8px; font-size:11px;">Logout</button>
+            </div>
+            <table>
+                <thead><tr><th>J</th><th style="text-align:left;">Lieu/Loc</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
-            <button class="btn-main" onclick="softLogout()" style="background:#555; margin-top:15px;">Quitter</button>
         </div>
     </div>
 </div>
 
 <nav class="tabs">
-    <button class="tab active" onclick="openTab('saisie', this)">➕ Pointer</button>
-    <button class="tab" onclick="openTab('historique', this)">📅 Calendrier</button>
+    <button class="tab active" id="nav-1" onclick="openTab('saisie', this)">➕ Pointer</button>
+    <button class="tab" id="nav-2" onclick="openTab('historique', this)">📅 Calendrier</button>
 </nav>
 
 <script>
@@ -123,17 +118,22 @@
     
     let entries = [];
     let currentUserId = "";
+    let lang = localStorage.getItem('lang') || 'fr';
+
+    const translations = {
+        fr: { save_ok: "Enregistré !", confirm_title: "Calcul pour le", brut: "Brut", pause: "Pause", trajet: "Trajet", total: "TOTAL RÉEL", done: "Objectif atteint ✅", del_confirm: "Supprimer cette entrée ?" },
+        nl: { save_ok: "Opgeslagen!", confirm_title: "Berekening voor", brut: "Bruto", pause: "Pauze", trajet: "Traject", total: "TOTAAL ECHT", done: "Doel bereikt ✅", del_confirm: "Deze invoer verwijderen ?" }
+    };
 
     function initApp() {
         const last = localStorage.getItem('lastLoggedUser');
         if(last) document.getElementById('userInput').value = last;
-        document.getElementById('date').valueAsDate = new Date();
+        document.getElementById('dateInput').valueAsDate = new Date();
     }
 
     function handleAuth() {
         const u = document.getElementById('userInput').value.trim().toLowerCase();
-        const p = document.getElementById('userPin').value;
-        if(!u || p.length < 4) return;
+        if(!u) return;
         currentUserId = u;
         localStorage.setItem('lastLoggedUser', u);
         document.getElementById('login-overlay').style.display = 'none';
@@ -149,80 +149,79 @@
     }
 
     async function saveData() {
-        const type = document.getElementById('entryType').value;
-        if(type === "CONGE") {
-            let s = new Date(document.getElementById('dateStart').value);
-            let e = new Date(document.getElementById('dateEnd').value);
-            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-                if (d.getDay() !== 0 && d.getDay() !== 6) {
-                    const dKey = d.toISOString().split('T')[0];
-                    await db.ref('users/'+currentUserId+'/entries/'+dKey.replace(/-/g,'')).set({ date: dKey, location: "CONGE", subType: document.getElementById('subCongeType').value, minutes: 0 });
-                }
-            }
-        } else {
-            const dateVal = document.getElementById('date').value; // YYYY-MM-DD
-            const isHomeS = document.getElementById('homeStart').checked;
-            const isHomeE = document.getElementById('homeEnd').checked;
-            
-            // Calcul précis en minutes
-            let start = new Date(`${dateVal}T${document.getElementById('startTime').value}`);
-            let end = new Date(`${dateVal}T${document.getElementById('endTime').value}`);
-            let totalMinutes = (end - start) / 60000;
+        const dateStr = document.getElementById('dateInput').value;
+        if(!dateStr) return;
+        const isHomeS = document.getElementById('homeStart').checked;
+        const isHomeE = document.getElementById('homeEnd').checked;
+        const loc = document.getElementById('location').value;
+        const [h1, m1] = document.getElementById('startTime').value.split(':').map(Number);
+        const [h2, m2] = document.getElementById('endTime').value.split(':').map(Number);
+        
+        let rawMin = (h2 * 60 + m2) - (h1 * 60 + m1);
+        let pause = (loc === "Wemmel") ? 45 : 30;
+        let trajet = (isHomeS ? 30 : 0) + (isHomeE ? 30 : 0);
+        let finalMin = rawMin - pause - trajet;
 
-            // Déduction trajet : 30 min par trajet maison coché
-            if (isHomeS) totalMinutes -= 30;
-            if (isHomeE) totalMinutes -= 30;
-
-            const loc = document.getElementById('location').value;
-            let displayLoc = (isHomeS ? "🏠→" : "") + loc + (isHomeE ? "→🏠" : "");
-
-            await db.ref('users/'+currentUserId+'/entries/'+dateVal.replace(/-/g,'')).set({
-                date: dateVal, location: displayLoc, minutes: totalMinutes,
-                start: document.getElementById('startTime').value,
-                end: document.getElementById('endTime').value
+        const t = translations[lang];
+        if(confirm(`${t.confirm_title} ${dateStr} :\n- ${t.brut}: ${formatT(rawMin)}\n- ${t.pause}: -${pause}m\n- ${t.trajet}: -${trajet}m\n----------\n${t.total}: ${formatT(finalMin)}`)) {
+            const key = dateStr.replace(/-/g, '');
+            await db.ref('users/'+currentUserId+'/entries/'+key).set({
+                date: dateStr, location: loc, minutes: finalMin, homeS: isHomeS, homeE: isHomeE
             });
+            alert(t.save_ok);
         }
-        alert("Enregistré !");
+    }
+
+    async function deleteEntry(dateKey) {
+        if(confirm(translations[lang].del_confirm)) {
+            const key = dateKey.replace(/-/g, '');
+            await db.ref('users/'+currentUserId+'/entries/'+key).remove();
+        }
     }
 
     function renderTable() {
-        const m = parseInt(document.getElementById('selectMonth').value || new Date().getMonth());
-        const y = new Date().getFullYear();
+        const selMonth = parseInt(document.getElementById('selectMonth').value || new Date().getMonth());
+        const selYear = new Date().getFullYear();
         const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
-        let balance = 0, conge = 0, weekDone = 0;
-
+        
+        let totalBalance = 0; let weekWork = 0;
+        
         const now = new Date();
-        const dayIdx = now.getDay() || 7;
-        const mon = new Date(now); mon.setDate(now.getDate() - dayIdx + 1); mon.setHours(0,0,0,0);
-        const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59);
+        const curMon = new Date(now);
+        curMon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+        curMon.setHours(0,0,0,0);
+        const curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
 
-        const days = new Date(y, m + 1, 0).getDate();
+        const days = new Date(selYear, selMonth + 1, 0).getDate();
+
         for (let i = 1; i <= days; i++) {
-            const dObj = new Date(y, m, i);
-            const dStr = dObj.toISOString().split('T')[0];
+            const dStr = `${selYear}-${String(selMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const dObj = new Date(selYear, selMonth, i);
             const e = entries.find(x => x.date === dStr);
-            const dNum = dObj.getDay();
+            const dayIdx = dObj.getDay(); 
             
-            // Objectif 39h : Lun-Jeu = 8h (480), Ven = 7h (420)
-            let goal = (dNum >= 1 && dNum <= 4) ? 480 : (dNum === 5 ? 420 : 0);
-            
-            let diff = 0, info = "-", prest = "-";
+            let goal = (dayIdx >= 1 && dayIdx <= 4) ? 480 : (dayIdx === 5 ? 420 : 0);
+            let diff = 0;
+
             if (e) {
-                if (e.location !== 'CONGE') {
-                    diff = e.minutes - goal; balance += diff; info = e.location; prest = formatT(e.minutes);
-                    if (dObj >= mon && dObj <= sun) weekDone += e.minutes;
-                } else {
-                    info = e.subType; if(e.subType === "ANNUEL") conge++;
-                    if (dObj >= mon && dObj <= sun) weekDone += goal;
-                }
+                diff = e.minutes - goal;
+                totalBalance += diff;
+                if (dObj >= curMon && dObj <= curSun) weekWork += e.minutes;
             }
-            const rCl = (dNum === 0 || dNum === 6) ? 'weekend' : (e && e.location === 'CONGE' ? 'holiday-row' : '');
-            tBody.innerHTML += `<tr class="${rCl}"><td>${i}</td><td>${info}</td><td>${prest}</td><td class="${diff>=0?'diff-pos':'diff-neg'}">${e?formatT(diff):'-'}</td></tr>`;
+
+            const isWE = (dayIdx === 0 || dayIdx === 6);
+            tBody.innerHTML += `<tr class="${isWE ? 'weekend' : ''}">
+                <td>${i}</td>
+                <td style="text-align:left;">${e ? (e.homeS?'🏠':'') + e.location + (e.homeE?'🏠':'') : ''}</td>
+                <td><b>${e ? formatT(e.minutes) : '-'}</b></td>
+                <td class="${diff >= 0 ? 'diff-pos' : 'diff-neg'}">${e ? formatT(diff) : '-'}</td>
+                <td>${e ? `<button class="btn-del" onclick="deleteEntry('${e.date}')">🗑️</button>` : ''}</td>
+            </tr>`;
         }
-        document.getElementById('stat-conge').innerText = (28 - conge);
-        document.getElementById('stat-hours').innerText = formatT(balance);
-        let rem = 2340 - weekDone; // 39h = 2340m
-        document.getElementById('stat-remaining').innerText = rem > 0 ? formatT(rem) : "Objectif OK";
+
+        const rem = 2340 - weekWork;
+        document.getElementById('stat-remaining-ptr').innerText = rem <= 0 ? translations[lang].done : formatT(rem);
+        document.getElementById('stat-balance').innerText = formatT(totalBalance);
     }
 
     function formatT(min) {
@@ -236,17 +235,29 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(id).style.display = 'block'; btn.classList.add('active');
     }
-
-    function toggleForm() {
-        const isC = document.getElementById('entryType').value === "CONGE";
-        document.getElementById('work-fields').style.display = isC ? 'none' : 'block';
-        document.getElementById('conge-fields').style.display = isC ? 'block' : 'none';
-    }
-
+    
     function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
 
-    const mNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
-    mNames.forEach((n, i) => document.getElementById('selectMonth').innerHTML += `<option value="${i}" ${i==new Date().getMonth()?'selected':''}>${n}</option>`);
+    const mNames = {
+        fr: ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"],
+        nl: ["Jan", "Feb", "Maa", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"]
+    };
+    
+    function updateMonthSelect() {
+        const sel = document.getElementById('selectMonth');
+        const current = sel.value || new Date().getMonth();
+        sel.innerHTML = '';
+        mNames[lang].forEach((n, i) => sel.innerHTML += `<option value="${i}" ${i==current?'selected':''}>${n}</option>`);
+    }
+
+    updateMonthSelect();
+
+    window.toggleLang = function() {
+        lang = (lang === 'fr' ? 'nl' : 'fr');
+        localStorage.setItem('lang', lang);
+        updateMonthSelect();
+        renderTable();
+    }
 </script>
 </body>
 </html>

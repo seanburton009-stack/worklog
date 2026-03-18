@@ -5,1238 +5,975 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dräger WorkLog Pro - 4.5 Official</title>
+    <title>Dräger WorkLog Pro v4.8</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
         /* ==========================================================================
-           SECTION : VARIABLES DE DESIGN (DESIGN SYSTEM)
-           ==========================================================================
-        */
+           1. DESIGN SYSTEM & IPHONE OPTIMIZATION
+           ========================================================================== */
         :root {
-            /* Couleurs Identité Dräger */
-            --primary-blue: #003366; 
-            --secondary-blue: #005eb8; 
-            --accent-blue: #00a9e0;
+            /* Palette Dräger */
+            --d-navy: #003366; 
+            --d-blue: #005eb8; 
+            --d-sky: #00a9e0;
+            --d-light-blue: rgba(0, 94, 184, 0.1);
             
-            /* Fond et Surfaces */
-            --body-bg: #f4f7f9;
-            --surface-card: #ffffff; 
-            --text-primary: #1e293b; 
-            --text-secondary: #64748b;
-            --border-color: #e2e8f0; 
+            /* Backgrounds */
+            --bg-body: #f2f4f7;
+            --bg-card: #ffffff; 
+            --bg-input: #ffffff;
+            --bg-inner: #f8fafc;
             
-            /* États et Alertes */
-            --color-danger: #ef4444; 
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
+            /* Typo */
+            --text-main: #1e293b; 
+            --text-muted: #64748b;
+            --border-ui: #e2e8f0; 
             
-            /* Effets et Animations */
-            --shadow-main: 0 10px 15px -3px rgba(0,0,0,0.1); 
-            --field-bg: #ffffff;
-            --inner-bg: #f8fafc; 
-            --weekend-bg-color: #f1f5f9;
-            --transition-speed: 0.3s;
-            --bezier-curve: cubic-bezier(0.4, 0, 0.2, 1);
+            /* Status */
+            --color-err: #ef4444; 
+            --color-ok: #10b981;
+            --color-warn: #f59e0b;
+            
+            /* Spécificités iPhone */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
         }
 
-        /* MODE SOMBRE (DARK MODE) 
-        */
         body.dark-mode {
-            --body-bg: #0f172a; 
-            --surface-card: #1e293b; 
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8; 
-            --border-color: #334155; 
-            --field-bg: #0f172a;
-            --inner-bg: #1e293b; 
-            --weekend-bg-color: #1e293b;
+            --bg-body: #0f172a; 
+            --bg-card: #1e293b; 
+            --bg-input: #0f172a;
+            --bg-inner: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8; 
+            --border-ui: #334155; 
         }
 
-        /* RESET & MISE EN PAGE GLOBALE 
-        */
+        /* RESET GLOBAL */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
-            margin: 0; 
-            padding: 0; 
+            margin: 0; padding: 0; 
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--body-bg); 
-            color: var(--text-primary);
-            transition: background 0.4s ease;
-            line-height: 1.6;
+            background-color: var(--bg-body); 
+            color: var(--text-main);
+            transition: background 0.3s ease;
+            line-height: 1.5;
+            /* Empêche le défilement horizontal sur iPhone */
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
 
-        .main-container { 
-            padding-top: 20px;
-            padding-left: 20px;
-            padding-right: 20px;
-            padding-bottom: 140px; 
-            max-width: 720px; 
-            margin-left: auto;
-            margin-right: auto;
+        /* CONTENEUR PRINCIPAL */
+        .app-container { 
+            padding: calc(20px + var(--safe-top)) 20px calc(110px + var(--safe-bottom)) 20px; 
+            max-width: 800px; 
+            margin: 0 auto;
             display: none; 
-            animation: slideUp 0.5s ease-out;
+            animation: app-entry 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        @keyframes slideUp {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
+        @keyframes app-entry {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .card-component { 
-            background-color: var(--surface-card); 
-            border-radius: 24px; 
+        .ui-card { 
+            background-color: var(--bg-card); 
+            border-radius: 28px; 
             padding: 24px; 
-            margin-bottom: 20px; 
-            box-shadow: var(--shadow-main); 
-            border: 1px solid var(--border-color); 
+            margin-bottom: 24px; 
+            box-shadow: 0 8px 20px -5px rgba(0,0,0,0.08); 
+            border: 1px solid var(--border-ui); 
             position: relative;
+            overflow: hidden;
         }
 
-        /* CHAMPS DE SAISIE ET BOUTONS 
-        */
-        input[type="text"],
-        input[type="password"],
-        input[type="date"],
-        input[type="time"],
-        select, 
-        textarea { 
-            width: 100%; 
-            padding: 16px; 
-            border: 2px solid var(--border-color); 
-            border-radius: 16px; 
-            font-size: 16px; 
-            margin-bottom: 16px; 
-            background-color: var(--field-bg); 
-            color: var(--text-primary); 
-            font-weight: 600; 
-            outline: none; 
-            transition: border-color var(--transition-speed);
-        }
-
-        textarea { 
-            height: 110px; 
-            resize: none; 
-            font-family: inherit;
-        }
-
-        input:focus, 
-        select:focus, 
-        textarea:focus { 
-            border-color: var(--secondary-blue); 
-            box-shadow: 0 0 0 4px rgba(0, 94, 184, 0.1);
-        }
-
+        /* TYPOGRAPHIE & LABELS */
+        h1, h2, h3 { font-weight: 900; color: var(--d-navy); }
+        
         label { 
             display: block; 
-            margin-bottom: 8px; 
+            margin-bottom: 10px; 
             font-weight: 800; 
-            font-size: 0.75rem; 
-            color: var(--secondary-blue); 
+            font-size: 11px; 
+            color: var(--d-blue); 
             text-transform: uppercase; 
-            letter-spacing: 1.2px; 
+            letter-spacing: 1.8px; 
         }
 
-        .action-button { 
+        /* INPUTS : Optimisés iPhone (Min 16px pour éviter le zoom auto) */
+        input, select, textarea { 
             width: 100%; 
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue)); 
-            color: #ffffff; 
             padding: 18px; 
-            border: none; 
+            border: 2px solid var(--border-ui); 
             border-radius: 18px; 
+            font-size: 16px; 
+            margin-bottom: 20px; 
+            background-color: var(--bg-input); 
+            color: var(--text-main); 
+            font-weight: 600; 
+            outline: none; 
+            transition: all 0.2s ease;
+            -webkit-appearance: none; /* Reset style iOS */
+        }
+
+        textarea { height: 130px; resize: none; }
+
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--d-blue); 
+            background-color: var(--bg-card);
+            box-shadow: 0 0 0 5px var(--d-light-blue);
+        }
+
+        /* BOUTONS */
+        .btn-main { 
+            width: 100%; 
+            background: linear-gradient(135deg, var(--d-navy), var(--d-blue)); 
+            color: #ffffff; 
+            padding: 20px; 
+            border: none; 
+            border-radius: 22px; 
             font-weight: 800; 
             cursor: pointer; 
-            font-size: 16px; 
-            transition: transform 0.2s;
-            box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2); 
+            font-size: 15px; 
             text-transform: uppercase;
+            box-shadow: 0 10px 20px -5px rgba(0, 51, 102, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .action-button:active { 
-            transform: scale(0.97); 
-        }
+        .btn-main:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(0, 51, 102, 0.2); }
 
-        /* NAVIGATION INTERNE 
-        */
-        .sub-navigation { 
-            display: flex; 
-            gap: 12px; 
-            margin-bottom: 25px; 
-            background-color: var(--border-color); 
-            padding: 6px; 
-            border-radius: 20px; 
-        }
-
-        .sub-nav-item { 
-            flex: 1; 
-            padding: 12px; 
-            border-radius: 16px; 
-            border: none; 
-            font-weight: 700; 
-            cursor: pointer; 
-            background-color: transparent; 
-            color: var(--text-secondary); 
-            transition: all 0.3s;
-        }
-
-        .sub-nav-item.active { 
-            background-color: var(--surface-card); 
-            color: var(--primary-blue); 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05); 
-        }
-
-        .bottom-tabs { 
+        /* NAVIGATION BASSE IPHONE */
+        .bottom-nav { 
             display: flex; 
             position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            right: 0; 
-            background-color: var(--surface-card); 
-            padding: 12px 12px calc(12px + env(safe-area-inset-bottom)) 12px; 
-            border-top: 1px solid var(--border-color); 
+            bottom: 0; left: 0; right: 0; 
+            background-color: var(--bg-card); 
+            padding: 15px 15px calc(15px + var(--safe-bottom)) 15px; 
+            border-top: 1px solid var(--border-ui); 
             z-index: 1000; 
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
-        .bottom-tab-item { 
-            flex: 1; 
-            border: none; 
-            background: none; 
-            font-size: 10px; 
-            color: var(--text-secondary); 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 4px; 
-            cursor: pointer;
+        .nav-item { 
+            flex: 1; border: none; background: none; font-size: 11px; 
+            color: var(--text-muted); display: flex; flex-direction: column; 
+            align-items: center; gap: 6px; cursor: pointer;
+            transition: color 0.3s ease;
         }
 
-        .bottom-tab-item.active { 
-            color: var(--secondary-blue); 
-            font-weight: 900; 
-        }
+        .nav-item.active { color: var(--d-blue); font-weight: 900; }
+        .nav-item i { font-size: 22px; }
 
-        /* TABLEAUX ET STATISTIQUES 
-        */
-        .data-table-wrapper { 
+        /* TABLEAUX IPHONE FRIENDLY */
+        .table-scroll-container { 
             overflow-x: auto; 
             width: 100%; 
-            margin-top: 15px; 
             border-radius: 20px; 
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-ui);
+            -webkit-overflow-scrolling: touch;
         }
 
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            font-size: 0.82em; 
-        }
-
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
         th { 
-            padding: 15px 10px; 
-            color: var(--text-secondary); 
-            border-bottom: 2px solid var(--border-color); 
+            padding: 18px 12px; 
+            background-color: var(--bg-inner); 
+            color: var(--text-muted); 
+            font-size: 10px; 
             text-transform: uppercase; 
-            font-size: 0.7em; 
             font-weight: 900; 
-            background-color: var(--inner-bg); 
+            text-align: center;
+            border-bottom: 2px solid var(--border-ui);
         }
+        td { padding: 18px 12px; border-bottom: 1px solid var(--border-ui); text-align: center; font-size: 13px; font-weight: 600; }
 
-        td { 
-            padding: 15px 10px; 
-            border-bottom: 1px solid var(--border-color); 
-            text-align: center; 
-        }
-
-        .stats-summary-grid { 
+        /* RÉSUMÉ DES STATS (LEFT | CENTER | RIGHT) */
+        .stats-row { 
             display: grid; 
             grid-template-columns: 1fr 1fr 1fr; 
-            gap: 15px; 
+            gap: 12px; 
             margin-top: 25px; 
         }
 
-        .summary-box { 
-            background-color: var(--inner-bg); 
-            padding: 18px 10px; 
-            border-radius: 22px; 
+        .stat-card { 
+            background-color: var(--bg-inner); 
+            padding: 20px 8px; 
+            border-radius: 20px; 
             text-align: center; 
-            border: 1px solid var(--border-color); 
+            border: 1px solid var(--border-ui); 
         }
 
-        .summary-box-label { 
-            display: block; 
-            font-size: 0.65em; 
-            color: var(--text-secondary); 
-            text-transform: uppercase; 
-            font-weight: 900; 
-            margin-bottom: 6px; 
+        .stat-card-label { 
+            display: block; font-size: 9px; color: var(--text-muted); 
+            text-transform: uppercase; font-weight: 900; margin-bottom: 8px; 
         }
 
-        .summary-box-value { 
-            display: block; 
-            font-size: 1.2em; 
-            font-weight: 950; 
-            color: var(--primary-blue); 
-        }
+        .stat-card-value { display: block; font-size: 16px; font-weight: 950; color: var(--d-navy); }
 
-        /* IMPRESSION PDF 
-        */
-        #print-only-header { 
-            display: none; 
-        }
-
-        #print-only-stats { 
-            display: none; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 20px; 
-            margin-bottom: 30px;
-        }
-
-        .print-stat-card {
-            border: 2px solid #003366;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-        }
-
-        .print-stat-title {
-            font-size: 9pt;
-            font-weight: 800;
-            text-transform: uppercase;
-            border-bottom: 1px solid #003366;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .print-stat-data {
-            font-size: 20pt;
-            font-weight: 900;
-        }
+        /* ==========================================================================
+           2. MODULES D'IMPRESSION PDF (SAUT DE PAGE)
+           ========================================================================== */
+        #pdf-header, #pdf-stats-summary, #pdf-observations-block { display: none; }
 
         @media print {
-            .no-print, 
-            .bottom-tabs, 
-            .action-button, 
-            #btn-theme-toggle, 
-            .sub-navigation, 
-            #app-header-ui, 
-            #comment-input-section, 
-            #section-saisie, 
-            #section-admin,
-            .language-selector-wrapper { 
+            .no-print, .bottom-nav, .btn-main, #theme-btn, .sub-view-nav, 
+            #section-saisie, #section-admin, #input-obs-container { 
                 display: none !important; 
             }
             
-            #section-registre { 
-                display: block !important; 
-                visibility: visible !important; 
-            }
+            #section-registre { display: block !important; padding: 0 !important; }
+            .app-container { display: block !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+            .ui-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
             
-            .main-container { 
-                padding: 0 !important; 
-                display: block !important; 
-                max-width: 100% !important; 
-                margin: 0 !important; 
+            #pdf-header { 
+                display: flex !important; justify-content: space-between; align-items: flex-end; 
+                border-bottom: 4px solid #003366; padding-bottom: 20px; margin-bottom: 30px; 
             }
-            
-            .card-component { 
-                box-shadow: none !important; 
-                border: none !important; 
-                padding: 0 !important; 
-            }
-            
-            #print-only-header { 
-                display: flex !important; 
-                justify-content: space-between; 
-                align-items: flex-end; 
-                border-bottom: 4px solid #003366; 
-                padding-bottom: 20px; 
-                margin-bottom: 30px; 
-            }
-            
-            #print-only-stats { 
-                display: grid !important; 
-            }
-            
-            #print-note-output {
+
+            #pdf-stats-summary { display: grid !important; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .pdf-stat-item { border: 2px solid #003366; border-radius: 12px; padding: 15px; text-align: center; }
+
+            /* FORÇAGE DU SAUT DE PAGE */
+            #pdf-observations-block {
                 display: block !important;
-                margin-top: 40px;
-                padding: 20px;
-                border: 1px solid #003366;
-                border-radius: 15px;
+                break-before: page; /* Important : nouvelle page ici */
+                padding: 50px 0;
             }
 
-            body { 
-                background-color: #ffffff !important; 
-                color: #000000 !important; 
+            .signature-area { 
+                margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; 
             }
-            
-            th { 
-                background-color: #f1f5f9 !important; 
-                border: 1px solid #003366 !important; 
-                color: #003366 !important; 
-            }
-            
-            td { 
-                border: 1px solid #cccccc !important; 
-            }
+            .sig-field { border-top: 2px solid #000; padding-top: 15px; text-align: center; font-weight: 900; text-transform: uppercase; font-size: 12px;}
+
+            body { background: #fff !important; color: #000 !important; }
+            th { background: #f0f0f0 !important; border: 1px solid #003366 !important; color: #003366 !important; }
+            td { border: 1px solid #ddd !important; }
         }
 
-        /* INTERFACE D'AUTHENTIFICATION 
-        */
-        #auth-overlay { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0; 
-            background-color: var(--body-bg); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 2000; 
+        /* TOAST NOTIFICATIONS */
+        #toast-container {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 3000; width: 90%; max-width: 350px;
+        }
+        .toast {
+            background: #1e293b; color: white; padding: 16px 20px; border-radius: 16px;
+            margin-bottom: 10px; font-weight: 700; font-size: 14px; text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); animation: toastIn 0.3s ease forwards;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* AUTH & MODALS */
+        #auth-gate { 
+            position: fixed; inset: 0; background-color: var(--bg-body); 
+            display: flex; justify-content: center; align-items: center; z-index: 2500; 
         }
 
-        .language-selector-wrapper {
-            margin-right: 15px;
+        .switch-ios { 
+            width: 52px; height: 30px; appearance: none; background: #cbd5e1; 
+            border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s ease;
         }
-
-        #lang-select-dropdown {
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 800;
-            margin-bottom: 0;
-            width: auto;
+        .switch-ios:checked { background: var(--color-ok); }
+        .switch-ios::after { 
+            content: ''; position: absolute; width: 26px; height: 26px; 
+            background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
         }
-
-        .switch-ios-style { 
-            width: 48px; 
-            height: 26px; 
-            appearance: none; 
-            background-color: #cbd5e1; 
-            border-radius: 20px; 
-            position: relative; 
-            cursor: pointer; 
-            transition: background-color 0.3s;
-        }
-
-        .switch-ios-style:checked { 
-            background-color: var(--color-success); 
-        }
-
-        .switch-ios-style::before { 
-            content: ''; 
-            position: absolute; 
-            width: 22px; 
-            height: 22px; 
-            background-color: #ffffff; 
-            border-radius: 50%; 
-            top: 2px; 
-            left: 2px; 
-            transition: transform 0.2s; 
-        }
-
-        .switch-ios-style:checked::before { 
-            transform: translateX(22px); 
-        }
+        .switch-ios:checked::after { transform: translateX(22px); }
     </style>
 </head>
-<body onload="startupApplication()">
+<body onload="initSystem()">
 
-    <div id="auth-overlay">
-        <div class="card-component" style="width: 90%; max-width: 380px; text-align: center; padding: 45px 30px;">
-            <h1 style="color:var(--primary-blue); font-size: 3em; font-weight: 950; letter-spacing: -2px; margin-bottom: 10px;">Dräger</h1>
-            <p style="margin-bottom:35px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; font-size: 0.8em; letter-spacing: 2px;">WorkLog Global 4.5</p>
+    <div id="toast-container"></div>
+
+    <div id="auth-gate">
+        <div class="ui-card" style="width: 88%; max-width: 400px; text-align: center; padding: 50px 30px;">
+            <h1 style="font-size: 3.2em; letter-spacing: -3px; margin-bottom: 5px;">Dräger</h1>
+            <p style="color:var(--text-muted); font-weight: 800; font-size: 0.75em; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 40px;">WorkLog Edition 4.8</p>
             
             <div style="text-align: left;">
-                <label id="label-auth-user">Utilisateur</label>
-                <input type="text" id="input-username" placeholder="ex: r.vander">
-                
-                <label id="label-auth-pin">Code PIN de sécurité</label>
-                <input type="password" id="input-pin" maxlength="4" placeholder="••••" inputmode="numeric">
+                <label id="lbl-auth-user">Utilisateur</label>
+                <input type="text" id="auth-id" placeholder="r.vander" autocomplete="username">
+                <label id="lbl-auth-pin">Code PIN de sécurité</label>
+                <input type="password" id="auth-pin" maxlength="4" placeholder="••••" inputmode="numeric">
             </div>
             
-            <button class="action-button" onclick="executeAuthentication()" id="btn-auth-submit">Ouvrir la session</button>
+            <button class="btn-main" onclick="processLogin()" id="btn-login-submit" style="margin-top: 10px;">Accéder au portail</button>
         </div>
     </div>
 
-    <div class="main-container" id="app-main-view">
+    <div class="app-container" id="app-viewport">
         
-        <div id="print-only-header">
-            <div class="print-header-left">
-                <h2 style="color:#003366; font-size: 26pt; margin:0; font-weight: 950;">TIMESHEET REPORT</h2>
-                <p style="margin:0; font-weight: 800; color: #64748b;">Dräger Safety - RSS Maintenance Division</p>
+        <div id="pdf-header">
+            <div>
+                <h2 style="font-size: 26pt; color:#003366;">FEUILLE DE TEMPS</h2>
+                <p style="font-weight: 800; color: #64748b;">Dräger Safety Belgium - RSS Operations</p>
             </div>
-            <div class="print-header-right" style="text-align:right;">
-                <h3 id="pdf-employee-name" style="margin:0; font-size: 16pt; text-transform: uppercase; color: #1e293b;"></h3>
-                <p id="pdf-reporting-period" style="margin:0; font-size: 13pt; font-weight: 900; color: #003366;"></p>
-            </div>
-        </div>
-
-        <div id="print-only-stats">
-            <div class="print-stat-card">
-                <span class="print-stat-title" id="pdf-stat-label-work">Total Presté</span>
-                <span class="print-stat-data" id="pdf-val-total-hours">0h00</span>
-            </div>
-            <div class="print-stat-card">
-                <span class="print-stat-title" id="pdf-stat-label-vac">Solde Congés</span>
-                <span class="print-stat-data" id="pdf-val-vacation">28 j</span>
-            </div>
-            <div class="print-stat-card">
-                <span class="print-stat-title" id="pdf-stat-label-diff">Heures +/-</span>
-                <span class="print-stat-data" id="pdf-val-overtime">0h00</span>
+            <div style="text-align:right;">
+                <h3 id="pdf-name-display" style="font-size: 18pt; text-transform: uppercase;"></h3>
+                <p id="pdf-period-display" style="font-size: 14pt; font-weight: 900; color: #003366;"></p>
             </div>
         </div>
 
-        <div id="app-header-ui" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:35px;">
-            <div class="user-greeting-zone">
-                <span id="txt-welcome" style="font-size: 1.8em; font-weight: 950; color:var(--primary-blue);">Bonjour</span>
-                <br>
-                <small id="display-today-date" style="color:var(--text-secondary); font-weight:800; text-transform: capitalize;"></small>
+        <div id="pdf-stats-summary">
+            <div class="pdf-stat-item"><span style="font-size: 10pt; font-weight: 800; display: block; margin-bottom: 5px;">HEURES PRESTÉES</span><span id="pdf-val-total" style="font-size: 22pt; font-weight: 950; color: #003366;">0h00</span></div>
+            <div class="pdf-stat-item"><span style="font-size: 10pt; font-weight: 800; display: block; margin-bottom: 5px;">SOLDE CONGÉS</span><span id="pdf-val-vac" style="font-size: 22pt; font-weight: 950; color: #003366;">28 j</span></div>
+            <div class="pdf-stat-item"><span style="font-size: 10pt; font-weight: 800; display: block; margin-bottom: 5px;">DIFFÉRENTIEL (+/-)</span><span id="pdf-val-diff" style="font-size: 22pt; font-weight: 950; color: #003366;">0h00</span></div>
+        </div>
+
+        <div id="mobile-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <div>
+                <span id="txt-greeting" style="font-size: 2em; font-weight: 950; color:var(--d-navy);">Bonjour</span><br>
+                <small id="txt-today-full" style="color:var(--text-muted); font-weight:800; text-transform: capitalize;"></small>
             </div>
-            <div style="display:flex; align-items:center;">
-                <div class="language-selector-wrapper">
-                    <select id="lang-select-dropdown" onchange="applyLanguageSwitch(this.value)">
-                        <option value="fr">FR</option>
-                        <option value="nl">NL</option>
-                        <option value="en">EN</option>
-                    </select>
-                </div>
-                <button onclick="toggleVisualTheme()" id="btn-theme-toggle" style="border:none; background-color:var(--surface-card); padding:12px; border-radius:14px; border:1px solid var(--border-color); font-size:18px; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">🌙</button>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <select id="ui-lang-selector" onchange="updateLanguage(this.value)" style="padding: 10px; width: auto; margin:0; border-radius: 14px; font-size: 13px; border: 1px solid var(--border-ui);">
+                    <option value="fr">FR</option><option value="nl">NL</option><option value="en">EN</option>
+                </select>
+                <button onclick="toggleDarkMode()" id="theme-btn" style="background:var(--bg-card); border:1px solid var(--border-ui); padding:10px; border-radius:14px; cursor:pointer; font-size: 18px;">🌙</button>
             </div>
         </div>
 
-        <div id="section-saisie" class="app-content-view">
-            <div class="sub-navigation">
-                <button class="sub-nav-item active" id="btn-sub-work" onclick="toggleSubView('work')">🕒 Travail</button>
-                <button class="sub-nav-item" id="btn-sub-vacation" onclick="toggleSubView('vacation')">🌴 Absence</button>
+        <div id="section-saisie" class="app-view-block">
+            <div class="sub-view-nav" style="display:flex; gap:12px; margin-bottom:25px;">
+                <button class="btn-main" id="sub-nav-work" onclick="toggleForm('work')" style="flex:1;">🕓 Travail</button>
+                <button class="btn-main" id="sub-nav-vac" onclick="toggleForm('vac')" style="flex:1; background:var(--text-muted);">🌴 Absence</button>
             </div>
 
-            <div id="view-form-work">
-                <div class="card-component" style="border-left: 12px solid var(--primary-blue);">
-                    <label id="lbl-weekly-target">OBJECTIF SEMAINE (39H)</label>
-                    <b style="font-size:2.8em; color:var(--primary-blue); letter-spacing: -1.5px;" id="val-week-remaining">39h00</b>
+            <div id="view-work">
+                <div class="ui-card" style="border-left: 12px solid var(--d-navy);">
+                    <label id="lbl-goal-week">OBJECTIF SEMAINE (39H)</label>
+                    <b style="font-size:3.2em; color:var(--d-navy); letter-spacing: -2px;" id="val-week-timer">39h00</b>
                 </div>
                 
-                <div class="card-component">
-                    <label id="lbl-field-date">Date de l'intervention</label>
-                    <input type="date" id="input-work-date">
+                <div class="ui-card">
+                    <label id="lbl-f-date">Date</label><input type="date" id="f-work-date">
                     
                     <div style="display:flex; gap:15px;">
-                        <div style="flex:1;">
-                            <label id="lbl-field-start">Heure Début</label>
-                            <input type="time" id="input-work-start" value="08:00">
-                        </div>
-                        <div style="flex:1;">
-                            <label id="lbl-field-end">Heure Fin</label>
-                            <input type="time" id="input-work-end" value="16:30">
-                        </div>
+                        <div style="flex:1;"><label id="lbl-f-start">Début</label><input type="time" id="f-work-start" value="08:00"></div>
+                        <div style="flex:1;"><label id="lbl-f-end">Fin</label><input type="time" id="f-work-end" value="16:30"></div>
                     </div>
                     
-                    <label id="lbl-field-location">Lieu de mission</label>
-                    <select id="select-work-location"></select>
+                    <label id="lbl-f-loc">Lieu</label><select id="f-work-loc"></select>
                     
-                    <div style="background-color:var(--inner-bg); padding:20px; border-radius:20px; margin-bottom:25px; border: 1.5px solid var(--border-color);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <span style="font-weight:800; font-size:0.95em;" id="lbl-opt-start-home">Départ Domicile (-30m)</span>
-                            <input type="checkbox" id="check-start-home" class="switch-ios-style">
+                    <div style="background:var(--bg-inner); padding:22px; border-radius:24px; margin: 10px 0 25px 0; border: 1px solid var(--border-ui);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                            <span id="lbl-opt-s" style="font-weight:700; font-size:14px;">Départ Domicile (-30m)</span>
+                            <input type="checkbox" id="opt-home-s" class="switch-ios">
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:800; font-size:0.95em;" id="lbl-opt-end-home">Retour Domicile (-30m)</span>
-                            <input type="checkbox" id="check-end-home" class="switch-ios-style">
+                            <span id="lbl-opt-e" style="font-weight:700; font-size:14px;">Retour Domicile (-30m)</span>
+                            <input type="checkbox" id="opt-home-e" class="switch-ios">
                         </div>
                     </div>
                     
-                    <button class="action-button" onclick="submitWorkEntry()" id="btn-save-activity">Enregistrer la journée</button>
+                    <button class="btn-main" onclick="saveActivity()" id="btn-save-activity">Enregistrer la journée</button>
                 </div>
             </div>
 
-            <div id="view-form-vacation" style="display:none;">
-                <div class="card-component" style="border-left: 12px solid var(--color-success);">
-                    <label id="lbl-vac-remaining">SOLDE CONGÉS ANNUELS</label>
-                    <b style="font-size:2.8em; color:var(--color-success);" id="val-vacation-balance-display">28 j</b>
+            <div id="view-vac" style="display:none;">
+                <div class="ui-card" style="border-left: 12px solid var(--color-ok);">
+                    <label id="lbl-vac-rest">SOLDE CONGÉS DISPONIBLES</label>
+                    <b style="font-size:3.2em; color:var(--color-ok);" id="val-vac-main-display">28 j</b>
                 </div>
-                <div class="card-component">
-                    <label id="lbl-vac-type">Motif de l'absence</label>
-                    <select id="select-vacation-type"></select>
-                    
+                <div class="ui-card">
+                    <label id="lbl-f-vtype">Type de congé</label><select id="f-vac-type"></select>
                     <div style="display:flex; gap:15px;">
-                        <div style="flex:1;">
-                            <label id="lbl-vac-start">Du (inclus)</label>
-                            <input type="date" id="input-vac-start">
-                        </div>
-                        <div style="flex:1;">
-                            <label id="lbl-vac-end">Au (inclus)</label>
-                            <input type="date" id="input-vac-end">
-                        </div>
+                        <div style="flex:1;"><label id="lbl-f-vs">Du</label><input type="date" id="f-vac-start"></div>
+                        <div style="flex:1;"><label id="lbl-f-ve">Au</label><input type="date" id="f-vac-end"></div>
                     </div>
-                    
-                    <button class="action-button" onclick="submitVacationEntry()" style="background:var(--color-success);" id="btn-save-vacation">Valider la demande</button>
+                    <button class="btn-main" onclick="saveVacation()" style="background:var(--color-ok);" id="btn-save-vac">Confirmer l'absence</button>
                 </div>
             </div>
         </div>
 
-        <div id="section-registre" class="app-content-view" style="display:none;">
-            <div class="card-component">
+        <div id="section-registre" class="app-view-block" style="display:none;">
+            <div class="ui-card">
                 <div style="display:flex; gap:15px; margin-bottom:25px;" class="no-print">
-                    <div style="flex:1;">
-                        <label id="lbl-filter-month">Sélection Mois</label>
-                        <select id="filter-month" onchange="refreshTableData()"></select>
-                    </div>
-                    <div style="flex:1;">
-                        <label id="lbl-filter-year">Année</label>
-                        <select id="filter-year" onchange="refreshTableData()"></select>
-                    </div>
+                    <div style="flex:1;"><label>Mois</label><select id="filter-m" onchange="refreshData()"></select></div>
+                    <div style="flex:1;"><label>Année</label><select id="filter-y" onchange="refreshData()"></select></div>
                 </div>
                 
-                <div class="data-table-wrapper">
-                    <table id="main-work-table">
+                <div class="table-scroll-container">
+                    <table id="table-log">
                         <thead>
                             <tr>
-                                <th id="th-col-date">DATE</th>
-                                <th id="th-col-loc">LIEU</th>
-                                <th id="th-col-hours">HEURES</th>
-                                <th id="th-col-dur">DURÉE</th>
-                                <th id="th-col-diff">+/-</th>
-                                <th class="no-print"></th>
+                                <th id="th-date">DATE</th><th id="th-loc">LIEU</th>
+                                <th id="th-hours">HEURES</th><th id="th-dur">DURÉE</th>
+                                <th id="th-diff">+/-</th><th class="no-print"></th>
                             </tr>
                         </thead>
-                        <tbody id="table-entries-body"></tbody>
+                        <tbody id="table-body"></tbody>
                     </table>
                 </div>
-                
-                <div class="stats-summary-grid no-print">
-                    <div class="summary-box">
-                        <span class="summary-box-label" id="box-label-total">Total Presté</span>
-                        <span class="summary-box-value" id="val-total-month">0h00</span>
+
+                <div class="stats-row no-print">
+                    <div class="stat-card">
+                        <span class="stat-card-label" id="box-l-total">Total Presté</span>
+                        <span class="stat-card-value" id="val-total-month">0h00</span>
                     </div>
-                    <div class="summary-box">
-                        <span class="summary-box-label" id="box-label-vac">Congés Restants</span>
-                        <span class="summary-box-value" id="val-vac-balance-table">28 j</span>
+                    <div class="stat-card">
+                        <span class="stat-card-label" id="box-l-vac">Congés Restants</span>
+                        <span class="stat-card-value" id="val-vac-table">28 j</span>
                     </div>
-                    <div class="summary-box">
-                        <span class="summary-box-label" id="box-label-over">Heures Suppl.</span>
-                        <span class="summary-box-value" id="val-overtime-month">0h00</span>
+                    <div class="stat-card">
+                        <span class="stat-card-label" id="box-l-over">Heures Suppl.</span>
+                        <span class="stat-card-value" id="val-over-month">0h00</span>
                     </div>
                 </div>
             </div>
 
-            <div class="card-component" id="comment-input-section">
-                <label id="lbl-pdf-notes">Notes et observations pour le rapport</label>
-                <textarea id="text-area-notes" placeholder="..." oninput="synchronizeNotes()"></textarea>
+            <div class="ui-card no-print" id="input-obs-container">
+                <label id="lbl-obs-input">Observations pour le rapport PDF</label>
+                <textarea id="obs-text-area" placeholder="Décrivez vos travaux ou remarques ici..." oninput="updatePdfNotes()"></textarea>
             </div>
 
-            <div id="print-note-output" style="display:none;">
-                <h4 style="color:#003366; margin-bottom:10px; font-size:11pt; border-bottom: 2px solid #003366; padding-bottom:5px;" id="pdf-lbl-remarks">OBSERVATIONS DU TECHNICIEN :</h4>
-                <p id="pdf-content-notes" style="font-size:10pt; white-space: pre-wrap; line-height: 1.6;"></p>
+            <div id="pdf-observations-block">
+                <h4 style="color:#003366; margin-bottom:20px; font-size:16pt; border-bottom: 3px solid #003366; padding-bottom:12px; text-transform: uppercase;">Observations du Technicien :</h4>
+                <div id="pdf-obs-render" style="font-size:12pt; min-height: 500px; border: 1px solid #e2e8f0; padding: 25px; border-radius: 15px; background: #fafafa; white-space: pre-wrap; line-height: 1.8;"></div>
+                
+                <div class="signature-area">
+                    <div class="sig-field">Signature Technicien</div>
+                    <div class="sig-field">Signature Responsable</div>
+                </div>
             </div>
         </div>
 
-        <div id="section-admin" class="app-content-view" style="display:none;">
-            <div class="card-component">
-                <h3 style="margin-bottom:25px; color:var(--primary-blue); font-weight: 950; text-transform: uppercase;">Gestion des Accès</h3>
-                
-                <label>Identifiant (ex: p.martin)</label>
-                <input type="text" id="admin-new-id" placeholder="ID Unique">
-                
-                <div style="display:flex; gap:15px;">
-                    <div style="flex:1;">
-                        <label>Prénom</label>
-                        <input type="text" id="admin-new-prenom" placeholder="Prénom">
-                    </div>
-                    <div style="flex:1;">
-                        <label>Nom</label>
-                        <input type="text" id="admin-new-nom" placeholder="Nom">
-                    </div>
+        <div id="section-admin" class="app-view-block" style="display:none;">
+            <div class="ui-card">
+                <h3 style="margin-bottom:25px; color:var(--d-navy); display:flex; align-items:center; gap:10px;">
+                    <span>🛡️</span> Gestion des Accès
+                </h3>
+                <label>Identifiant Unique</label><input type="text" id="admin-user-id" placeholder="ex: j.dupont">
+                <div style="display:flex; gap:12px;">
+                    <div style="flex:1;"><label>Prénom</label><input type="text" id="admin-user-p"></div>
+                    <div style="flex:1;"><label>Nom</label><input type="text" id="admin-user-n"></div>
                 </div>
-                
-                <label>Code PIN Personnel</label>
-                <input type="password" id="admin-new-pin" maxlength="4" placeholder="4 chiffres">
-                
-                <label>Rôle Utilisateur</label>
-                <select id="admin-new-role">
+                <label>Code PIN (4 chiffres)</label><input type="password" id="admin-user-pin" maxlength="4" inputmode="numeric">
+                <label>Rôle Système</label>
+                <select id="admin-user-role">
                     <option value="user">Utilisateur Standard</option>
-                    <option value="admin">Administrateur Système</option>
+                    <option value="admin">Administrateur</option>
                 </select>
-                
-                <button class="action-button" onclick="processAdminUserCreation()" style="background:var(--color-success);">Créer le compte</button>
+                <button class="btn-main" onclick="adminCreateAccount()" style="background:var(--color-ok); margin-top:10px;">Enregistrer le membre</button>
             </div>
-
-            <div class="card-component">
-                <label>Membres de l'équipe</label>
-                <div id="admin-user-list-container"></div>
+            
+            <div class="ui-card">
+                <label style="margin-bottom:20px;">Liste des collaborateurs</label>
+                <div id="admin-members-list" style="display:flex; flex-direction:column; gap:15px;"></div>
             </div>
         </div>
     </div>
 
-    <nav class="bottom-tabs no-print">
-        <button class="bottom-tab-item active" id="nav-item-saisie" onclick="navigateToTab('saisie', this)">
-            <span style="font-size:24px;">🕓</span>
-            <span id="nav-label-saisie">Saisie</span>
-        </button>
-        <button class="bottom-tab-item" id="nav-item-registre" onclick="navigateToTab('registre', this)">
-            <span style="font-size:24px;">🗓️</span>
-            <span id="nav-label-reg">Registre</span>
-        </button>
-        <button class="bottom-tab-item" onclick="triggerCleanPrint()">
-            <span style="font-size:24px;">🖨️</span>
-            <span id="nav-label-print">Imprimer</span>
-        </button>
-        <button class="bottom-tab-item" id="nav-admin-access" style="display:none;" onclick="navigateToTab('admin', this)">
-            <span style="font-size:24px;">🛡️</span>
-            <span>Admin</span>
-        </button>
+    <nav class="bottom-nav no-print">
+        <button class="nav-item active" id="tab-saisie" onclick="showTab('saisie', this)"><i>🕓</i><span id="nav-l-s">Saisie</span></button>
+        <button class="nav-item" id="tab-registre" onclick="showTab('registre', this)"><i>🗓️</i><span id="nav-l-r">Registre</span></button>
+        <button class="nav-item" onclick="initPrintProcess()"><i>🖨️</i><span id="nav-l-p">Imprimer</span></button>
+        <button class="nav-item" id="nav-admin-link" style="display:none;" onclick="showTab('admin', this)"><i>🛡️</i><span>Admin</span></button>
     </nav>
 
     <script>
+        /* ==========================================================================
+           3. LOGIQUE JAVASCRIPT MASTER 4.8
+           ========================================================================== */
+
         /**
-         * OBJET DE TRADUCTION COMPLET (VOLUME ÉTENDU)
+         * DICTIONNAIRE MULTILINGUE COMPLET
          */
-        const DICTIONARY = {
+        const TRANSLATIONS = {
             fr: {
-                auth_user: "Utilisateur", auth_pin: "Code PIN de sécurité", auth_submit: "OUVRIR LA SESSION",
-                welcome: "Bonjour", weekly_target: "OBJECTIF SEMAINE (39H)", date_label: "Date de l'intervention",
-                start_label: "Heure Début", end_label: "Heure Fin", loc_label: "Lieu de mission",
-                home_start: "Départ Domicile (-30m)", home_end: "Retour Domicile (-30m)", save_btn: "ENREGISTRER LA JOURNÉE",
-                vac_bal_label: "SOLDE CONGÉS ANNUELS", vac_type_label: "Motif de l'absence",
-                vac_start_label: "Du (inclus)", vac_end_label: "Au (inclus)", vac_btn: "VALIDER LA DEMANDE",
-                tab_work: "Travail", tab_vac: "Absence", filter_m: "Sélection Mois", filter_y: "Année",
-                th_d: "DATE", th_l: "LIEU", th_h: "HEURES", th_dur: "DURÉE", th_diff: "+/-",
-                box_total: "Total Presté", box_vac: "Congés Restants", box_over: "Heures Suppl.",
-                pdf_note_lbl: "Notes et observations pour le rapport", pdf_rem_lbl: "OBSERVATIONS DU TECHNICIEN :",
-                nav_s: "Saisie", nav_r: "Registre", nav_p: "Imprimer"
+                hi: "Bonjour", goal: "OBJECTIF SEMAINE (39H)", save: "ENREGISTRER", 
+                total: "Total Presté", vac: "Congés Restants", over: "Heures Suppl.",
+                auth_u: "Utilisateur", auth_p: "Code PIN de sécurité", login: "ACCÉDER AU PORTAIL",
+                tab_w: "🕓 Travail", tab_v: "🌴 Absence", obs: "Observations pour le rapport PDF",
+                nav_s: "Saisie", nav_r: "Registre", nav_p: "Imprimer",
+                vac_rem: "SOLDE CONGÉS DISPONIBLES"
             },
             nl: {
-                auth_user: "Gebruiker", auth_pin: "Beveiligingspincode", auth_submit: "SESSIE OPENEN",
-                welcome: "Goeiedag", weekly_target: "WEEKDOELSTELLING (39U)", date_label: "Datum van interventie",
-                start_label: "Startuur", end_label: "Einduur", loc_label: "Locatie",
-                home_start: "Vertrek Thuis (-30m)", home_end: "Terug naar Huis (-30m)", save_btn: "DAG OPSLAAN",
-                vac_bal_label: "JAARLIJKS VERLOFSALDO", vac_type_label: "Reden van afwezigheid",
-                vac_start_label: "Van (incl.)", vac_end_label: "Tot (incl.)", vac_btn: "AANVRAAG BEVESTIGEN",
-                tab_work: "Werk", tab_vac: "Verlof", filter_m: "Selecteer Maand", filter_y: "Jaar",
-                th_d: "DATUM", th_l: "LOCATIE", th_h: "UREN", th_dur: "DUUR", th_diff: "+/-",
-                box_total: "Totaal Gewerkt", box_vac: "Resterend Verlof", box_over: "Overuren",
-                pdf_note_lbl: "Nota's en opmerkingen voor het rapport", pdf_rem_lbl: "OPMERKINGEN TECHNICUS:",
-                nav_s: "Invoer", nav_r: "Register", nav_p: "Afdrukken"
+                hi: "Goeiedag", goal: "WEEKDOELSTELLING (39U)", save: "OPSLAAN",
+                total: "Totaal Gewerkt", vac: "Resterend Verlof", over: "Overuren",
+                auth_u: "Gebruiker", auth_p: "Veiligheids PIN", login: "LOG IN",
+                tab_w: "🕓 Werk", tab_v: "🌴 Verlof", obs: "Opmerkingen voor PDF-rapport",
+                nav_s: "Invoer", nav_r: "Register", nav_p: "Print",
+                vac_rem: "RESTEREND VERLOFSALDO"
             },
             en: {
-                auth_user: "Username", auth_pin: "Security PIN", auth_submit: "OPEN SESSION",
-                welcome: "Hello", weekly_target: "WEEKLY TARGET (39H)", date_label: "Intervention Date",
-                start_label: "Start Time", end_label: "End Time", loc_label: "Location",
-                home_start: "Start from Home (-30m)", home_end: "Return Home (-30m)", save_btn: "SAVE DAY",
-                vac_bal_label: "ANNUAL LEAVE BALANCE", vac_type_label: "Reason for absence",
-                vac_start_label: "From (incl.)", vac_end_label: "To (incl.)", vac_btn: "CONFIRM REQUEST",
-                tab_work: "Work", tab_vac: "Leave", filter_m: "Select Month", filter_y: "Year",
-                th_d: "DATE", th_l: "LOCATION", th_h: "HOURS", th_dur: "DURATION", th_diff: "+/-",
-                box_total: "Total Worked", box_vac: "Leave Balance", box_over: "Overtime",
-                pdf_note_lbl: "Notes and observations for the report", pdf_rem_lbl: "TECHNICIAN REMARKS:",
-                nav_s: "Entry", nav_r: "Registry", nav_p: "Print"
+                hi: "Hello", goal: "WEEKLY TARGET (39H)", save: "SAVE ENTRY",
+                total: "Total Hours", vac: "Leave Balance", over: "Overtime",
+                auth_u: "Username", auth_p: "Security PIN", login: "LOGIN",
+                tab_w: "🕓 Work", tab_v: "🌴 Leave", obs: "Observations for PDF report",
+                nav_s: "Entry", nav_r: "Registry", nav_p: "Print",
+                vac_rem: "AVAILABLE LEAVE BALANCE"
             }
         };
 
         /**
-         * CONFIGURATION FIREBASE
+         * CONFIGURATION ET VARIABLES GLOBALES
          */
-        const FIREBASE_CONFIG = { 
+        const FIREBASE_INIT = { 
             apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
             authDomain: "worklog-fc54b.firebaseapp.com", 
             databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", 
             projectId: "worklog-fc54b" 
         };
-        
-        firebase.initializeApp(FIREBASE_CONFIG);
-        const database = firebase.database();
+        firebase.initializeApp(FIREBASE_INIT);
+        const rtdb = firebase.database();
+
+        let currentUser = null;
+        let dataEntries = [];
+        let activeLang = 'fr';
+        const MONTH_NAMES = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
         /**
-         * VARIABLES D'ÉTAT GLOBALES
+         * INITIALISATION DU SYSTÈME
          */
-        let sessionUser = null;
-        let workEntries = [];
-        let currentActiveLanguage = 'fr';
-        const MONTH_NAMES_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-
-        /**
-         * FONCTION : INITIALISATION AU CHARGEMENT
-         */
-        function startupApplication() {
-            console.log("System initialization...");
-            
-            // Initialisation des sélecteurs temporels
-            populateYearFilter();
-            populateMonthFilter();
-            
-            // Données statiques
-            setupLocationOptions();
-            setupAbsenceOptions();
-
-            // Initialisation des dates par défaut
-            const isoToday = new Date().toISOString().split('T')[0];
-            document.getElementById('input-work-date').value = isoToday;
-            document.getElementById('input-vac-start').value = isoToday;
-            document.getElementById('input-vac-end').value = isoToday;
+        function initSystem() {
+            console.log("System Initializing...");
+            setupSelectors();
+            setInitialDates();
+            updateLanguage('fr');
             
             // Affichage de la date du jour
-            updateDateDisplay();
-            
-            // Langue initiale
-            applyLanguageSwitch('fr');
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            document.getElementById('txt-today-full').innerText = new Date().toLocaleDateString('fr-FR', options);
         }
 
         /**
-         * FONCTIONS DE REMPLISSAGE (DOM)
+         * CONFIGURATION DES SÉLECTEURS (MOIS, ANNÉES, LIEUX)
          */
-        function populateYearFilter() {
-            const select = document.getElementById('filter-year'); 
-            const currentYear = new Date().getFullYear();
-            for(let year = currentYear - 1; year <= currentYear + 1; year++){
-                let opt = document.createElement('option'); 
-                opt.value = year; 
-                opt.text = year; 
-                if(year === currentYear) opt.selected = true; 
-                select.appendChild(opt);
+        function setupSelectors() {
+            const yr = new Date().getFullYear();
+            const ySel = document.getElementById('filter-y');
+            const mSel = document.getElementById('filter-m');
+            
+            // Génération dynamique des années (N-1 à N+1)
+            for(let i = yr - 1; i <= yr + 1; i++) {
+                let o = document.createElement('option'); o.value = i; o.text = i;
+                if(i === yr) o.selected = true; ySel.appendChild(o);
             }
-        }
 
-        function populateMonthFilter() {
-            const select = document.getElementById('filter-month');
-            MONTH_NAMES_FR.forEach((name, index) => {
-                let opt = document.createElement('option'); 
-                opt.value = index; 
-                opt.text = name; 
-                if(index === new Date().getMonth()) opt.selected = true; 
-                select.appendChild(opt);
+            // Génération des mois
+            MONTH_NAMES.forEach((m, idx) => {
+                let o = document.createElement('option'); o.value = idx; o.text = m;
+                if(idx === new Date().getMonth()) o.selected = true; mSel.appendChild(o);
             });
-        }
 
-        function setupLocationOptions() {
+            // Lieux prédéfinis
             const locations = ["Wemmel Office", "Client Mission", "Esso Antwerpen", "Projet INEOS", "Home Office"];
-            const select = document.getElementById('select-work-location');
-            locations.forEach(loc => { 
-                let opt = document.createElement('option'); 
-                opt.value = loc; 
-                opt.text = loc; 
-                select.appendChild(opt); 
+            const locSel = document.getElementById('f-work-loc');
+            locations.forEach(l => {
+                let o = document.createElement('option'); o.value = l; o.text = l;
+                locSel.appendChild(o);
             });
-        }
 
-        function setupAbsenceOptions() {
-            const types = ["Congés légaux", "Maladie", "Récupération", "Férié"];
-            const select = document.getElementById('select-vacation-type');
-            types.forEach(type => { 
-                let opt = document.createElement('option'); 
-                opt.value = type; 
-                opt.text = type; 
-                select.appendChild(opt); 
+            // Types d'absences
+            const vacTypes = ["Congés légaux", "Maladie", "Récupération", "Férié", "Petit Chômage"];
+            const vTypeSel = document.getElementById('f-vac-type');
+            vacTypes.forEach(t => {
+                let o = document.createElement('option'); o.value = t; o.text = t;
+                vTypeSel.appendChild(o);
             });
         }
 
         /**
-         * GESTION DU MULTILINGUE
+         * RÉGLAGE DES DATES PAR DÉFAUT
          */
-        function applyLanguageSwitch(langCode) {
-            currentActiveLanguage = langCode;
-            const t = DICTIONARY[langCode];
-            
-            // Auth
-            document.getElementById('label-auth-user').innerText = t.auth_user;
-            document.getElementById('label-auth-pin').innerText = t.auth_pin;
-            document.getElementById('btn-auth-submit').innerText = t.auth_submit;
-            
-            // Header & Saisie
-            document.getElementById('lbl-weekly-target').innerText = t.weekly_target;
-            document.getElementById('lbl-field-date').innerText = t.date_label;
-            document.getElementById('lbl-field-start').innerText = t.start_label;
-            document.getElementById('lbl-field-end').innerText = t.end_label;
-            document.getElementById('lbl-field-location').innerText = t.loc_label;
-            document.getElementById('lbl-opt-start-home').innerText = t.home_start;
-            document.getElementById('lbl-opt-end-home').innerText = t.home_end;
-            document.getElementById('btn-save-activity').innerText = t.save_btn;
-            
-            document.getElementById('lbl-vac-remaining').innerText = t.vac_bal_label;
-            document.getElementById('lbl-vac-type').innerText = t.vac_type_label;
-            document.getElementById('lbl-vac-start').innerText = t.vac_start_label;
-            document.getElementById('lbl-vac-end').innerText = t.vac_end_label;
-            document.getElementById('btn-save-vacation').innerText = t.vac_btn;
-            
-            document.getElementById('btn-sub-work').innerText = "🕒 " + t.tab_work;
-            document.getElementById('btn-sub-vacation').innerText = "🌴 " + t.tab_vac;
-            
-            // Table
-            document.getElementById('lbl-filter-month').innerText = t.filter_m;
-            document.getElementById('lbl-filter-year').innerText = t.filter_y;
-            document.getElementById('th-col-date').innerText = t.th_d;
-            document.getElementById('th-col-loc').innerText = t.th_l;
-            document.getElementById('th-col-hours').innerText = t.th_h;
-            document.getElementById('th-col-dur').innerText = t.th_dur;
-            document.getElementById('th-col-diff').innerText = t.th_diff;
-            
-            document.getElementById('box-label-total').innerText = t.box_total;
-            document.getElementById('box-label-vac').innerText = t.box_vac;
-            document.getElementById('box-label-over').innerText = t.box_over;
-            
-            // PDF & Nav
-            document.getElementById('lbl-pdf-notes').innerText = t.pdf_note_lbl;
-            document.getElementById('pdf-lbl-remarks').innerText = t.pdf_rem_lbl;
-            document.getElementById('nav-label-saisie').innerText = t.nav_s;
-            document.getElementById('nav-label-reg').innerText = t.nav_r;
-            document.getElementById('nav-label-print').innerText = t.nav_p;
-
-            if(sessionUser) {
-                document.getElementById('txt-welcome').innerText = t.welcome + " " + sessionUser.prenom;
-            }
+        function setInitialDates() {
+            const now = new Date().toISOString().split('T')[0];
+            document.getElementById('f-work-date').value = now;
+            document.getElementById('f-vac-start').value = now;
+            document.getElementById('f-vac-end').value = now;
         }
 
         /**
-         * SYSTÈME D'AUTHENTIFICATION
+         * SYSTÈME DE NOTIFICATIONS (TOASTS)
          */
-        function executeAuthentication() {
-            const userId = document.getElementById('input-username').value.trim().toLowerCase();
-            const userPin = document.getElementById('input-pin').value;
-            
-            if(!userId || !userPin) {
-                return alert("Veuillez remplir vos accès.");
-            }
+        function notify(msg) {
+            const container = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerText = msg;
+            container.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 3000);
+        }
 
-            database.ref('users/' + userId).once('value', snapshot => {
-                const userData = snapshot.val();
-                
-                if(userData && userData.pin === userPin) {
-                    sessionUser = { id: userId, ...userData };
-                    
-                    document.getElementById('auth-overlay').style.display = 'none';
-                    document.getElementById('app-main-view').style.display = 'block';
-                    document.getElementById('txt-welcome').innerText = DICTIONARY[currentActiveLanguage].welcome + " " + sessionUser.prenom;
-                    
-                    if(sessionUser.role === 'admin') {
-                        document.getElementById('nav-admin-access').style.display = 'flex';
-                        initializeAdminPanel();
-                    }
-                    
-                    startDataSynchronization();
+        /**
+         * AUTHENTIFICATION ET GESTION DE SESSION
+         */
+        function processLogin() {
+            const id = document.getElementById('auth-id').value.trim().toLowerCase();
+            const pin = document.getElementById('auth-pin').value;
+            
+            if(!id || !pin) return notify("Veuillez remplir tous les champs");
+
+            rtdb.ref('users/' + id).once('value', snapshot => {
+                const uData = snapshot.val();
+                if(uData && uData.pin === pin) {
+                    currentUser = { id, ...uData };
+                    document.getElementById('auth-gate').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('auth-gate').style.display = 'none';
+                        document.getElementById('app-viewport').style.display = 'block';
+                        
+                        if(uData.role === 'admin') {
+                            document.getElementById('nav-admin-link').style.display = 'flex';
+                            adminRefreshList();
+                        }
+                        
+                        updateLanguage(activeLang);
+                        startDataSync();
+                        notify("Bienvenue, " + uData.prenom);
+                    }, 400);
                 } else {
-                    alert("Utilisateur ou PIN invalide.");
+                    notify("Identifiants incorrects");
                 }
             });
         }
 
         /**
-         * SYNCHRONISATION DES DONNÉES
+         * SYNCHRONISATION EN TEMPS RÉEL FIREBASE
          */
-        function startDataSynchronization() {
-            database.ref('users/' + sessionUser.id + '/entries').on('value', snapshot => {
-                const data = snapshot.val();
-                workEntries = data ? Object.values(data) : [];
-                refreshTableData();
+        function startDataSync() {
+            rtdb.ref('users/' + currentUser.id + '/entries').on('value', snap => {
+                dataEntries = snap.val() ? Object.values(snap.val()) : [];
+                refreshData();
             });
         }
 
         /**
-         * UTILITAIRES DE CONVERSION TEMPS
+         * LOGIQUE DE CALCUL DES TEMPS (CONVERSION MINUTES <-> FORMAT HH:MM)
          */
-        function timeToMinutes(timeStr) {
+        function tToMin(timeStr) {
             if(!timeStr) return 0;
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return (hours * 60) + minutes;
+            const [h, m] = timeStr.split(':').map(Number);
+            return (h * 60) + m;
         }
 
-        function minutesToFormat(totalMinutes) {
-            const isNegative = totalMinutes < 0;
-            const absoluteMinutes = Math.abs(totalMinutes);
-            const hours = Math.floor(absoluteMinutes / 60);
-            const mins = Math.round(absoluteMinutes % 60);
-            return `${isNegative ? '-' : ''}${hours}h${mins.toString().padStart(2, '0')}`;
+        function minToFmt(minTotal) {
+            const isNeg = minTotal < 0;
+            const absMin = Math.abs(minTotal);
+            const h = Math.floor(absMin / 60);
+            const m = Math.round(absMin % 60);
+            return (isNeg ? '-' : '') + h + 'h' + m.toString().padStart(2, '0');
         }
 
         /**
-         * GESTION DES ENTRÉES
+         * ENREGISTREMENT ACTIVITÉ TRAVAIL
          */
-        async function submitWorkEntry() {
-            const dateVal = document.getElementById('input-work-date').value;
-            const startTime = document.getElementById('input-work-start').value;
-            const endTime = document.getElementById('input-work-end').value;
-            const location = document.getElementById('select-work-location').value;
+        async function saveActivity() {
+            const d = document.getElementById('f-work-date').value;
+            const s = document.getElementById('f-work-start').value;
+            const e = document.getElementById('f-work-end').value;
+            const l = document.getElementById('f-work-loc').value;
             
-            let startMin = timeToMinutes(startTime);
-            let endMin = timeToMinutes(endTime);
+            let startM = tToMin(s);
+            let endM = tToMin(e);
             
-            // Ajustements domicile (-30 min trajet par sens)
-            if(document.getElementById('check-start-home').checked) startMin += 30;
-            if(document.getElementById('check-end-home').checked) endMin -= 30;
+            // Déductions trajet (30 min si coché)
+            if(document.getElementById('opt-home-s').checked) startM += 30;
+            if(document.getElementById('opt-home-e').checked) endM -= 30;
             
-            // Calcul pause (45 min pour sites spécifiques, sinon 30)
-            const pauseTime = (location.includes("Wemmel") || location.includes("Esso")) ? 45 : 30;
-            const netDuration = endMin - startMin - pauseTime;
-
-            if(netDuration <= 0) {
-                return alert("La durée calculée est invalide.");
-            }
-
-            const entryId = dateVal.replace(/-/g, '');
-            await database.ref('users/' + sessionUser.id + '/entries/' + entryId).set({
-                date: dateVal,
-                location: location,
-                minutes: netDuration,
-                start: startTime,
-                end: endTime,
-                isVacation: false
-            });
+            // Déduction pause (45 min pour bureau/esso, 30 min ailleurs)
+            const pause = (l.includes("Wemmel") || l.includes("Esso")) ? 45 : 30;
+            const netMinutes = endM - startM - pause;
             
-            alert("Journée enregistrée avec succès.");
+            if(netMinutes <= 0) return notify("Durée de travail invalide");
+            
+            const payload = {
+                date: d, location: l, minutes: netMinutes, start: s, end: e, isVac: false
+            };
+            
+            await rtdb.ref('users/' + currentUser.id + '/entries/' + d.replace(/-/g, '')).set(payload);
+            notify("Activité enregistrée avec succès");
         }
 
-        async function submitVacationEntry() {
-            let currentDate = new Date(document.getElementById('input-vac-start').value);
-            const stopDate = new Date(document.getElementById('input-vac-end').value);
-            const category = document.getElementById('select-vacation-type').value;
+        /**
+         * ENREGISTREMENT ABSENCES (CONGÉS)
+         */
+        async function saveVacation() {
+            let current = new Date(document.getElementById('f-vac-start').value);
+            const endDate = new Date(document.getElementById('f-vac-end').value);
+            const vType = document.getElementById('f-vac-type').value;
+            
+            if(current > endDate) return notify("Dates incohérentes");
 
-            while(currentDate <= stopDate) {
-                // On ne compte que les jours de semaine
-                const dayOfWeek = currentDate.getDay();
+            while(current <= endDate) {
+                const dayOfWeek = current.getDay();
+                // On ne compte pas les weekends (0=Dim, 6=Sam)
                 if(dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    const isoDate = currentDate.toISOString().split('T')[0];
-                    const entryId = isoDate.replace(/-/g, '');
-                    
-                    // Objectif journalier : 8h (480m) sauf vendredi 7h (420m)
+                    const iso = current.toISOString().split('T')[0];
+                    // Objectif par défaut (8h Lun-Jeu, 7h Ven)
                     const dayGoal = (dayOfWeek === 5) ? 420 : 480;
                     
-                    await database.ref('users/' + sessionUser.id + '/entries/' + entryId).set({
-                        date: isoDate,
-                        location: category,
-                        minutes: dayGoal,
-                        isVacation: true
+                    await rtdb.ref('users/' + currentUser.id + '/entries/' + iso.replace(/-/g, '')).set({
+                        date: iso, location: vType, minutes: dayGoal, isVac: true
                     });
                 }
-                currentDate.setDate(currentDate.getDate() + 1);
+                current.setDate(current.getDate() + 1);
             }
-            alert("Période d'absence enregistrée.");
+            notify("Période d'absence validée");
         }
 
         /**
-         * RENDU DU TABLEAU ET CALCULS
+         * RAFRAÎCHISSEMENT DU TABLEAU ET CALCULS STATISTIQUES
          */
-        function refreshTableData() {
-            const filterMonth = parseInt(document.getElementById('filter-month').value);
-            const filterYear = parseInt(document.getElementById('filter-year').value);
-            const tbody = document.getElementById('table-entries-body');
-            tbody.innerHTML = '';
+        function refreshData() {
+            const selectedMonth = parseInt(document.getElementById('filter-m').value);
+            const selectedYear = parseInt(document.getElementById('filter-y').value);
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
             
-            let monthlyTotalMinutes = 0;
-            let monthlyOvertimeMinutes = 0;
-            let vacationDaysCount = 0;
+            let monthlyTotalMin = 0;
+            let monthlyOvertimeMin = 0;
+            let vacationDaysUsed = 0;
             
-            // Calcul global des congés sur l'année
-            workEntries.forEach(entry => {
-                if(entry.isVacation && entry.location === "Congés légaux") {
-                    vacationDaysCount++;
-                }
+            // Calcul du solde congé global
+            dataEntries.forEach(ent => {
+                if(ent.isVac && ent.location === "Congés légaux") vacationDaysUsed++;
             });
 
-            const daysInMonth = new Date(filterYear, filterMonth + 1, 0).getDate();
+            const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
             
-            for(let day = 1; day <= daysInMonth; day++) {
-                const dayIso = `${filterYear}-${String(filterMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const entry = workEntries.find(e => e.date === dayIso);
-                const dateObj = new Date(filterYear, filterMonth, day);
-                const dayIndex = dateObj.getDay();
+            // Boucle sur chaque jour du mois
+            for(let day = 1; day <= lastDay; day++) {
+                const isoDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const entry = dataEntries.find(x => x.date === isoDate);
+                const dObj = new Date(selectedYear, selectedMonth, day);
+                const dayNum = dObj.getDay();
                 
-                let dailyGoal = 0;
-                if(dayIndex !== 0 && dayIndex !== 6) {
-                    dailyGoal = (dayIndex === 5 ? 420 : 480);
+                // Calcul de l'objectif (0 si weekend, sinon 8h ou 7h)
+                let dayGoal = 0;
+                if(dayNum !== 0 && dayNum !== 6) {
+                    dayGoal = (dayNum === 5) ? 420 : 480;
                 }
                 
-                const delta = entry ? (entry.minutes - dailyGoal) : 0;
+                const delta = entry ? (entry.minutes - dayGoal) : 0;
                 
                 if(entry) {
-                    if(!entry.isVacation) monthlyTotalMinutes += entry.minutes;
-                    monthlyOvertimeMinutes += delta;
+                    if(!entry.isVac) monthlyTotalMin += entry.minutes;
+                    monthlyOvertimeMin += delta;
                 }
 
-                const tr = document.createElement('tr');
-                if(dayIndex === 0 || dayIndex === 6) {
-                    tr.style.backgroundColor = "var(--weekend-bg-color)";
-                }
+                // Création de la ligne du tableau
+                const row = document.createElement('tr');
+                if(dayNum === 0 || dayNum === 6) row.style.backgroundColor = "var(--bg-inner)";
                 
-                tr.innerHTML = `
-                    <td><b>${day}/${filterMonth + 1}</b></td>
-                    <td>${entry ? entry.location : ''}</td>
-                    <td>${entry && !entry.isVacation ? entry.start + ' - ' + entry.end : ''}</td>
-                    <td>${entry ? minutesToFormat(entry.minutes) : ''}</td>
-                    <td style="color:${delta >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight:bold">
-                        ${entry ? minutesToFormat(delta) : ''}
+                row.innerHTML = `
+                    <td><span style="opacity:0.5; font-size:9px;">${dayNum===0?'Dim':dayNum===1?'Lun':dayNum===2?'Mar':dayNum===3?'Mer':dayNum===4?'Jeu':dayNum===5?'Ven':'Sam'}</span><br><b>${day}/${selectedMonth+1}</b></td>
+                    <td><span style="font-size:11px;">${entry ? entry.location : '-'}</span></td>
+                    <td>${entry && !entry.isVac ? '<small>'+entry.start+' → '+entry.end+'</small>' : ''}</td>
+                    <td>${entry ? minToFmt(entry.minutes) : ''}</td>
+                    <td style="color:${delta >= 0 ? 'var(--color-ok)' : 'var(--color-err)'}; font-weight:800;">
+                        ${entry ? minToFmt(delta) : ''}
                     </td>
                     <td class="no-print">
-                        ${entry ? `<button onclick="deleteRowEntry('${entry.date}')" style="background:none; border:none; cursor:pointer; font-size:16px;">🗑️</button>` : ''}
+                        ${entry ? `<button onclick="deleteEntry('${entry.date}')" style="background:none; border:none; font-size:16px; cursor:pointer;">🗑️</button>` : ''}
                     </td>
                 `;
-                tbody.appendChild(tr);
+                tableBody.appendChild(row);
             }
 
-            // Mise à jour de l'UI
-            document.getElementById('val-total-month').innerText = minutesToFormat(monthlyTotalMinutes);
-            document.getElementById('val-overtime-month').innerText = minutesToFormat(monthlyOvertimeMinutes);
-            document.getElementById('val-vac-balance-table').innerText = (28 - vacationDaysCount) + " j";
-            document.getElementById('val-vacation-balance-display').innerText = (28 - vacationDaysCount) + " j";
-
-            // Mise à jour du PDF
-            document.getElementById('pdf-val-total-hours').innerText = minutesToFormat(monthlyTotalMinutes);
-            document.getElementById('pdf-val-vacation').innerText = (28 - vacationDaysCount) + " j";
-            document.getElementById('pdf-val-overtime').innerText = minutesToFormat(monthlyOvertimeMinutes);
+            // Mise à jour de l'UI (Tableau) - Layout GAUCHE | MILIEU | DROITE
+            document.getElementById('val-total-month').innerText = minToFmt(monthlyTotalMin);
+            document.getElementById('val-vac-table').innerText = (28 - vacationDaysUsed) + " j";
+            document.getElementById('val-over-month').innerText = minToFmt(monthlyOvertimeMin);
+            
+            // Mise à jour de l'UI (Saisie)
+            document.getElementById('val-vac-main-display').innerText = (28 - vacationDaysUsed) + " j";
+            
+            // Mise à jour PDF
+            document.getElementById('pdf-val-total').innerText = minToFmt(monthlyTotalMin);
+            document.getElementById('pdf-val-vac').innerText = (28 - vacationDaysUsed) + " j";
+            document.getElementById('pdf-val-diff').innerText = minToFmt(monthlyOvertimeMin);
 
             calculateWeeklyProgress();
         }
 
+        /**
+         * CALCUL DU COMPTEUR HEBDOMADAIRE (39H)
+         */
         function calculateWeeklyProgress() {
-            const today = new Date();
-            const startOfWeek = new Date(today);
-            const dayNum = today.getDay();
-            const diff = (dayNum === 0 ? 6 : dayNum - 1);
-            
-            startOfWeek.setDate(today.getDate() - diff);
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            const day = now.getDay();
+            const diffToMonday = (day === 0 ? 6 : day - 1);
+            startOfWeek.setDate(now.getDate() - diffToMonday);
             startOfWeek.setHours(0,0,0,0);
             
-            let completedMinutes = 0;
-            workEntries.forEach(entry => {
-                const entryDate = new Date(entry.date);
-                if(entryDate >= startOfWeek && !entry.isVacation) {
-                    completedMinutes += entry.minutes;
+            let minutesDoneThisWeek = 0;
+            dataEntries.forEach(e => {
+                const eDate = new Date(e.date);
+                if(eDate >= startOfWeek && !e.isVac) {
+                    minutesDoneThisWeek += e.minutes;
                 }
             });
             
-            // Objectif 39h = 2340 minutes
-            document.getElementById('val-week-remaining').innerText = minutesToFormat(2340 - completedMinutes);
+            const weeklyGoalMin = 2340; // 39h * 60min
+            const remaining = weeklyGoalMin - minutesDoneThisWeek;
+            document.getElementById('val-week-timer').innerText = minToFmt(remaining);
         }
 
         /**
-         * FONCTIONS DE NAVIGATION ET UI
+         * GESTION DE L'INTERFACE (TABS & FORMS)
          */
-        function navigateToTab(sectionId, buttonRef) {
-            document.querySelectorAll('.app-content-view').forEach(view => view.style.display = 'none');
-            document.querySelectorAll('.bottom-tab-item').forEach(btn => btn.classList.remove('active'));
-            
-            document.getElementById('section-' + sectionId).style.display = 'block';
-            buttonRef.classList.add('active');
+        function showTab(tabId, btn) {
+            document.querySelectorAll('.app-view-block').forEach(v => v.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('section-' + tabId).style.display = 'block';
+            btn.classList.add('active');
+            window.scrollTo(0,0);
         }
 
-        function toggleSubView(viewMode) {
-            document.getElementById('view-form-work').style.display = (viewMode === 'work' ? 'block' : 'none');
-            document.getElementById('view-form-vacation').style.display = (viewMode === 'vacation' ? 'block' : 'none');
-            
-            document.getElementById('btn-sub-work').classList.toggle('active', viewMode === 'work');
-            document.getElementById('btn-sub-vacation').classList.toggle('active', viewMode === 'vacation');
+        function toggleForm(type) {
+            document.getElementById('view-work').style.display = (type === 'work' ? 'block' : 'none');
+            document.getElementById('view-vac').style.display = (type === 'vac' ? 'block' : 'none');
+            document.getElementById('sub-nav-work').style.background = (type === 'work' ? 'var(--d-navy)' : 'var(--text-muted)');
+            document.getElementById('sub-nav-vac').style.background = (type === 'vac' ? 'var(--color-ok)' : 'var(--text-muted)');
         }
 
-        function triggerCleanPrint() {
-            // Forcer l'affichage du registre
-            navigateToTab('registre', document.getElementById('nav-item-registre'));
+        /**
+         * MISE À JOUR DE LA LANGUE
+         */
+        function updateLanguage(l) {
+            activeLang = l;
+            const t = TRANSLATIONS[l];
             
-            const monthSelect = document.getElementById('filter-month');
-            const yearVal = document.getElementById('filter-year').value;
+            // Auth
+            document.getElementById('lbl-auth-user').innerText = t.auth_u;
+            document.getElementById('lbl-auth-pin').innerText = t.auth_p;
+            document.getElementById('btn-login-submit').innerText = t.login;
             
-            document.getElementById('pdf-employee-name').innerText = sessionUser.prenom + " " + sessionUser.nom;
-            document.getElementById('pdf-reporting-period').innerText = MONTH_NAMES_FR[monthSelect.value].toUpperCase() + " " + yearVal;
+            // Header
+            if(currentUser) document.getElementById('txt-greeting').innerText = t.hi + " " + currentUser.prenom;
             
-            // Délai pour rafraîchissement DOM
+            // Forms
+            document.getElementById('lbl-goal-week').innerText = t.goal;
+            document.getElementById('btn-save-activity').innerText = t.save;
+            document.getElementById('lbl-vac-rest').innerText = t.vac_rem;
+            
+            // Registry Boxes
+            document.getElementById('box-l-total').innerText = t.total;
+            document.getElementById('box-l-vac').innerText = t.vac;
+            document.getElementById('box-l-over').innerText = t.over;
+            
+            // Nav
+            document.getElementById('nav-l-s').innerText = t.nav_s;
+            document.getElementById('nav-l-r').innerText = t.nav_r;
+            document.getElementById('nav-l-p').innerText = t.nav_p;
+            
+            // Obs
+            document.getElementById('lbl-obs-input').innerText = t.obs;
+        }
+
+        /**
+         * PROCESSUS D'IMPRESSION PDF
+         */
+        function initPrintProcess() {
+            showTab('registre', document.getElementById('tab-registre'));
+            
+            // On prépare les données PDF
+            document.getElementById('pdf-name-display').innerText = currentUser.prenom + " " + currentUser.nom;
+            const mLabel = MONTH_NAMES[document.getElementById('filter-m').value];
+            const yLabel = document.getElementById('filter-y').value;
+            document.getElementById('pdf-period-display').innerText = mLabel.toUpperCase() + " " + yLabel;
+            
+            // Petit délai pour laisser l'UI se mettre en place
             setTimeout(() => {
                 window.print();
-            }, 500);
+            }, 600);
         }
 
-        function toggleVisualTheme() {
+        /**
+         * OUTILS SECONDAIRES
+         */
+        function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('theme-btn');
+            btn.innerText = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
         }
 
-        function synchronizeNotes() {
-            document.getElementById('pdf-content-notes').innerText = document.getElementById('text-area-notes').value;
+        function updatePdfNotes() {
+            document.getElementById('pdf-obs-render').innerText = document.getElementById('obs-text-area').value;
         }
 
-        function updateDateDisplay() {
-            const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            document.getElementById('display-today-date').innerText = new Date().toLocaleDateString('fr-FR', options);
-        }
-
-        function deleteRowEntry(dateIso) {
-            if(confirm("Confirmer la suppression de cette entrée ?")) {
-                const id = dateIso.replace(/-/g, '');
-                database.ref('users/' + sessionUser.id + '/entries/' + id).remove();
+        function deleteEntry(dateKey) {
+            if(confirm("Voulez-vous vraiment supprimer cette entrée ?")) {
+                rtdb.ref('users/' + currentUser.id + '/entries/' + dateKey.replace(/-/g,'')).remove();
+                notify("Entrée supprimée");
             }
         }
 
         /**
-         * SECTION : ADMINISTRATION (GESTION DES MEMBRES)
+         * ADMINISTRATION : CRÉATION ET GESTION
          */
-        function initializeAdminPanel() {
-            database.ref('users').on('value', snapshot => {
-                const container = document.getElementById('admin-user-list-container');
+        function adminRefreshList() {
+            rtdb.ref('users').on('value', snap => {
+                const container = document.getElementById('admin-members-list');
                 container.innerHTML = '';
-                const users = snapshot.val();
+                const allUsers = snap.val();
                 
-                for(let id in users) {
-                    const u = users[id];
-                    const userRow = document.createElement('div');
-                    userRow.style.padding = "15px";
-                    userRow.style.borderBottom = "1px solid var(--border-color)";
-                    userRow.style.display = "flex";
-                    userRow.style.justifyContent = "space-between";
-                    userRow.style.alignItems = "center";
+                for(let uid in allUsers) {
+                    const u = allUsers[uid];
+                    const item = document.createElement('div');
+                    item.style.padding = "15px";
+                    item.style.background = "var(--bg-inner)";
+                    item.style.borderRadius = "16px";
+                    item.style.display = "flex";
+                    item.style.justifyContent = "space-between";
+                    item.style.alignItems = "center";
+                    item.style.border = "1px solid var(--border-ui)";
                     
-                    userRow.innerHTML = `
+                    item.innerHTML = `
                         <div>
-                            <span style="font-weight:900;">${u.prenom} ${u.nom}</span><br>
-                            <small style="color:var(--text-secondary)">ID: ${id} | Rôle: ${u.role}</small>
+                            <b style="color:var(--d-navy)">${u.prenom} ${u.nom}</b><br>
+                            <small style="opacity:0.6">${uid} | Role: ${u.role}</small>
                         </div>
-                        <button onclick="processAdminUserDeletion('${id}')" style="background:none; border:none; color:var(--color-danger); font-weight:bold; cursor:pointer;">SUPPRIMER</button>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="adminToggleRole('${uid}', '${u.role}')" style="padding:6px 10px; border-radius:8px; border:1px solid var(--d-blue); background:none; font-size:10px; font-weight:800;">STATUT</button>
+                            <button onclick="adminDeleteUser('${uid}')" style="padding:6px 10px; border-radius:8px; border:none; background:var(--color-err); color:white; font-size:10px; font-weight:800;">X</button>
+                        </div>
                     `;
-                    container.appendChild(userRow);
+                    container.appendChild(item);
                 }
             });
         }
 
-        async function processAdminUserCreation() {
-            const id = document.getElementById('admin-new-id').value.trim().toLowerCase();
-            const pin = document.getElementById('admin-new-pin').value;
-            const prenom = document.getElementById('admin-new-prenom').value;
-            const nom = document.getElementById('admin-new-nom').value;
-            const role = document.getElementById('admin-new-role').value;
-
-            if(!id || pin.length < 4 || !prenom || !nom) {
-                return alert("Informations du compte incomplètes.");
-            }
-
-            await database.ref('users/' + id).set({
-                prenom: prenom,
-                nom: nom,
-                pin: pin,
-                role: role
+        async function adminCreateAccount() {
+            const uid = document.getElementById('admin-user-id').value.trim().toLowerCase();
+            const pin = document.getElementById('admin-user-pin').value;
+            const pre = document.getElementById('admin-user-p').value;
+            const nom = document.getElementById('admin-user-n').value;
+            const rol = document.getElementById('admin-user-role').value;
+            
+            if(!uid || pin.length < 4) return notify("Données Admin incomplètes");
+            
+            await rtdb.ref('users/' + uid).set({
+                prenom: pre, nom: nom, pin: pin, role: rol
             });
             
-            alert("Nouveau membre ajouté à l'organisation.");
-            
-            // Clear fields
-            document.getElementById('admin-new-id').value = '';
-            document.getElementById('admin-new-pin').value = '';
-            document.getElementById('admin-new-prenom').value = '';
-            document.getElementById('admin-new-nom').value = '';
+            notify("Compte " + uid + " créé");
+            // Reset fields
+            document.getElementById('admin-user-id').value = '';
+            document.getElementById('admin-user-pin').value = '';
         }
 
-        function processAdminUserDeletion(targetId) {
-            if(confirm("Supprimer définitivement l'accès de : " + targetId + " ?")) {
-                database.ref('users/' + targetId).remove();
+        function adminToggleRole(uid, currentRole) {
+            const nextRole = (currentRole === 'admin' ? 'user' : 'admin');
+            rtdb.ref('users/' + uid + '/role').set(nextRole);
+            notify("Rôle mis à jour pour " + uid);
+        }
+
+        function adminDeleteUser(uid) {
+            if(confirm("Supprimer définitivement l'utilisateur " + uid + " ?")) {
+                rtdb.ref('users/' + uid).remove();
+                notify("Utilisateur révoqué");
             }
         }
     </script>

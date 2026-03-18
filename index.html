@@ -3,213 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V61</title>
+    <title>Dräger WorkLog V66 - FULL VERSION</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --- VARIABLES DE THEME --- */
         :root {
-            --primary: #003366;
-            --secondary: #005eb8;
-            --bg: #f4f7f9;
-            --card-bg: #ffffff;
-            --text-main: #333333;
-            --text-sub: #64748b;
-            --border: #e1e8ed;
-            --danger: #d9534f;
-            --emerald: #2ecc71;
-            --shadow: 0 4px 12px rgba(0,0,0,0.08);
-            --input-bg: #ffffff;
-            --nav-bg: rgba(255, 255, 255, 0.85);
+            --primary: #003366; --secondary: #005eb8; --bg: #f4f7f9;
+            --card-bg: #ffffff; --text-main: #333; --text-sub: #64748b;
+            --border: #e1e8ed; --danger: #d9534f; --emerald: #2ecc71;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08); --input-bg: #fff;
         }
 
-        /* Classe forcée par le bouton manuel */
         body.dark-mode {
-            --bg: #0b141d;
-            --card-bg: #1a2632;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --border: #2d3d4d;
-            --input-bg: #243442;
+            --bg: #0b141d; --card-bg: #1a2632; --text-main: #f1f5f9;
+            --text-sub: #94a3b8; --border: #2d3d4d; --input-bg: #243442;
             --shadow: 0 4px 12px rgba(0,0,0,0.4);
-            --nav-bg: rgba(26, 38, 50, 0.9);
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            margin: 0;
+            background: var(--bg); margin: 0; color: var(--text-main);
             padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
-            color: var(--text-main);
-            transition: all 0.3s ease;
+            transition: background 0.3s;
         }
 
-        /* --- BOUTON THEME --- */
-        .theme-toggle {
-            background: var(--border);
-            border: none;
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .container { padding: 15px 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
+        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        
+        input, select { 
+            width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; 
+            font-size: 16px; margin-bottom: 12px; background: var(--input-bg); color: var(--text-main); 
+        }
+        label { display: block; margin-bottom: 4px; font-weight: 700; font-size: 0.75em; color: var(--secondary); text-transform: uppercase; }
+        
+        .btn-main { 
+            width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; padding: 16px; border: none; border-radius: 15px; font-weight: 700; cursor: pointer; 
         }
 
-        /* --- AUTHENTICATION --- */
-        #login-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
+        .tabs { 
+            display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); 
+            padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; border-top: 1px solid var(--border); z-index: 1000;
+        }
+        .tab { flex: 1; border: none; background: none; font-size: 11px; color: var(--text-sub); text-align: center; position: relative; }
+        .tab.active { color: var(--secondary); font-weight: bold; }
+        .tab-icon { display: block; font-size: 20px; margin-bottom: 2px; }
+
+        .notif-badge {
+            position: absolute; top: 2px; right: 15px; background: var(--danger); color: white;
+            font-size: 10px; padding: 2px 6px; border-radius: 10px; display: none; border: 2px solid var(--card-bg);
         }
 
-        .box {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 28px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: var(--shadow);
-        }
+        .sub-tabs { display: flex; gap: 8px; margin-bottom: 15px; background: var(--border); padding: 4px; border-radius: 12px; }
+        .sub-tab { flex: 1; padding: 10px; border: none; border-radius: 9px; font-weight: 700; font-size: 0.8em; cursor: pointer; background: none; color: var(--text-sub); }
+        .sub-tab.active { background: var(--card-bg); color: var(--primary); }
 
-        /* --- LAYOUT --- */
-        .container {
-            padding: 20px 16px 140px 16px;
-            max-width: 600px;
-            margin: auto;
-            display: none;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+        th { padding: 10px 4px; color: var(--text-sub); border-bottom: 2px solid var(--border); }
+        td { padding: 12px 4px; border-bottom: 1px solid var(--border); text-align: center; }
+        .weekend { opacity: 0.5; background: rgba(0,0,0,0.02); }
 
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        /* --- INPUTS --- */
-        input, select {
-            width: 100%;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            font-size: 17px;
-            margin-bottom: 15px;
-            display: block;
-            background: var(--input-bg);
-            color: var(--text-main);
-            outline: none;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 0.8em;
-            color: var(--secondary);
-            text-transform: uppercase;
-        }
-
-        .btn-main {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 18px;
-            border: none;
-            border-radius: 18px;
-            font-weight: 700;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-
-        /* --- NAVIGATION --- */
-        .tabs {
-            display: flex;
-            background: var(--nav-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            padding: 12px 10px calc(12px + env(safe-area-inset-bottom)) 10px;
-            border-top: 0.5px solid var(--border);
-            z-index: 1000;
-        }
-
-        .tab {
-            flex: 1; border: none; background: none;
-            font-size: 11px; color: var(--text-sub);
-            font-weight: 600;
-        }
-
-        .tab.active { color: var(--secondary); }
-        .tab-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-
-        /* --- SWITCH iOS --- */
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; }
-        .ios-switch {
-            width: 50px; height: 30px; appearance: none;
-            background: #ccc; border-radius: 20px;
-            position: relative; transition: 0.3s;
-        }
+        .ios-switch { width: 44px; height: 24px; appearance: none; background: #ccc; border-radius: 15px; position: relative; transition: 0.3s; margin: 0; }
         .ios-switch:checked { background: var(--emerald); }
-        .ios-switch::before {
-            content: ''; position: absolute; width: 26px; height: 26px;
-            background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s;
-        }
+        .ios-switch::before { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
         .ios-switch:checked::before { left: 22px; }
 
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); }
+        #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        
         @media print {
-            .tabs, .btn-main, .theme-toggle, .lang-switch, #login-overlay { display: none !important; }
-            .container { display: block !important; width: 100%; color: black; background: white; }
+            .tabs, .btn-main, .sub-tabs, #login-overlay, .delete-col, #btn-theme { display: none !important; }
+            .container { display: block !important; width: 100%; padding: 0; }
         }
     </style>
 </head>
-<body>
+<body onload="initApp()">
 
 <div id="login-overlay">
-    <div class="box" id="auth-login">
-        <h2 style="color:white; margin-bottom:20px;">Dräger RSS</h2>
+    <div class="card" style="width: 90%; max-width: 350px; text-align: center;" id="auth-login">
+        <h2 style="color:var(--primary)">Dräger WorkLog</h2>
         <input type="text" id="loginUser" placeholder="Utilisateur">
         <input type="password" id="loginPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleAuth()">LOGIN</button>
-        <div style="margin-top:15px;">
-            <a onclick="showAuth('register')" style="color:rgba(255,255,255,0.8); cursor:pointer; font-size: 0.9em;">+ Créer un compte</a>
-        </div>
+        <p onclick="showAuth('register')" style="cursor:pointer; color:var(--secondary); font-size:0.8em; margin-top:15px;">+ Créer un compte</p>
     </div>
 
-    <div class="box" id="auth-register" style="display:none;">
-        <h2 style="color:var(--primary);">Nouveau Compte</h2>
+    <div class="card" id="auth-register" style="display:none; width: 90%; max-width: 350px;">
+        <h2 style="color:var(--primary)">Nouveau Compte</h2>
         <input type="text" id="regNom" placeholder="NOM">
         <input type="text" id="regPrenom" placeholder="Prénom">
         <input type="text" id="regUser" placeholder="User">
         <input type="password" id="regPin" maxlength="4" placeholder="PIN" inputmode="numeric">
         <button class="btn-main" onclick="handleRegister()">VALIDER</button>
-        <button class="btn-main" style="background:#ccc; color:#333;" onclick="showAuth('login')">RETOUR</button>
+        <button class="btn-main" style="background:#ccc; margin-top:5px;" onclick="showAuth('login')">RETOUR</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <b id="welcome-msg" style="font-size: 1.2em;">...</b>
-        <div style="display:flex; gap:10px;">
-            <button class="theme-toggle" onclick="toggleDarkMode()" id="themeBtn">🌙</button>
-            <select id="langSelect" onchange="toggleLang(true)" style="margin:0; width:auto; padding:5px 10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <b id="welcome-msg">...</b>
+        <div style="display:flex; gap:8px;">
+            <button onclick="toggleTheme()" id="btn-theme" style="border:none; background:var(--border); padding:8px; border-radius:10px;">🌙</button>
+            <select id="langSelect" onchange="toggleLang(true)" style="width:auto; margin:0; padding:5px;">
                 <option value="fr">FR</option>
                 <option value="nl">NL</option>
             </select>
@@ -217,55 +115,106 @@
     </div>
 
     <div id="saisie" class="content">
-        <div class="card">
-            <label id="lbl-date">Date</label>
-            <input type="date" id="dateInput">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;"><label id="lbl-start">Départ</label><input type="time" id="startTime" value="08:00"></div>
-                <div style="flex:1;"><label id="lbl-end">Retour</label><input type="time" id="endTime" value="16:30"></div>
+        <div class="sub-tabs">
+            <button class="sub-tab active" id="btn-w" onclick="switchSubTab('work')">HEURES</button>
+            <button class="sub-tab" id="btn-v" onclick="switchSubTab('vacation')">CONGÉS</button>
+        </div>
+
+        <div id="form-work">
+            <div class="card" style="border-left: 5px solid var(--primary);">
+                <span id="txt-rem-week" style="font-size:0.9em; color:var(--text-sub)">Reste (Semaine)</span><br>
+                <b id="stat-remaining-week" style="font-size:1.8em; color:var(--primary)">39h00</b>
             </div>
-            <label id="lbl-loc">Lieu</label>
-            <select id="location">
-                <option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option>
-            </select>
-            <div class="card" style="margin: 0 0 15px 0; padding: 15px; background: rgba(0,0,0,0.03);">
-                <div class="toggle-row">
-                    <span id="txt-sh">Départ Maison (-30m)</span>
-                    <input type="checkbox" id="startHome" class="ios-switch">
+            <div class="card">
+                <label id="lbl-date">Date</label>
+                <input type="date" id="dateInput">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label id="lbl-start">Départ</label><input type="time" id="startTime" value="08:00"></div>
+                    <div style="flex:1;"><label id="lbl-end">Retour</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
-                <div class="toggle-row" style="margin-top:15px;">
-                    <span id="txt-eh">Retour Maison (-30m)</span>
-                    <input type="checkbox" id="endHome" class="ios-switch">
+                <label id="lbl-loc">Lieu</label>
+                <select id="location">
+                    <option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option>
+                </select>
+                <div style="background:var(--bg); padding:12px; border-radius:12px; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span id="txt-sh" style="font-size:0.85em;">Maison (-30m)</span>
+                        <input type="checkbox" id="startHome" class="ios-switch">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span id="txt-eh" style="font-size:0.85em;">Maison (-30m)</span>
+                        <input type="checkbox" id="endHome" class="ios-switch">
+                    </div>
                 </div>
+                <button class="btn-main" onclick="saveData()" id="btn-save-work">ENREGISTRER</button>
             </div>
-            <button class="btn-main" onclick="saveData()" id="btn-save-work">ENREGISTRER</button>
+        </div>
+
+        <div id="form-vacation" style="display:none;">
+            <div class="card" style="background:var(--emerald); color:white; text-align:center;">
+                <span id="txt-vac-title">SOLDE CONGÉS LÉGAUX</span><br>
+                <b id="vac-balance" style="font-size:1.8em;">28 jours</b>
+            </div>
+            <div class="card">
+                <label id="lbl-vtype">Type</label>
+                <select id="vacCategory">
+                    <option value="Congés légaux">Congés légaux</option>
+                    <option value="Jour férié">Jour férié</option>
+                    <option value="Malade">Malade</option>
+                    <option value="Récupération">Récupération</option>
+                </select>
+                <label id="lbl-vfrom">Du</label><input type="date" id="vacStart">
+                <label id="lbl-vto">Au</label><input type="date" id="vacEnd">
+                <button class="btn-main" onclick="saveVacation()" id="btn-save-vac">VALIDER</button>
+            </div>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="card">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
                 <select id="selectMonth" onchange="renderTable()"></select>
                 <select id="selectYear" onchange="renderTable()"></select>
             </div>
-            <table id="mainTable">
+            <table>
                 <thead>
-                    <tr><th id="th-date">Date</th><th id="th-loc">Lieu</th><th id="th-real">H</th><th>+/-</th><th class="delete-col"></th></tr>
+                    <tr><th id="th-date">Date</th><th id="th-loc">Lieu</th><th id="th-real">H</th><th id="th-diff">+/-</th><th class="delete-col"></th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-        <button class="btn-main" onclick="window.print()">🖨️ GÉNÉRER PDF</button>
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span id="txt-total">Total:</span><span id="total-month-work" style="font-weight:700;">0h00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; color:var(--emerald);">
+                <span id="txt-final-vac">Congés:</span><span><span id="hist-vac-balance">28</span> <span id="txt-days">j</span></span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                <span id="txt-diff-lbl">Solde +/- :</span><span id="total-month-diff" style="font-weight:700;">0h00</span>
+            </div>
+        </div>
+        <button class="btn-main" onclick="window.print()" id="btn-pdf">🖨️ PDF</button>
+    </div>
+
+    <div id="admin" class="content" style="display:none;">
+        <div class="card">
+            <h3 style="color:var(--primary); margin-top:0;">Gestion des Utilisateurs</h3>
+            <div id="user-list">Chargement...</div>
+        </div>
     </div>
 </div>
 
 <nav class="tabs">
     <button class="tab active" onclick="openTab('saisie', this)"><span class="tab-icon">🕒</span><span id="nav-p">LOG</span></button>
-    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📊</span><span id="nav-t">TABLEAU</span></button>
+    <button class="tab" onclick="openTab('historique', this)"><span class="tab-icon">📊</span><span id="nav-t">HISTO</span></button>
+    <button class="tab" id="nav-admin" style="display:none;" onclick="openTab('admin', this)">
+        <span class="notif-badge" id="admin-badge">0</span>
+        <span class="tab-icon">⚙️</span>ADMIN
+    </button>
 </nav>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = { 
         apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
         authDomain: "worklog-fc54b.firebaseapp.com", 
@@ -277,97 +226,194 @@
 
     let user = null, entries = [], currentLang = 'fr';
 
-    // --- DARK MODE LOGIC ---
-    function toggleDarkMode() {
-        const isDark = document.body.classList.toggle('dark-mode');
-        document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }
-
-    // --- INIT ---
-    function initApp() {
-        // Appliquer thème sauvegardé
-        if(localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('themeBtn').innerText = '☀️';
+    const translations = {
+        fr: { 
+            btnW: "HEURES", btnV: "CONGÉS", remW: "Reste (Semaine)", vacT: "SOLDE CONGÉS LÉGAUX", save: "ENREGISTRER", 
+            date: "Date", start: "Départ", end: "Retour", loc: "Lieu", sh: "Maison (-30m)", eh: "Maison (-30m)", 
+            real: "H", diff: "+/-", navP: "LOG", navT: "HISTO", fvac: "Congés:", days: "j", total: "Total:", 
+            diff_lbl: "Solde +/- :", vtype: "Type", vfrom: "Du", vto: "Au", pdf: "🖨️ PDF", welcome: "Salut",
+            months: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
+        },
+        nl: { 
+            btnW: "UREN", btnV: "VERLOF", remW: "Rest (Week)", vacT: "WETTELIJK VERLOF", save: "OPSLAAN", 
+            date: "Datum", start: "Vertrek", end: "Terug", loc: "Locatie", sh: "Thuis (-30m)", eh: "Thuis (-30m)", 
+            real: "U", diff: "+/-", navP: "LOG", navT: "HISTO", fvac: "Verlof:", days: "d", total: "Totaal:", 
+            diff_lbl: "Saldo +/- :", vtype: "Type", vfrom: "Van", vto: "Tot", pdf: "🖨️ PDF", welcome: "Hallo",
+            months: ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"]
         }
-        
-        const mSel = document.getElementById('selectMonth');
-        const months = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-        months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i == new Date().getMonth() ? 'selected' : ''}>${n}</option>`);
-        
-        const ySel = document.getElementById('selectYear');
+    };
+
+    // --- INITIALISATION ---
+    function initApp() {
+        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); document.getElementById('btn-theme').innerText = '☀️'; }
         const cy = new Date().getFullYear();
-        for (let y = cy - 1; y <= cy + 1; y++) ySel.innerHTML += `<option value="${y}" ${y == cy ? 'selected' : ''}>${y}</option>`;
+        const ySel = document.getElementById('selectYear');
+        for(let y=cy-1; y<=cy+1; y++) ySel.innerHTML += `<option value="${y}" ${y==cy?'selected':''}>${y}</option>`;
+        toggleLang(false);
     }
 
-    // --- AUTH ---
+    // --- AUTHENTIFICATION ---
     function handleAuth() {
         const uId = document.getElementById('loginUser').value.trim().toLowerCase();
         const pin = document.getElementById('loginPin').value;
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
+                if(!d.active && d.role !== 'admin') return alert("En attente de validation admin.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = "Salut " + user.prenom;
+                if(user.lang) { document.getElementById('langSelect').value = user.lang; toggleLang(false); }
+                if(user.role === 'admin') { 
+                    document.getElementById('nav-admin').style.display = 'block'; 
+                    setupAdminWatcher(); 
+                }
                 syncData();
-            } else alert("Erreur identifiants");
+            } else alert("PIN incorrect");
         });
     }
 
-    function syncData() {
-        db.ref('users/' + user.id + '/entries').on('value', snap => {
-            entries = snap.val() ? Object.values(snap.val()) : [];
-            renderTable();
-        });
+    async function handleRegister() {
+        const id = document.getElementById('regUser').value.trim().toLowerCase();
+        const n = document.getElementById('regNom').value, p = document.getElementById('regPrenom').value, pin = document.getElementById('regPin').value;
+        if(!id || pin.length < 4) return alert("Champs incomplets");
+        await db.ref('users/' + id).set({ nom: n, prenom: p, pin: pin, active: false, role: 'user', lang: currentLang });
+        alert("Inscription réussie. Demandez à l'admin de vous activer.");
+        showAuth('login');
+    }
+
+    // --- CALCULS & SYNC ---
+    function syncData() { 
+        db.ref('users/' + user.id + '/entries').on('value', snap => { 
+            entries = snap.val() ? Object.values(snap.val()) : []; 
+            renderTable(); 
+        }); 
     }
 
     async function saveData() {
-        const d = document.getElementById('dateInput').value;
-        if(!d) return alert("Choisis une date");
-        const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
+        const d = document.getElementById('dateInput').value; if(!d) return alert("Date manquante");
+        const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value, l = document.getElementById('location').value;
         const [h1, m1] = s.split(':').map(Number), [h2, m2] = e.split(':').map(Number);
-        let total = (h2 * 60 + m2) - (h1 * 60 + m1) - 30; // -30 min pause standard
+        let total = (h2 * 60 + m2) - (h1 * 60 + m1) - (l === "Wemmel" ? 45 : 30);
         if(document.getElementById('startHome').checked) total -= 30;
         if(document.getElementById('endHome').checked) total -= 30;
+        await db.ref('users/' + user.id + '/entries/' + d.replace(/-/g, '')).set({ date: d, location: l, minutes: total, isVacation: false });
+        alert("Enregistré");
+    }
 
-        await db.ref('users/' + user.id + '/entries/' + d.replace(/-/g, '')).set({
-            date: d, location: document.getElementById('location').value, minutes: total, start: s, end: e
-        });
-        alert("Enregistré !");
+    async function saveVacation() {
+        const sD = new Date(document.getElementById('vacStart').value), eD = new Date(document.getElementById('vacEnd').value);
+        if(!sD || !eD) return alert("Dates manquantes");
+        let curr = new Date(sD);
+        while(curr <= eD) {
+            if(curr.getDay()!==0 && curr.getDay()!==6) {
+                const ds = curr.toISOString().split('T')[0], goal = (curr.getDay()===5 ? 420 : 480);
+                await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g,'')).set({ date: ds, location: document.getElementById('vacCategory').value, minutes: goal, isVacation: true });
+            }
+            curr.setDate(curr.getDate()+1);
+        }
+        alert("Congés sauvegardés");
     }
 
     function renderTable() {
-        const tBody = document.getElementById('tableBody');
-        tBody.innerHTML = '';
-        const m = parseInt(document.getElementById('selectMonth').value);
-        const y = parseInt(document.getElementById('selectYear').value);
-        
-        entries.filter(e => new Date(e.date).getMonth() === m).forEach(e => {
-            tBody.innerHTML += `<tr>
-                <td>${e.date.split('-')[2]}</td>
-                <td>${e.location}</td>
-                <td>${Math.floor(e.minutes/60)}h${(e.minutes%60).toString().padStart(2,'0')}</td>
-                <td>-</td>
-                <td class="delete-col"><button onclick="deleteEntry('${e.date}')">🗑️</button></td>
+        const m = parseInt(document.getElementById('selectMonth').value), y = parseInt(document.getElementById('selectYear').value);
+        const tBody = document.getElementById('tableBody'); tBody.innerHTML = '';
+        let totalM = 0, totalD = 0, vacUsed = 0;
+        entries.forEach(e => { if(e.isVacation && (e.location.includes("Congé") || e.location.includes("Wettelijk"))) vacUsed++; });
+        document.getElementById('vac-balance').innerText = (28 - vacUsed) + " j";
+        document.getElementById('hist-vac-balance').innerText = 28 - vacUsed;
+
+        const days = new Date(y, m + 1, 0).getDate();
+        for(let i=1; i<=days; i++) {
+            const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`, dobj = new Date(y, m, i);
+            const e = entries.find(x => x.date === ds), goal = (dobj.getDay()>=1 && dobj.getDay()<=4) ? 480 : (dobj.getDay()===5 ? 420 : 0);
+            if(e) { totalM += e.minutes; totalD += (e.minutes - goal); }
+            tBody.innerHTML += `<tr class="${(dobj.getDay()==0||dobj.getDay()==6)?'weekend':''}">
+                <td style="font-weight:700;">${i}/${m+1}</td>
+                <td>${e ? e.location : ''}</td>
+                <td>${e ? formatT(e.minutes) : ''}</td>
+                <td style="color:${e && (e.minutes-goal)>=0?'var(--emerald)':'var(--danger)'}">${e ? formatT(e.minutes-goal) : ''}</td>
+                <td class="delete-col">${e ? `<span onclick="deleteEntry('${e.date}')">🗑️</span>` : ''}</td>
             </tr>`;
+        }
+        document.getElementById('total-month-work').innerText = formatT(totalM);
+        document.getElementById('total-month-diff').innerText = formatT(totalD);
+        updateWeeklyStats();
+    }
+
+    function formatT(min) { const h = Math.floor(Math.abs(min)/60), m = Math.round(Math.abs(min)%60); return `${min<0?'-':''}${h}h${m.toString().padStart(2,'0')}`; }
+
+    function updateWeeklyStats() {
+        const now = new Date(), startWeek = new Date(now);
+        startWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+        startWeek.setHours(0,0,0,0);
+        let wk = 0; entries.forEach(e => { if(new Date(e.date) >= startWeek && !e.isVacation) wk += e.minutes; });
+        const rem = 2340 - wk; document.getElementById('stat-remaining-week').innerText = rem <= 0 ? "OK" : formatT(rem);
+    }
+
+    // --- GESTION ADMIN ---
+    function setupAdminWatcher() {
+        db.ref('users').on('value', snap => {
+            const users = snap.val(), div = document.getElementById('user-list'), badge = document.getElementById('admin-badge');
+            div.innerHTML = ''; let pending = 0;
+            for(let id in users) { if(id===user.id) continue;
+                if(!users[id].active) pending++;
+                div.innerHTML += `<div class="user-row" style="${!users[id].active?'background:rgba(217,83,79,0.05);':''}">
+                    <div><b>${users[id].prenom} ${users[id].nom}</b><br><small>${id}</small></div>
+                    <div style="display:flex; gap:12px;">
+                        <input type="checkbox" class="ios-switch" ${users[id].active?'checked':''} onchange="db.ref('users/${id}/active').set(this.checked)">
+                        <span onclick="deleteUser('${id}')" style="font-size:18px;">🗑️</span>
+                    </div>
+                </div>`;
+            }
+            if(pending > 0) { badge.innerText = pending; badge.style.display = 'block'; }
+            else badge.style.display = 'none';
         });
     }
 
-    function openTab(id, btn) {
-        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).style.display = 'block';
-        btn.classList.add('active');
+    // --- UI HELPERS ---
+    function openTab(id, btn) { 
+        document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); 
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
+        document.getElementById(id).style.display = 'block'; btn.classList.add('active'); 
+    }
+    
+    function switchSubTab(t) { 
+        document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; 
+        document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; 
+        document.getElementById('btn-w').classList.toggle('active', t === 'work'); 
+        document.getElementById('btn-v').classList.toggle('active', t === 'vacation'); 
     }
 
-    async function deleteEntry(date) {
-        if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+date.replace(/-/g,'')).remove();
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-mode');
+        document.getElementById('btn-theme').innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
 
-    window.onload = initApp;
+    function toggleLang(updateDb) {
+        currentLang = document.getElementById('langSelect').value;
+        const t = translations[currentLang];
+        document.getElementById('btn-w').innerText = t.btnW; document.getElementById('btn-v').innerText = t.btnV;
+        document.getElementById('txt-rem-week').innerText = t.remW; document.getElementById('txt-vac-title').innerText = t.vacT;
+        document.getElementById('btn-save-work').innerText = t.save; document.getElementById('lbl-date').innerText = t.date;
+        document.getElementById('lbl-start').innerText = t.start; document.getElementById('lbl-end').innerText = t.end;
+        document.getElementById('lbl-loc').innerText = t.loc; document.getElementById('th-date').innerText = t.date;
+        document.getElementById('th-loc').innerText = t.loc; document.getElementById('th-real').innerText = t.real;
+        document.getElementById('th-diff').innerText = t.diff; document.getElementById('nav-p').innerText = t.navP;
+        document.getElementById('nav-t').innerText = t.navT; document.getElementById('txt-final-vac').innerText = t.fvac;
+        document.getElementById('txt-days').innerText = t.days; document.getElementById('txt-total').innerText = t.total;
+        document.getElementById('txt-diff-lbl').innerText = t.diff_lbl; document.getElementById('btn-pdf').innerText = t.pdf;
+        const mSel = document.getElementById('selectMonth'), curM = mSel.value;
+        mSel.innerHTML = ""; t.months.forEach((n, i) => mSel.innerHTML += `<option value="${i}" ${i==new Date().getMonth() && curM=='' ? 'selected' : (i==curM?'selected':'')}>${n}</option>`);
+        if(user) document.getElementById('welcome-msg').innerText = `${t.welcome} ${user.prenom}`;
+        if(updateDb && user) db.ref('users/' + user.id + '/lang').set(currentLang);
+        renderTable();
+    }
+
+    async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g,'')).remove(); }
+    async function deleteUser(id) { if(confirm("Supprimer l'utilisateur ?")) await db.ref('users/'+id).remove(); }
+    function showAuth(t) { document.getElementById('auth-login').style.display = t==='login'?'block':'none'; document.getElementById('auth-register').style.display = t==='register'?'block':'none'; }
 </script>
 </body>
 </html>

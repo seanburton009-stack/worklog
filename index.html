@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V41 - Full Version</title>
+    <title>Dräger WorkLog V42</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -70,37 +70,40 @@
             <button onclick="location.reload()" style="color:var(--danger); border:none; background:none; font-weight:bold;">🚪 Déconnexion</button>
         </div>
 
-        <div class="info-week">
-            <span id="txt-rem-week">Reste à prester cette semaine (Objectif 39h)</span>
-            <b id="stat-remaining-week">39h00</b>
-        </div>
-
         <div class="sub-tabs" style="display: flex; gap: 10px; margin-bottom: 15px; background: #e2e8f0; padding: 5px; border-radius: 12px;">
             <button class="sub-tab active" id="btn-w" onclick="switchSubTab('work')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Saisie Heures</button>
             <button class="sub-tab" id="btn-v" onclick="switchSubTab('vacation')" style="flex:1; padding:10px; border:none; border-radius:8px; font-weight:bold;">Congés</button>
         </div>
 
-        <div id="form-work" class="card">
-            <label>Date</label><input type="date" id="dateInput">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;"><label>Arrivée</label><input type="time" id="startTime" value="08:00"></div>
-                <div style="flex:1;"><label>Départ</label><input type="time" id="endTime" value="16:30"></div>
+        <div id="form-work">
+            <div class="info-week">
+                <span id="txt-rem-week">Reste à prester cette semaine (Objectif 39h)</span>
+                <b id="stat-remaining-week">39h00</b>
             </div>
-            <label>Lieu</label>
-            <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
-            <button class="btn-main" onclick="saveData()">Enregistrer journée</button>
+            <div class="card">
+                <label>Date</label><input type="date" id="dateInput">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Arrivée</label><input type="time" id="startTime" value="08:00"></div>
+                    <div style="flex:1;"><label>Départ</label><input type="time" id="endTime" value="16:30"></div>
+                </div>
+                <label>Lieu</label>
+                <select id="location"><option>Wemmel</option><option>Client</option><option>INEOS</option><option>Esso</option></select>
+                <button class="btn-main" onclick="saveData()">Enregistrer journée</button>
+            </div>
         </div>
 
-        <div id="form-vacation" class="card" style="display:none;">
+        <div id="form-vacation" style="display:none;">
             <div class="info-week" style="border-top-color:var(--emerald);">
                 <span>Solde Congés Légaux Restants</span>
                 <b id="vac-allowance">28 j</b>
             </div>
-            <label>Type</label>
-            <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
-            <label>Du</label><input type="date" id="vacStart">
-            <label>Au</label><input type="date" id="vacEnd">
-            <button class="btn-main" onclick="saveVacation()">Enregistrer Congés</button>
+            <div class="card">
+                <label>Type</label>
+                <select id="vacCategory"><option>Congés légaux</option><option>Jour férié</option><option>Malade</option><option>Récupération</option></select>
+                <label>Du</label><input type="date" id="vacStart">
+                <label>Au</label><input type="date" id="vacEnd">
+                <button class="btn-main" onclick="saveVacation()">Enregistrer Congés</button>
+            </div>
         </div>
     </div>
 
@@ -149,7 +152,7 @@
         db.ref('users/' + uId).once('value', snap => {
             const d = snap.val();
             if (d && d.pin === pin) {
-                if (!d.active && d.role !== 'admin') return alert("Votre compte est en attente de validation par Sean.");
+                if (!d.active && d.role !== 'admin') return alert("Votre compte est en attente de validation.");
                 user = { id: uId, ...d };
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
@@ -191,7 +194,7 @@
         while(curr <= eD) {
             if(curr.getDay() !== 0 && curr.getDay() !== 6) {
                 const ds = curr.toISOString().split('T')[0];
-                const dayType = curr.getDay(); // 1-4: 8h, 5: 7h
+                const dayType = curr.getDay();
                 await db.ref('users/'+user.id+'/entries/'+ds.replace(/-/g, '')).set({ date: ds, location: document.getElementById('vacCategory').value, minutes: (dayType === 5 ? 420 : 480), isVacation: true });
             }
             curr.setDate(curr.getDate() + 1);
@@ -233,7 +236,7 @@
         document.getElementById('total-month-diff').innerText = formatT(totalD);
         document.getElementById('vac-allowance').innerText = (28 - vacCount) + " j";
         
-        const remWeek = 2340 - weekWork; // 39h = 2340 min
+        const remWeek = 2340 - weekWork;
         document.getElementById('stat-remaining-week').innerText = remWeek <= 0 ? "Objectif Atteint" : formatT(remWeek);
     }
 
@@ -258,7 +261,12 @@
     async function deleteEntry(k) { if(confirm("Supprimer ?")) await db.ref('users/'+user.id+'/entries/'+k.replace(/-/g, '')).remove(); }
     function formatT(min) { const h = Math.floor(Math.abs(min)/60); const m = Math.round(Math.abs(min)%60); return `${min < 0 ? '-' : ''}${h}h${m.toString().padStart(2, '0')}`; }
     function openTab(id, btn) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display = 'block'; btn.classList.add('active'); }
-    function switchSubTab(t) { document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); }
+    function switchSubTab(t) { 
+        document.getElementById('form-work').style.display = t === 'work' ? 'block' : 'none'; 
+        document.getElementById('form-vacation').style.display = t === 'vacation' ? 'block' : 'none'; 
+        document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active')); 
+        document.getElementById(t === 'work' ? 'btn-w' : 'btn-v').classList.add('active');
+    }
 
     function initApp() {
         db.ref('users/burtonse').update({ nom: "BURTON", prenom: "Sean", pin: "0514", role: "admin", active: true });

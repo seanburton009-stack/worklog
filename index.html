@@ -3,47 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dräger WorkLog V9</title>
+    <title>Dräger WorkLog V10</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
         :root { --primary: #003366; --secondary: #3498db; --bg: #f0f2f5; --danger: #e74c3c; --success: #27ae60; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        
+        /* Optimisation iPhone / iOS */
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; overflow-x: hidden; }
+        
         #login-overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .box { background: white; padding: 30px; border-radius: 20px; width: 80%; max-width: 300px; text-align: center; }
-        .container { padding: 20px 15px 120px 15px; max-width: 600px; margin: auto; display: none; }
+        .box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
+        
+        .container { padding: 20px 15px calc(100px + env(safe-area-inset-bottom)) 15px; max-width: 600px; margin: auto; display: none; }
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
+        
+        /* Fix Zoom iPhone: Font-size doit être 16px min */
+        input, select { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; 
+            font-size: 16px; margin-bottom: 10px; background: #fff;
+            -webkit-appearance: none; /* Nettoie le style iOS */
+        }
+
         .check-row { display: flex; justify-content: space-around; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        .check-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.82em; }
+        .check-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.85em; }
+        .check-item input { width: 20px; height: 20px; margin: 0; }
+
         .btn-main { width: 100%; background: var(--secondary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
         
         .info-week { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; }
-        .info-week b { font-size: 1.6em; letter-spacing: 1px; display: block; }
+        .info-week b { font-size: 1.6em; letter-spacing: 1px; display: block; margin-top: 5px; }
 
-        .tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; border-top: 1px solid #ccc; z-index: 1000; }
-        .tab { flex: 1; border: none; background: none; font-size: 12px; color: #888; text-align: center; }
+        .tabs { 
+            display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; 
+            padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; 
+            border-top: 1px solid #ccc; z-index: 1000; 
+        }
+        .tab { flex: 1; border: none; background: none; font-size: 11px; color: #888; text-align: center; padding: 5px; }
         .tab.active { color: var(--secondary); font-weight: bold; }
         
         .stat-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: white; padding: 12px; border-radius: 15px; text-align: center; font-size: 0.85em; }
+        .stat-box { background: white; padding: 12px; border-radius: 15px; text-align: center; font-size: 0.8em; }
         .stat-box b { display: block; font-size: 1.2em; color: var(--primary); }
         
-        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
-        th, td { padding: 10px 2px; text-align: center; border-bottom: 1px solid #eee; }
-        .weekend { color: #ccc; background: #fdfdfd; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+        th, td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #eee; }
+        .weekend { color: #ccc; background: #f9f9f9; }
         .diff-pos { color: var(--success); font-weight: bold; }
         .diff-neg { color: var(--danger); }
         
         .export-bar { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-exp { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .btn-exp { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; }
 
         @media print {
             .tabs, .export-bar, .lang-btn, #btn-logout, .btn-del { display: none !important; }
-            .container { padding: 0; }
+            .container { padding: 0; display: block !important; }
             .card { box-shadow: none; border: 1px solid #eee; }
         }
     </style>
@@ -52,59 +71,59 @@
 
 <div id="login-overlay">
     <div class="box">
-        <h2>Dräger RSS</h2>
-        <input type="text" id="userInput" placeholder="Utilisateur / Gebruiker">
+        <h2 id="txt-login-title">Dräger RSS</h2>
+        <input type="text" id="userInput" placeholder="...">
         <input type="password" id="userPin" maxlength="4" placeholder="PIN">
-        <button class="btn-main" onclick="handleAuth()">Connexion / Inloggen</button>
+        <button class="btn-main" id="txt-login-btn" onclick="handleAuth()">Connexion</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    <button class="lang-btn" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5em;" onclick="toggleLang()">🌐</button>
+    <button class="lang-btn" style="position: absolute; top: 15px; right: 15px; background: white; border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2em; z-index: 10;" onclick="toggleLang()">🌐</button>
     
     <div id="saisie" class="content active">
         <div class="info-week">
-            <span id="st-rem-ptr">Reste à prester (Semaine) / Resterend Week</span>
+            <span id="txt-rem-label">Reste à prester (Semaine)</span>
             <b id="stat-remaining-ptr">--h--</b>
         </div>
         <div class="card">
-            <label>Date / Datum</label>
+            <label id="txt-lbl-date">Date</label>
             <input type="date" id="dateInput">
             <div style="display:flex; gap:10px;">
-                <div style="flex:1;"><label>Début / Start</label><input type="time" id="startTime" value="08:00"></div>
-                <div style="flex:1;"><label>Fin / Einde</label><input type="time" id="endTime" value="16:30"></div>
+                <div style="flex:1;"><label id="txt-lbl-start">Début</label><input type="time" id="startTime" value="08:00"></div>
+                <div style="flex:1;"><label id="txt-lbl-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
             </div>
             <div class="check-row">
-                <div class="check-item"><input type="checkbox" id="homeStart"><label for="homeStart">🏠 Départ Maison</label></div>
-                <div class="check-item"><input type="checkbox" id="homeEnd"><label for="homeEnd">🏠 Retour Maison</label></div>
+                <div class="check-item"><input type="checkbox" id="homeStart"><label for="homeStart" id="txt-lbl-hs">🏠 Départ Maison</label></div>
+                <div class="check-item"><input type="checkbox" id="homeEnd"><label for="homeEnd" id="txt-lbl-he">🏠 Retour Maison</label></div>
             </div>
-            <label>Lieu / Locatie</label>
+            <label id="txt-lbl-loc">Lieu</label>
             <select id="location">
                 <option value="Wemmel">Wemmel (-45m pause)</option>
                 <option value="Client">Client (-30m pause)</option>
                 <option value="INEOS">INEOS (-30m pause)</option>
                 <option value="Esso">Esso (-30m pause)</option>
             </select>
-            <button class="btn-main" onclick="saveData()">Enregistrer / Opslaan</button>
+            <button class="btn-main" id="txt-btn-save" onclick="saveData()">Enregistrer</button>
         </div>
     </div>
 
     <div id="historique" class="content" style="display:none;">
         <div class="export-bar">
-            <button class="btn-exp" onclick="exportExcel()">📊 Excel (.csv)</button>
-            <button class="btn-exp" onclick="window.print()">🖨️ PDF / Print</button>
+            <button class="btn-exp" onclick="exportExcel()">📊 Excel</button>
+            <button class="btn-exp" id="txt-btn-print" onclick="window.print()">🖨️ PDF / Print</button>
         </div>
         <div class="stat-banner">
-            <div class="stat-box"><span>Balance Mois / Maand</span><b id="stat-balance">--</b></div>
-            <div class="stat-box"><span>Congés / Verlof</span><b>28</b></div>
+            <div class="stat-box"><span id="txt-stat-bal">Balance Mois</span><b id="stat-balance">--</b></div>
+            <div class="stat-box"><span id="txt-stat-con">Congés</span><b>28</b></div>
         </div>
         <div class="card">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <select id="selectMonth" onchange="renderTable()" style="margin:0; width:65%;"></select>
-                <button onclick="softLogout()" id="btn-logout" style="background:#eee; border:none; padding:8px; border-radius:8px; font-size:11px;">Logout</button>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <select id="selectMonth" onchange="renderTable()" style="margin:0; width:60%;"></select>
+                <button onclick="softLogout()" id="txt-btn-logout" style="background:#eee; border:none; padding:10px; border-radius:8px; font-size:11px;">Logout</button>
             </div>
             <table>
-                <thead><tr><th>J</th><th style="text-align:left;">Lieu/Loc</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
+                <thead><tr id="txt-table-head"><th>J</th><th style="text-align:left;">Lieu</th><th>Réel</th><th>+/-</th><th></th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -112,8 +131,8 @@
 </div>
 
 <nav class="tabs">
-    <button class="tab active" onclick="openTab('saisie', this)">➕ Pointer</button>
-    <button class="tab" onclick="openTab('historique', this)">📅 Calendrier</button>
+    <button class="tab active" id="txt-nav-ptr" onclick="openTab('saisie', this)">➕ Pointer</button>
+    <button class="tab" id="txt-nav-cal" onclick="openTab('historique', this)">📅 Calendrier</button>
 </nav>
 
 <script>
@@ -125,15 +144,49 @@
     let currentUserId = "";
     let lang = localStorage.getItem('lang') || 'fr';
 
-    const translations = {
-        fr: { save_ok: "Enregistré !", done: "Objectif atteint ✅", del_confirm: "Supprimer ?" },
-        nl: { save_ok: "Opgeslagen!", done: "Doel bereikt ✅", del_confirm: "Verwijderen ?" }
+    const ui = {
+        fr: {
+            login_user: "Utilisateur", login_btn: "Connexion", rem_label: "Reste à prester (Semaine)",
+            lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", lbl_hs: "🏠 Départ Maison", lbl_he: "🏠 Retour Maison",
+            lbl_loc: "Lieu", btn_save: "Enregistrer", btn_print: "🖨️ PDF / Imprimer", stat_bal: "Balance Mois",
+            stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu</th><th>Réel</th><th>+/-</th><th></th>",
+            save_ok: "Enregistré !", done: "Objectif atteint ✅", del_confirm: "Supprimer ?", confirm_calc: "Total : {t} - Confirmer ?"
+        },
+        nl: {
+            login_user: "Gebruiker", login_btn: "Inloggen", rem_label: "Nog te presteren (Week)",
+            lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", lbl_hs: "🏠 Vertrek Huis", lbl_he: "🏠 Terug Huis",
+            lbl_loc: "Locatie", btn_save: "Opslaan", btn_print: "🖨️ PDF / Printen", stat_bal: "Maand Balans",
+            stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie</th><th>Echt</th><th>+/-</th><th></th>",
+            save_ok: "Opgeslagen!", done: "Doel bereikt ✅", del_confirm: "Verwijderen ?", confirm_calc: "Totaal : {t} - Bevestigen ?"
+        }
     };
+
+    function translateUI() {
+        const t = ui[lang];
+        document.getElementById('userInput').placeholder = t.login_user;
+        document.getElementById('txt-login-btn').innerText = t.login_btn;
+        document.getElementById('txt-rem-label').innerText = t.rem_label;
+        document.getElementById('txt-lbl-date').innerText = t.lbl_date;
+        document.getElementById('txt-lbl-start').innerText = t.lbl_start;
+        document.getElementById('txt-lbl-end').innerText = t.lbl_end;
+        document.getElementById('txt-lbl-hs').innerText = t.lbl_hs;
+        document.getElementById('txt-lbl-he').innerText = t.lbl_he;
+        document.getElementById('txt-lbl-loc').innerText = t.lbl_loc;
+        document.getElementById('txt-btn-save').innerText = t.btn_save;
+        document.getElementById('txt-btn-print').innerText = t.btn_print;
+        document.getElementById('txt-stat-bal').innerText = t.stat_bal;
+        document.getElementById('txt-stat-con').innerText = t.stat_con;
+        document.getElementById('txt-nav-ptr').innerText = t.nav_ptr;
+        document.getElementById('txt-nav-cal').innerText = t.nav_cal;
+        document.getElementById('txt-table-head').innerHTML = t.table_head;
+        updateMonthSelect();
+    }
 
     function initApp() {
         const last = localStorage.getItem('lastLoggedUser');
         if(last) document.getElementById('userInput').value = last;
         document.getElementById('dateInput').valueAsDate = new Date();
+        translateUI();
     }
 
     function handleAuth() {
@@ -164,17 +217,17 @@
 
         let finalMin = (h2 * 60 + m2) - (h1 * 60 + m1) - (loc === "Wemmel" ? 45 : 30) - (isHS ? 30 : 0) - (isHE ? 30 : 0);
 
-        if(confirm(`Total : ${formatT(finalMin)} - Confirmer ?`)) {
+        if(confirm(ui[lang].confirm_calc.replace('{t}', formatT(finalMin)))) {
             const key = dateStr.replace(/-/g, '');
             await db.ref('users/'+currentUserId+'/entries/'+key).set({
                 date: dateStr, location: loc, minutes: finalMin, homeS: isHS, homeE: isHE
             });
-            alert(translations[lang].save_ok);
+            alert(ui[lang].save_ok);
         }
     }
 
     async function deleteEntry(dateKey) {
-        if(confirm(translations[lang].del_confirm)) {
+        if(confirm(ui[lang].del_confirm)) {
             await db.ref('users/'+currentUserId+'/entries/'+dateKey.replace(/-/g, '')).remove();
         }
     }
@@ -208,24 +261,22 @@
                 <td style="text-align:left;">${e ? (e.homeS?'🏠':'') + e.location + (e.homeE?'🏠':'') : ''}</td>
                 <td><b>${e ? formatT(e.minutes) : '-'}</b></td>
                 <td class="${diff >= 0 ? 'diff-pos' : 'diff-neg'}">${e ? formatT(diff) : '-'}</td>
-                <td>${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer; color:red;">🗑️</span>` : ''}</td>
+                <td>${e ? `<span onclick="deleteEntry('${e.date}')" style="cursor:pointer; color:red; font-size:1.2em;">🗑️</span>` : ''}</td>
             </tr>`;
         }
         const rem = 2340 - weekWork;
-        document.getElementById('stat-remaining-ptr').innerText = rem <= 0 ? translations[lang].done : formatT(rem);
+        document.getElementById('stat-remaining-ptr').innerText = rem <= 0 ? ui[lang].done : formatT(rem);
         document.getElementById('stat-balance').innerText = formatT(totalBalance);
     }
 
     function exportExcel() {
-        let csv = "Date;Lieu;Minutes;Heures\n";
-        entries.forEach(e => { csv += `${e.date};${e.location};${e.minutes};${formatT(e.minutes)}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        let csv = "Date;Lieu;Heures\n";
+        entries.forEach(e => { csv += `${e.date};${e.location};${formatT(e.minutes)}\n`; });
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", `Dräger_WorkLog_${currentUserId}.csv`);
-        document.body.appendChild(link);
+        link.download = `Dräger_${currentUserId}.csv`;
         link.click();
-        document.body.removeChild(link);
     }
 
     function formatT(min) {
@@ -242,21 +293,19 @@
     
     function softLogout() { document.getElementById('mainContainer').style.display='none'; document.getElementById('login-overlay').style.display='flex'; }
 
-    const mFr = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
-    const mNl = ["Jan", "Feb", "Maa", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
-    
     function updateMonthSelect() {
+        const mFr = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+        const mNl = ["Jan", "Feb", "Maa", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
         const sel = document.getElementById('selectMonth');
         const current = sel.value || new Date().getMonth();
         sel.innerHTML = '';
         (lang === 'fr' ? mFr : mNl).forEach((n, i) => sel.innerHTML += `<option value="${i}" ${i==current?'selected':''}>${n}</option>`);
     }
-    updateMonthSelect();
 
     window.toggleLang = function() {
         lang = (lang === 'fr' ? 'nl' : 'fr');
         localStorage.setItem('lang', lang);
-        updateMonthSelect();
+        translateUI();
         renderTable();
     }
 </script>

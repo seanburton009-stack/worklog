@@ -95,11 +95,13 @@
                     <div class="input-group" style="flex:1;"><label id="l-end">Fin</label><input type="time" id="endTime" value="16:30"></div>
                 </div>
                 <div class="input-group">
-                    <label id="l-loc">Lieu</label>
+                    <label id="l-loc">Lieu / Trajet</label>
                     <select id="location">
                         <option value="Wemmel">Wemmel (45m)</option>
                         <option value="Client">Client (30m)</option>
                         <option value="Esso">Esso (30m)</option>
+                        <option value="Maison-Start">🏠 Maison (Départ)</option>
+                        <option value="Maison-End">🏠 Maison (Retour)</option>
                     </select>
                 </div>
             </div>
@@ -183,28 +185,15 @@
     function handleAuth() {
         const user = document.getElementById('userInput').value.trim().toLowerCase();
         const pin = document.getElementById('userPin').value;
-        
-        if(!user || pin.length !== 4) {
-            alert("Utilisateur et PIN (4 chiffres) requis");
-            return;
-        }
-
+        if(!user || pin.length !== 4) { alert("Utilisateur et PIN (4 chiffres) requis"); return; }
         const storedPin = localStorage.getItem('pin_' + user);
-
         if (!storedPin) {
-            // Nouvel utilisateur ou premier PIN pour cet user
-            if(confirm("Créer un nouveau profil pour " + user + " avec ce PIN ?")) {
-                localStorage.setItem('pin_' + user, pin);
-                loginSuccess(user);
+            if(confirm("Créer un nouveau profil pour " + user + " ?")) {
+                localStorage.setItem('pin_' + user, pin); loginSuccess(user);
             }
         } else {
-            // Vérification
-            if (pin === storedPin) {
-                loginSuccess(user);
-            } else {
-                alert("Code PIN incorrect pour cet utilisateur");
-                document.getElementById('userPin').value = "";
-            }
+            if (pin === storedPin) loginSuccess(user);
+            else { alert("Code PIN incorrect"); document.getElementById('userPin').value = ""; }
         }
     }
 
@@ -218,7 +207,6 @@
     }
 
     function softLogout() {
-        // On cache juste l'interface et on vide le PIN, mais on garde le nom d'utilisateur pour le suivant
         document.getElementById('mainContainer').style.display = 'none';
         document.getElementById('login-overlay').style.display = 'flex';
         document.getElementById('userPin').value = "";
@@ -245,9 +233,23 @@
             }
         } else {
             const d = document.getElementById('date').value;
+            const loc = document.getElementById('location').value;
             let diff = (new Date(`${d}T${document.getElementById('endTime').value}`) - new Date(`${d}T${document.getElementById('startTime').value}`)) / 60000;
-            diff -= (document.getElementById('location').value === "Wemmel" ? 45 : 30);
-            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ date: d, location: document.getElementById('location').value, minutes: diff, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value });
+            
+            // Calcul trajet forfaitaire
+            let deduction = 0;
+            if (loc === "Wemmel") deduction = 45;
+            else if (loc.includes("Client") || loc.includes("Esso") || loc.includes("Maison")) deduction = 30;
+            
+            diff -= deduction;
+
+            await db.ref('users/'+currentUserId+'/entries/'+d.replace(/-/g,'')).set({ 
+                date: d, 
+                location: loc.replace('Maison-', '🏠 '), 
+                minutes: diff, 
+                start: document.getElementById('startTime').value, 
+                end: document.getElementById('endTime').value 
+            });
         }
         alert("Enregistré !");
     }

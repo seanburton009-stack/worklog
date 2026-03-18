@@ -11,7 +11,6 @@
     <style>
         :root { --primary: #003366; --secondary: #3498db; --bg: #f0f2f5; --danger: #e74c3c; --success: #27ae60; }
         
-        /* Optimisation iPhone / iOS */
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; overflow-x: hidden; }
         
@@ -23,11 +22,10 @@
         
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
         
-        /* Fix Zoom iPhone: Font-size doit être 16px min */
         input, select { 
             width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; 
             font-size: 16px; margin-bottom: 10px; background: #fff;
-            -webkit-appearance: none; /* Nettoie le style iOS */
+            -webkit-appearance: none;
         }
 
         .check-row { display: flex; justify-content: space-around; background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
@@ -57,11 +55,13 @@
         .diff-pos { color: var(--success); font-weight: bold; }
         .diff-neg { color: var(--danger); }
         
-        .export-bar { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-exp { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; }
+        /* Barre d'action optimisée avec le bouton langue intégré */
+        .export-bar { display: flex; gap: 8px; margin-bottom: 15px; }
+        .btn-exp { flex: 1; padding: 12px 5px; border-radius: 10px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-lang { flex: 0 0 50px; background: var(--primary); color: white; border: none; font-size: 1.2em; }
 
         @media print {
-            .tabs, .export-bar, .lang-btn, #btn-logout, .btn-del { display: none !important; }
+            .tabs, .export-bar, #btn-logout, .btn-del { display: none !important; }
             .container { padding: 0; display: block !important; }
             .card { box-shadow: none; border: 1px solid #eee; }
         }
@@ -79,9 +79,12 @@
 </div>
 
 <div class="container" id="mainContainer">
-    <button class="lang-btn" style="position: absolute; top: 15px; right: 15px; background: white; border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2em; z-index: 10;" onclick="toggleLang()">🌐</button>
     
     <div id="saisie" class="content active">
+        <div class="export-bar" style="margin-bottom:15px;">
+             <div style="flex:1;"></div>
+             <button class="btn-exp btn-lang" onclick="toggleLang()">🌐</button>
+        </div>
         <div class="info-week">
             <span id="txt-rem-label">Reste à prester (Semaine)</span>
             <b id="stat-remaining-ptr">--h--</b>
@@ -111,7 +114,8 @@
     <div id="historique" class="content" style="display:none;">
         <div class="export-bar">
             <button class="btn-exp" onclick="exportExcel()">📊 Excel</button>
-            <button class="btn-exp" id="txt-btn-print" onclick="window.print()">🖨️ PDF / Print</button>
+            <button class="btn-exp" id="txt-btn-print" onclick="window.print()">🖨️ PDF</button>
+            <button class="btn-exp btn-lang" onclick="toggleLang()">🌐</button>
         </div>
         <div class="stat-banner">
             <div class="stat-box"><span id="txt-stat-bal">Balance Mois</span><b id="stat-balance">--</b></div>
@@ -148,14 +152,14 @@
         fr: {
             login_user: "Utilisateur", login_btn: "Connexion", rem_label: "Reste à prester (Semaine)",
             lbl_date: "Date", lbl_start: "Début", lbl_end: "Fin", lbl_hs: "🏠 Départ Maison", lbl_he: "🏠 Retour Maison",
-            lbl_loc: "Lieu", btn_save: "Enregistrer", btn_print: "🖨️ PDF / Imprimer", stat_bal: "Balance Mois",
+            lbl_loc: "Lieu", btn_save: "Enregistrer", btn_print: "🖨️ PDF", stat_bal: "Balance Mois",
             stat_con: "Congés", nav_ptr: "➕ Pointer", nav_cal: "📅 Calendrier", table_head: "<th>J</th><th style='text-align:left;'>Lieu</th><th>Réel</th><th>+/-</th><th></th>",
             save_ok: "Enregistré !", done: "Objectif atteint ✅", del_confirm: "Supprimer ?", confirm_calc: "Total : {t} - Confirmer ?"
         },
         nl: {
             login_user: "Gebruiker", login_btn: "Inloggen", rem_label: "Nog te presteren (Week)",
             lbl_date: "Datum", lbl_start: "Start", lbl_end: "Einde", lbl_hs: "🏠 Vertrek Huis", lbl_he: "🏠 Terug Huis",
-            lbl_loc: "Locatie", btn_save: "Opslaan", btn_print: "🖨️ PDF / Printen", stat_bal: "Maand Balans",
+            lbl_loc: "Locatie", btn_save: "Opslaan", btn_print: "🖨️ PDF", stat_bal: "Maand Balans",
             stat_con: "Verlof", nav_ptr: "➕ Invoer", nav_cal: "📅 Kalender", table_head: "<th>D</th><th style='text-align:left;'>Locatie</th><th>Echt</th><th>+/-</th><th></th>",
             save_ok: "Opgeslagen!", done: "Doel bereikt ✅", del_confirm: "Verwijderen ?", confirm_calc: "Totaal : {t} - Bevestigen ?"
         }

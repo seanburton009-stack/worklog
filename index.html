@@ -5,162 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dräger WorkLog RSS v5.0</title>
+    <title>Dräger WorkLog v5.1</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --------------------------------------------------------------------------
-           1. CORE DESIGN SYSTEM & IPHONE OPTIMIZATION
-           -------------------------------------------------------------------------- */
         :root {
-            --drager-navy: #003366; 
-            --drager-blue: #005eb8; 
-            --drager-sky: #00a9e0;
+            --drager-navy: #003366; --drager-blue: #005eb8; --drager-sky: #00a9e0;
             --drager-bg-soft: rgba(0, 94, 184, 0.08);
-            
-            --app-bg: #f2f5f9;
-            --card-bg: #ffffff; 
-            --input-bg: #ffffff;
-            --text-primary: #1e293b; 
-            --text-secondary: #64748b;
-            --ui-border: #e2e8f0; 
-            
-            --state-error: #ef4444; 
-            --state-success: #10b981;
-            --state-warning: #f59e0b;
-            
-            /* Safe Areas iPhone (Encoche & Barre Home) */
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
+            --app-bg: #f2f5f9; --card-bg: #ffffff; --input-bg: #ffffff;
+            --text-primary: #1e293b; --text-secondary: #64748b; --ui-border: #e2e8f0; 
+            --state-error: #ef4444; --state-success: #10b981;
+            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
             --radius-xl: 30px;
         }
 
         body.dark-mode {
-            --app-bg: #0f172a; 
-            --card-bg: #1e293b; 
-            --input-bg: #0f172a;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8; 
-            --ui-border: #334155; 
+            --app-bg: #0f172a; --card-bg: #1e293b; --input-bg: #0f172a;
+            --text-primary: #f1f5f9; --text-secondary: #94a3b8; --ui-border: #334155; 
         }
 
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-            margin: 0; padding: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background-color: var(--app-bg); color: var(--text-primary); transition: background 0.4s ease; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+        .main-wrapper { padding: calc(20px + var(--safe-top)) 18px calc(110px + var(--safe-bottom)) 18px; max-width: 700px; margin: 0 auto; display: none; }
         
-        body {
-            background-color: var(--app-bg); 
-            color: var(--text-primary);
-            transition: background 0.4s ease;
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
+        .glass-card { background-color: var(--card-bg); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 24px; box-shadow: 0 12px 30px -10px rgba(0,0,0,0.1); border: 1px solid var(--ui-border); position: relative; }
 
-        .main-wrapper { 
-            padding: calc(20px + var(--safe-top)) 18px calc(110px + var(--safe-bottom)) 18px; 
-            max-width: 700px; 
-            margin: 0 auto;
-            display: none;
-            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
+        .field-label { display: block; margin-bottom: 10px; font-weight: 800; font-size: 10px; color: var(--drager-blue); text-transform: uppercase; letter-spacing: 1.5px; }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .glass-card { 
-            background-color: var(--card-bg); 
-            border-radius: var(--radius-xl); 
-            padding: 24px; 
-            margin-bottom: 24px; 
-            box-shadow: 0 12px 30px -10px rgba(0,0,0,0.1); 
-            border: 1px solid var(--ui-border); 
-            position: relative;
-        }
+        input, select, textarea { width: 100%; padding: 16px; border: 2px solid var(--ui-border); border-radius: 18px; font-size: 16px; margin-bottom: 20px; background-color: var(--input-bg); color: var(--text-primary); font-weight: 600; outline: none; -webkit-appearance: none; }
 
-        /* IPHONE INPUTS (Min 16px font to prevent auto-zoom) */
-        h1, h2, h3 { font-weight: 800; color: var(--drager-navy); }
-        
-        .field-label { 
-            display: block; margin-bottom: 10px; font-weight: 800; font-size: 10px; 
-            color: var(--drager-blue); text-transform: uppercase; letter-spacing: 1.5px; 
-        }
-
-        input, select, textarea { 
-            width: 100%; padding: 16px; border: 2px solid var(--ui-border); 
-            border-radius: 18px; font-size: 16px; margin-bottom: 20px; 
-            background-color: var(--input-bg); color: var(--text-primary); 
-            font-weight: 600; outline: none; -webkit-appearance: none;
-        }
-
-        .cta-button { 
-            width: 100%; background: linear-gradient(135deg, var(--drager-navy), var(--drager-blue)); 
-            color: #ffffff; padding: 20px; border: none; border-radius: 20px; 
-            font-weight: 800; cursor: pointer; font-size: 15px; text-transform: uppercase;
-            box-shadow: 0 8px 20px rgba(0, 51, 102, 0.25);
-        }
-
+        .cta-button { width: 100%; background: linear-gradient(135deg, var(--drager-navy), var(--drager-blue)); color: #ffffff; padding: 20px; border: none; border-radius: 20px; font-weight: 800; cursor: pointer; font-size: 15px; text-transform: uppercase; box-shadow: 0 8px 20px rgba(0, 51, 102, 0.25); }
         .cta-button:active { transform: scale(0.97); opacity: 0.9; }
 
-        /* TAB BAR IPHONE */
-        .bottom-navigation { 
-            display: flex; position: fixed; bottom: 0; left: 0; right: 0; 
-            background-color: var(--card-bg); padding: 12px 10px calc(12px + var(--safe-bottom)) 10px; 
-            border-top: 1px solid var(--ui-border); z-index: 1000; 
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-        }
-
-        .nav-tab { 
-            flex: 1; border: none; background: none; font-size: 10px; 
-            color: var(--text-secondary); display: flex; flex-direction: column; 
-            align-items: center; gap: 5px;
-        }
-
+        .bottom-navigation { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--card-bg); padding: 12px 10px calc(12px + var(--safe-bottom)) 10px; border-top: 1px solid var(--ui-border); z-index: 1000; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
+        .nav-tab { flex: 1; border: none; background: none; font-size: 10px; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .nav-tab.active { color: var(--drager-blue); font-weight: 900; }
-        .nav-tab i { font-size: 20px; }
 
-        /* STATS LAYOUT (GAUCHE | MILIEU | DROITE) */
-        .dashboard-grid { 
-            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 25px; 
-        }
-
-        .dash-box { 
-            background-color: var(--app-bg); padding: 18px 5px; border-radius: 20px; 
-            text-align: center; border: 1px solid var(--ui-border); 
-        }
-
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 25px; }
+        .dash-box { background-color: var(--app-bg); padding: 18px 5px; border-radius: 20px; text-align: center; border: 1px solid var(--ui-border); }
         .dash-label { display: block; font-size: 8px; color: var(--text-secondary); text-transform: uppercase; font-weight: 900; margin-bottom: 5px; }
         .dash-val { display: block; font-size: 14px; font-weight: 950; color: var(--drager-navy); }
 
-        /* TABLEAU IPHONE */
         .table-responsive { overflow-x: auto; width: 100%; border-radius: 20px; border: 1px solid var(--ui-border); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; background: var(--card-bg); }
         th { padding: 14px; background-color: var(--app-bg); font-size: 9px; text-transform: uppercase; border-bottom: 2px solid var(--ui-border); }
         td { padding: 14px 8px; border-bottom: 1px solid var(--ui-border); text-align: center; font-size: 12px; font-weight: 600; }
 
-        /* PRINT LOGIC */
-        @media print {
-            .no-print, .bottom-navigation, .cta-button, #section-saisie, #section-admin { display: none !important; }
-            .main-wrapper { display: block !important; padding: 0 !important; }
-            #print-obs-block { display: block !important; break-before: page; padding-top: 50px; }
-        }
-
-        #login-screen { 
-            position: fixed; inset: 0; background-color: var(--app-bg); 
-            display: flex; justify-content: center; align-items: center; z-index: 2000; 
-        }
-        
-        .switch-ios { 
-            width: 50px; height: 30px; appearance: none; background: #cbd5e1; 
-            border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s;
-        }
+        #login-screen { position: fixed; inset: 0; background-color: var(--app-bg); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .switch-ios { width: 50px; height: 30px; appearance: none; background: #cbd5e1; border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s; }
         .switch-ios:checked { background: var(--state-success); }
         .switch-ios::after { content: ''; position: absolute; width: 26px; height: 26px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.2s; }
         .switch-ios:checked::after { transform: translateX(20px); }
@@ -171,19 +66,19 @@
     <div id="login-screen">
         <div class="glass-card" style="width: 90%; max-width: 400px; text-align: center;">
             <h1 style="font-size: 3em;">DRÄGER</h1>
-            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px;">WORKLOG RSS v5.0</p>
+            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px;">WORKLOG RSS v5.1</p>
             <div style="text-align: left;">
-                <label class="field-label">Utilisateur</label>
-                <input type="text" id="auth-u" placeholder="ex: p.nom">
+                <label class="field-label">Utilisateur (minuscules)</label>
+                <input type="text" id="auth-u" placeholder="p.nom" autocomplete="off">
                 <label class="field-label">Code PIN</label>
-                <input type="password" id="auth-p" maxlength="4" inputmode="numeric">
+                <input type="password" id="auth-p" maxlength="4" inputmode="numeric" placeholder="••••">
             </div>
-            <button class="cta-button" onclick="handleAuth()">Connexion</button>
+            <button class="cta-button" id="btn-login-main" onclick="handleAuth()">Connexion</button>
+            <p id="diag-msg" style="margin-top:15px; font-size:10px; color:var(--text-secondary);"></p>
         </div>
     </div>
 
     <div class="main-wrapper" id="app-ui">
-        
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
             <div>
                 <span id="txt-hi" style="font-size: 2em; font-weight: 950; color:var(--drager-navy);">Bonjour</span><br>
@@ -200,7 +95,7 @@
 
             <div id="view-work">
                 <div class="glass-card" style="border-left: 10px solid var(--drager-navy);">
-                    <label class="field-label">HEURES RESTANTES CETTE SEMAINE (39H)</label>
+                    <label class="field-label">HEURES RESTANTES (OBJECTIF 39H)</label>
                     <b style="font-size:3.5em; color:var(--drager-navy); letter-spacing: -2px;" id="val-weekly">39h00</b>
                 </div>
                 <div class="glass-card">
@@ -248,48 +143,25 @@
                 </div>
                 <div class="table-responsive">
                     <table>
-                        <thead>
-                            <tr><th>DATE</th><th>LIEU</th><th>HEURES</th><th>DURÉE</th><th>+/-</th><th class="no-print"></th></tr>
-                        </thead>
+                        <thead><tr><th>DATE</th><th>LIEU</th><th>HEURES</th><th>DURÉE</th><th>+/-</th><th class="no-print"></th></tr></thead>
                         <tbody id="log-body"></tbody>
                     </table>
                 </div>
                 <div class="dashboard-grid no-print">
-                    <div class="dash-box">
-                        <span class="dash-label">Total Presté</span>
-                        <span class="dash-val" id="res-total">0h00</span>
-                    </div>
-                    <div class="dash-box">
-                        <span class="dash-label">Congés Restants</span>
-                        <span class="dash-val" id="res-vac">28 j</span>
-                    </div>
-                    <div class="dash-box">
-                        <span class="dash-label">Heures Suppl.</span>
-                        <span class="dash-val" id="res-over">0h00</span>
-                    </div>
+                    <div class="dash-box"><span class="dash-label">Total Presté</span><span class="dash-val" id="res-total">0h00</span></div>
+                    <div class="dash-box"><span class="dash-label">Congés Restants</span><span class="dash-val" id="res-vac">28 j</span></div>
+                    <div class="dash-box"><span class="dash-label">Heures Suppl.</span><span class="dash-val" id="res-over">0h00</span></div>
                 </div>
-            </div>
-            
-            <div class="glass-card no-print">
-                <label class="field-label">Observations PDF</label>
-                <textarea id="obs-input" oninput="syncPdf()"></textarea>
-            </div>
-
-            <div id="print-obs-block" style="display:none;">
-                <h3 style="border-bottom:2px solid #003366; padding-bottom:10px;">Observations :</h3>
-                <div id="pdf-render" style="padding:20px; min-height:400px; background:#f9f9f9; border:1px solid #ddd; margin-top:10px;"></div>
             </div>
         </div>
 
         <div id="section-admin" class="page-block" style="display:none;">
             <div class="glass-card">
-                <h3 style="margin-bottom:20px;">Gestion Membres</h3>
+                <h3>Gestion Équipe</h3>
                 <input type="text" id="ad-id" placeholder="Login">
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="ad-pre" placeholder="Prénom">
-                    <input type="text" id="ad-nom" placeholder="Nom">
-                </div>
-                <input type="password" id="ad-pin" placeholder="PIN (4)" maxlength="4">
+                <input type="text" id="ad-pre" placeholder="Prénom">
+                <input type="text" id="ad-nom" placeholder="Nom">
+                <input type="password" id="ad-pin" placeholder="PIN" maxlength="4">
                 <select id="ad-role"><option value="user">User</option><option value="admin">Admin</option></select>
                 <button class="cta-button" onclick="adminCreate()" style="background:var(--state-success);">Ajouter</button>
             </div>
@@ -305,31 +177,41 @@
     </nav>
 
     <script>
-        /** LOGIQUE RSS v5.0 **/
+        /** LOGIQUE RSS v5.1 **/
+        // ATTENTION : Vérifie bien que cette URL est la tienne !
         const FB_CONF = { 
             apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
             authDomain: "worklog-fc54b.firebaseapp.com", 
             databaseURL: "https://worklog-fc54b-default-rtdb.europe-west1.firebasedatabase.app/", 
             projectId: "worklog-fc54b" 
         };
-        firebase.initializeApp(FB_CONF);
-        const db = firebase.database();
+
+        let db;
+        try {
+            firebase.initializeApp(FB_CONF);
+            db = firebase.database();
+        } catch(e) {
+            alert("Erreur Firebase : " + e.message);
+        }
 
         let me = null, data = [];
         const MONTHS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
         function bootSystem() {
-            initSelectors();
-            document.getElementById('txt-date').innerText = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+            try {
+                initSelectors();
+                document.getElementById('txt-date').innerText = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+            } catch(e) { console.error("Boot Error", e); }
         }
 
         function initSelectors() {
             const y = new Date().getFullYear();
             const sy = document.getElementById('sel-y'), sm = document.getElementById('sel-m');
+            if(!sy || !sm) return;
             for(let i=y-1; i<=y+1; i++) { let o = document.createElement('option'); o.value=i; o.text=i; if(i===y) o.selected=true; sy.appendChild(o); }
             MONTHS.forEach((m,i) => { let o = document.createElement('option'); o.value=i; o.text=m; if(i===new Date().getMonth()) o.selected=true; sm.appendChild(o); });
             
-            const locs = ["Wemmel Office", "Client Mission", "Esso Antwerpen", "Projet INEOS", "Home Office"];
+            const locs = ["Wemmel Office", "Client Mission", "Esso Antwerpen", "Projet INEOS", "Technopolis"];
             const fl = document.getElementById('f-loc');
             locs.forEach(l => { let o = document.createElement('option'); o.value=l; o.text=l; fl.appendChild(o); });
 
@@ -343,20 +225,54 @@
             document.getElementById('v-end').value = n;
         }
 
-        function handleAuth() {
+        /** DIAGNOSTIC LOGIN **/
+        async function handleAuth() {
+            const btn = document.getElementById('btn-login-main');
+            const diag = document.getElementById('diag-msg');
+            btn.innerText = "Recherche...";
+            diag.innerText = "Connexion à la base de données...";
+
             const u = document.getElementById('auth-u').value.trim().toLowerCase();
             const p = document.getElementById('auth-p').value;
-            db.ref('users/'+u).once('value', s => {
-                const d = s.val();
-                if(d && d.pin === p) {
-                    me = {id:u, ...d};
-                    document.getElementById('login-screen').style.display='none';
-                    document.getElementById('app-ui').style.display='block';
-                    document.getElementById('txt-hi').innerText = "Bonjour " + me.prenom;
-                    if(me.role === 'admin') { document.getElementById('btn-adm').style.display='flex'; adminSync(); }
-                    startSync();
-                } else alert("Erreur.");
-            });
+
+            if(!u || !p) {
+                alert("Remplis les deux champs.");
+                btn.innerText = "Connexion";
+                return;
+            }
+
+            try {
+                // On tente de lire l'utilisateur
+                db.ref('users/'+u).once('value', s => {
+                    const d = s.val();
+                    if(d) {
+                        diag.innerText = "Utilisateur trouvé. Vérification PIN...";
+                        if(d.pin === p) {
+                            me = {id:u, ...d};
+                            document.getElementById('login-screen').style.display='none';
+                            document.getElementById('app-ui').style.display='block';
+                            document.getElementById('txt-hi').innerText = "Bonjour " + me.prenom;
+                            if(me.role === 'admin') { 
+                                document.getElementById('btn-adm').style.display='flex'; 
+                                adminSync(); 
+                            }
+                            startSync();
+                        } else {
+                            alert("Code PIN incorrect.");
+                            btn.innerText = "Connexion";
+                        }
+                    } else {
+                        alert("Utilisateur '" + u + "' non trouvé. Vérifie l'orthographe (minuscules).");
+                        btn.innerText = "Connexion";
+                    }
+                }, err => {
+                    alert("Erreur de permission Firebase : " + err.message);
+                    btn.innerText = "Connexion";
+                });
+            } catch(e) {
+                alert("Erreur fatale : " + e.message);
+                btn.innerText = "Connexion";
+            }
         }
 
         function startSync() {
@@ -366,7 +282,6 @@
             });
         }
 
-        /** CALCULS **/
         const toM = t => { if(!t) return 0; const [h,m]=t.split(':').map(Number); return (h*60)+m; };
         const toF = m => { const n=m<0, a=Math.abs(m), h=Math.floor(a/60), min=Math.round(a%60); return (n?'-':'')+h+'h'+min.toString().padStart(2,'0'); };
 
@@ -377,7 +292,6 @@
             if(document.getElementById('c-home-e').checked) em-=30;
             const pause = (l === "Wemmel Office") ? 45 : 30;
             const net = em - sm - pause;
-            if(net <= 0) return alert("Invalide.");
             await db.ref('users/'+me.id+'/entries/'+dt.replace(/-/g,'')).set({date:dt, location:l, minutes:net, start:s, end:e, isVac:false});
             alert("Sauvé.");
         }
@@ -387,8 +301,7 @@
             while(cur <= end) {
                 const dw = cur.getDay();
                 if(dw !== 0 && dw !== 6) {
-                    const iso = cur.toISOString().split('T')[0];
-                    const g = (dw === 5) ? 420 : 480;
+                    const iso = cur.toISOString().split('T')[0], g = (dw === 5) ? 420 : 480;
                     await db.ref('users/'+me.id+'/entries/'+iso.replace(/-/g,'')).set({date:iso, location:type, minutes:g, isVac:true});
                 }
                 cur.setDate(cur.getDate()+1);
@@ -408,7 +321,6 @@
                 let target = 0; if(dw!==0 && dw!==6) target = (dw===5?420:480);
                 const diff = e ? (e.minutes - target) : 0;
                 if(e) { if(!e.isVac) tMin += e.minutes; tDiff += diff; }
-
                 const tr = document.createElement('tr');
                 if(dw===0||dw===6) tr.style.background = "var(--drager-bg-soft)";
                 tr.innerHTML = `<td><b>${d}/${m+1}</b></td><td>${e?e.location:''}</td><td>${e&&!e.isVac?e.start+'-'+e.end:''}</td><td>${e?toF(e.minutes):''}</td><td style="color:${diff>=0?'var(--state-success)':'var(--state-error)'}; font-weight:900">${e?toF(diff):''}</td><td class="no-print">${e?`<button onclick="delE('${e.date}')" style="background:none;border:none;">🗑️</button>`:''}</td>`;
@@ -417,25 +329,18 @@
             document.getElementById('res-total').innerText = toF(tMin);
             document.getElementById('res-vac').innerText = (28 - vUsed) + " j";
             document.getElementById('res-over').innerText = toF(tDiff);
-            document.getElementById('val-vac-top').innerText = (28 - vUsed) + " j";
             calcWeekly();
         }
 
-        /** CORRECTION LOGIQUE V5.0 : ON COMPTE TOUT (Travail + Vacances) **/
         function calcWeekly() {
             const now = new Date(), start = new Date(now);
             const d = now.getDay(); const diff = (d === 0 ? 6 : d - 1);
             start.setDate(now.getDate() - diff); start.setHours(0,0,0,0);
-            
             let done = 0;
             data.forEach(e => {
                 const ed = new Date(e.date);
-                // On inclut désormais tout ce qui est dans la semaine (même isVac)
-                if(ed >= start) {
-                    done += e.minutes;
-                }
+                if(ed >= start) done += e.minutes;
             });
-            // 39h = 2340 minutes
             document.getElementById('val-weekly').innerText = toF(2340 - done);
         }
 
@@ -455,10 +360,8 @@
         }
 
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); document.getElementById('btn-theme').innerText = document.body.classList.contains('dark-mode')?'☀️':'🌙'; }
-        function syncPdf() { document.getElementById('pdf-render').innerText = document.getElementById('obs-input').value; }
         function delE(dt) { if(confirm("Supprimer ?")) db.ref('users/'+me.id+'/entries/'+dt.replace(/-/g,'')).remove(); }
 
-        /** ADMIN **/
         function adminSync() {
             db.ref('users').on('value', s => {
                 const c = document.getElementById('admin-list'); c.innerHTML = '';
@@ -473,7 +376,7 @@
         }
 
         async function adminCreate() {
-            const id = document.getElementById('ad-id').value, pin = document.getElementById('ad-pin').value, p = document.getElementById('ad-pre').value, n = document.getElementById('ad-nom').value, r = document.getElementById('ad-role').value;
+            const id = document.getElementById('ad-id').value.toLowerCase(), pin = document.getElementById('ad-pin').value, p = document.getElementById('ad-pre').value, n = document.getElementById('ad-nom').value, r = document.getElementById('ad-role').value;
             if(!id || pin.length < 4) return alert("Données incomplètes.");
             await db.ref('users/'+id).set({prenom:p, nom:n, pin:pin, role:r});
             alert("Ajouté.");

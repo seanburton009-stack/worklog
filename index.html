@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dräger WorkLog v5.3</title>
+    <title>Dräger WorkLog v5.4</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -41,7 +41,7 @@
         .cta-button:active { transform: scale(0.97); opacity: 0.9; }
 
         .bottom-navigation { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--card-bg); padding: 12px 10px calc(12px + var(--safe-bottom)) 10px; border-top: 1px solid var(--ui-border); z-index: 1000; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
-        .nav-tab { flex: 1; border: none; background: none; font-size: 10px; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .nav-tab { flex: 1; border: none; background: none; font-size: 10px; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
         .nav-tab.active { color: var(--drager-blue); font-weight: 900; }
 
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 25px; }
@@ -66,7 +66,7 @@
     <div id="login-screen">
         <div class="glass-card" style="width: 90%; max-width: 400px; text-align: center;">
             <h1 style="font-size: 2.5em; color:var(--drager-navy);">Bienvenu</h1>
-            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px; color:var(--text-secondary);">DRÄGER WORKLOG v5.3</p>
+            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px; color:var(--text-secondary);">DRÄGER WORKLOG v5.4</p>
             <div style="text-align: left;">
                 <label class="field-label">Utilisateur (minuscules)</label>
                 <input type="text" id="auth-u" placeholder="p.nom" autocomplete="off">
@@ -84,7 +84,7 @@
                 <span id="txt-hi" style="font-size: 2em; font-weight: 950; color:var(--drager-navy);">Bonjour</span><br>
                 <small id="txt-date" style="color:var(--text-secondary); font-weight:800; text-transform: capitalize;"></small>
             </div>
-            <button onclick="toggleDarkMode()" id="btn-theme" style="background:var(--card-bg); border:1px solid var(--ui-border); padding:10px; border-radius:14px;">🌙</button>
+            <button onclick="toggleDarkMode()" id="btn-theme" style="background:var(--card-bg); border:1px solid var(--ui-border); padding:10px; border-radius:14px; cursor:pointer;">🌙</button>
         </div>
 
         <div id="section-saisie" class="page-block">
@@ -144,6 +144,11 @@
                     <select id="sel-m" onchange="uiRefresh()" style="flex:1;"></select>
                     <select id="sel-y" onchange="uiRefresh()" style="flex:1;"></select>
                 </div>
+                
+                <div style="display:flex; gap:10px; margin-bottom:15px;" class="no-print">
+                    <button class="cta-button" onclick="exportToCSV()" style="background: var(--state-success); padding: 12px; font-size: 13px;">📊 Exporter en CSV</button>
+                </div>
+
                 <div class="table-responsive">
                     <table>
                         <thead><tr><th>DATE</th><th>HEURES</th><th>PAUSE</th><th>DURÉE NETTE</th><th>+/-</th><th class="no-print"></th></tr></thead>
@@ -190,7 +195,7 @@
     </nav>
 
     <script>
-        /** LOGIQUE RSS v5.3 **/
+        /** LOGIQUE RSS v5.4 **/
         const FB_CONF = { 
             apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
             authDomain: "worklog-fc54b.firebaseapp.com", 
@@ -265,7 +270,6 @@
                             document.getElementById('app-ui').style.display='block';
                             document.getElementById('txt-hi').innerText = "Bonjour " + me.prenom;
                             
-                            // Applique la pause par défaut de l'utilisateur dans le champ de saisie
                             document.getElementById('f-break').value = me.customBreak;
 
                             if(me.role === 'admin') { 
@@ -368,7 +372,7 @@
                     colContent = `<td></td><td></td><td></td>`;
                 }
 
-                tr.innerHTML = `<td><b>${d}/${m+1}</b></td>${colContent}<td style="color:${diff>=0?'var(--state-success)':'var(--state-error)'}; font-weight:900">${e?toF(diff):''}</td><td class="no-print">${e?`<button onclick="delE('${e.date}')" style="background:none;border:none;">🗑️</button>`:''}</td>`;
+                tr.innerHTML = `<td><b>${d}/${m+1}</b></td>${colContent}<td style="color:${diff>=0?'var(--state-success)':'var(--state-error)'}; font-weight:900">${e?toF(diff):''}</td><td class="no-print">${e?`<button onclick="delE('${e.date}')" style="background:none;border:none;cursor:pointer;">🗑️</button>`:''}</td>`;
                 body.appendChild(tr);
             }
             document.getElementById('res-total').innerText = toF(tMin);
@@ -416,6 +420,22 @@
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); document.getElementById('btn-theme').innerText = document.body.classList.contains('dark-mode')?'☀️':'🌙'; }
         function delE(dt) { if(confirm("Supprimer ?")) db.ref('users/'+me.id+'/entries/'+dt.replace(/-/g,'')).remove(); }
 
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Date;Type/Horaires;Pause;Duree Nette\n";
+            data.forEach(d => {
+                let desc = d.isVac ? d.location : (d.start + "-" + d.end);
+                let pause = d.breakTime ? d.breakTime + "m" : "0m";
+                csvContent += `${d.date};${desc};${pause};${toF(d.minutes)}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Drager_WorkLog_" + me.id + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function adminSync() {
             db.ref('users').on('value', s => {
                 const c = document.getElementById('admin-list'); c.innerHTML = '';
@@ -423,7 +443,7 @@
                 for(let id in us) {
                     const u = us[id], div = document.createElement('div');
                     div.style.padding="10px"; div.style.borderBottom="1px solid #ddd"; div.style.display="flex"; div.style.justifyContent="space-between";
-                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause déf: ${u.customBreak||30}m</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;">X</button>`;
+                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause déf: ${u.customBreak||30}m</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;cursor:pointer;">X</button>`;
                     c.appendChild(div);
                 }
             });

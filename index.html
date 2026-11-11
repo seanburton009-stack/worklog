@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dräger WorkLog v5.4</title>
+    <title>Dräger WorkLog v5.5</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -66,7 +66,7 @@
     <div id="login-screen">
         <div class="glass-card" style="width: 90%; max-width: 400px; text-align: center;">
             <h1 style="font-size: 2.5em; color:var(--drager-navy);">Bienvenu</h1>
-            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px; color:var(--text-secondary);">DRÄGER WORKLOG v5.4</p>
+            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px; color:var(--text-secondary);">DRÄGER WORKLOG v5.5</p>
             <div style="text-align: left;">
                 <label class="field-label">Utilisateur (minuscules)</label>
                 <input type="text" id="auth-u" placeholder="p.nom" autocomplete="off">
@@ -165,7 +165,7 @@
 
         <div id="section-admin" class="page-block" style="display:none;">
             <div class="glass-card">
-                <h3>Gestion Équipe & Profils</h3>
+                <h3 id="admin-form-title">Gestion Équipe & Profils</h3>
                 <input type="text" id="ad-id" placeholder="Login (ex: p.nom)">
                 <input type="text" id="ad-pre" placeholder="Prénom">
                 <input type="text" id="ad-nom" placeholder="Nom">
@@ -181,7 +181,8 @@
                 <input type="number" id="ad-break" placeholder="Ex: 30" value="30">
 
                 <select id="ad-role"><option value="user">User</option><option value="admin">Admin</option></select>
-                <button class="cta-button" onclick="adminCreate()" style="background:var(--state-success);">Enregistrer / Ajouter</button>
+                <button class="cta-button" onclick="adminCreate()" style="background:var(--state-success);" id="admin-btn-action">Enregistrer / Ajouter</button>
+                <button class="cta-button" onclick="resetAdminForm()" style="background:var(--text-secondary); margin-top:10px; display:none;" id="admin-btn-cancel">Annuler la modification</button>
             </div>
             <div class="glass-card"><div id="admin-list"></div></div>
         </div>
@@ -195,7 +196,7 @@
     </nav>
 
     <script>
-        /** LOGIQUE RSS v5.4 **/
+        /** LOGIQUE RSS v5.5 **/
         const FB_CONF = { 
             apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
             authDomain: "worklog-fc54b.firebaseapp.com", 
@@ -436,17 +437,57 @@
             document.body.removeChild(link);
         }
 
+        let cachedUsers = {};
         function adminSync() {
             db.ref('users').on('value', s => {
+                cachedUsers = s.val() || {};
                 const c = document.getElementById('admin-list'); c.innerHTML = '';
-                const us = s.val();
-                for(let id in us) {
-                    const u = us[id], div = document.createElement('div');
-                    div.style.padding="10px"; div.style.borderBottom="1px solid #ddd"; div.style.display="flex"; div.style.justifyContent="space-between";
-                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause déf: ${u.customBreak||30}m</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;cursor:pointer;">X</button>`;
+                for(let id in cachedUsers) {
+                    const u = cachedUsers[id], div = document.createElement('div');
+                    div.style.padding="10px"; div.style.borderBottom="1px solid #ddd"; div.style.display="flex"; div.style.justifyContent="space-between"; div.style.alignItems="center";
+                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause: ${u.customBreak||30}m</small></div>
+                    <div>
+                        <button onclick="editUser('${id}')" style="color:var(--drager-blue);border:none;background:none;cursor:pointer;margin-right:10px;font-weight:bold;">Modifier</button>
+                        <button onclick="admDel('${id}')" style="color:red;border:none;background:none;cursor:pointer;font-weight:bold;">X</button>
+                    </div>`;
                     c.appendChild(div);
                 }
             });
+        }
+
+        function editUser(id) {
+            const u = cachedUsers[id];
+            if(!u) return;
+            document.getElementById('ad-id').value = id;
+            document.getElementById('ad-id').disabled = true; // Empêche de modifier l'ID/login existant
+            document.getElementById('ad-pre').value = u.prenom || '';
+            document.getElementById('ad-nom').value = u.nom || '';
+            document.getElementById('ad-pin').value = u.pin || '';
+            document.getElementById('ad-contract').value = u.contractHours || 39;
+            document.getElementById('ad-vacation').value = u.vacationTotal || 28;
+            document.getElementById('ad-break').value = u.customBreak || 30;
+            document.getElementById('ad-role').value = u.role || 'user';
+
+            document.getElementById('admin-form-title').innerText = "Modifier le profil : " + id;
+            document.getElementById('admin-btn-action').innerText = "Mettre à jour";
+            document.getElementById('admin-btn-cancel').style.display = "block";
+            window.scrollTo(0,0);
+        }
+
+        function resetAdminForm() {
+            document.getElementById('ad-id').value = '';
+            document.getElementById('ad-id').disabled = false;
+            document.getElementById('ad-pre').value = '';
+            document.getElementById('ad-nom').value = '';
+            document.getElementById('ad-pin').value = '';
+            document.getElementById('ad-contract').value = '39';
+            document.getElementById('ad-vacation').value = '28';
+            document.getElementById('ad-break').value = '30';
+            document.getElementById('ad-role').value = 'user';
+
+            document.getElementById('admin-form-title').innerText = "Gestion Équipe & Profils";
+            document.getElementById('admin-btn-action').innerText = "Enregistrer / Ajouter";
+            document.getElementById('admin-btn-cancel').style.display = "none";
         }
 
         async function adminCreate() {
@@ -461,6 +502,9 @@
 
             if(!id || pin.length < 4) return alert("ID manquant ou PIN de 4 chiffres requis.");
             
+            // Conserver les entrées (entries) si elles existent déjà pour cet utilisateur
+            let existingEntries = cachedUsers[id] && cachedUsers[id].entries ? cachedUsers[id].entries : {};
+
             await db.ref('users/'+id).set({
                 prenom: p, 
                 nom: n, 
@@ -468,10 +512,13 @@
                 role: r, 
                 contractHours: parseInt(contractHours), 
                 vacationTotal: parseInt(vacationTotal), 
-                customBreak: parseInt(customBreak)
+                customBreak: parseInt(customBreak),
+                entries: existingEntries
             });
-            alert("Profil enregistré avec succès.");
+            alert("Opération réussie !");
+            resetAdminForm();
         }
+
         function admDel(id) { if(confirm("Supprimer ce profil ?")) db.ref('users/'+id).remove(); }
     </script>
 </body>

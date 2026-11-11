@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dräger WorkLog v5.1</title>
+    <title>Dräger WorkLog v5.2</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -66,7 +66,7 @@
     <div id="login-screen">
         <div class="glass-card" style="width: 90%; max-width: 400px; text-align: center;">
             <h1 style="font-size: 3em;">DRÄGER</h1>
-            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px;">WORKLOG RSS v5.1</p>
+            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px;">WORKLOG RSS v5.2</p>
             <div style="text-align: left;">
                 <label class="field-label">Utilisateur (minuscules)</label>
                 <input type="text" id="auth-u" placeholder="p.nom" autocomplete="off">
@@ -95,8 +95,8 @@
 
             <div id="view-work">
                 <div class="glass-card" style="border-left: 10px solid var(--drager-navy);">
-                    <label class="field-label">HEURES RESTANTES (OBJECTIF 39H)</label>
-                    <b style="font-size:3.5em; color:var(--drager-navy); letter-spacing: -2px;" id="val-weekly">39h00</b>
+                    <label class="field-label" id="lbl-weekly-target">HEURES RESTANTES (OBJECTIF)</label>
+                    <b style="font-size:3.5em; color:var(--drager-navy); letter-spacing: -2px;" id="val-weekly">--</b>
                 </div>
                 <div class="glass-card">
                     <label class="field-label">Date</label><input type="date" id="f-date">
@@ -122,7 +122,7 @@
             <div id="view-vac" style="display:none;">
                 <div class="glass-card" style="border-left: 10px solid var(--state-success);">
                     <label class="field-label">SOLDE CONGÉS</label>
-                    <b style="font-size:3.5em; color:var(--state-success);" id="val-vac-top">28 j</b>
+                    <b style="font-size:3.5em; color:var(--state-success);" id="val-vac-top">--</b>
                 </div>
                 <div class="glass-card">
                     <label class="field-label">Type</label><select id="v-type"></select>
@@ -149,7 +149,7 @@
                 </div>
                 <div class="dashboard-grid no-print">
                     <div class="dash-box"><span class="dash-label">Total Presté</span><span class="dash-val" id="res-total">0h00</span></div>
-                    <div class="dash-box"><span class="dash-label">Congés Restants</span><span class="dash-val" id="res-vac">28 j</span></div>
+                    <div class="dash-box"><span class="dash-label">Congés Restants</span><span class="dash-val" id="res-vac">--</span></div>
                     <div class="dash-box"><span class="dash-label">Heures Suppl.</span><span class="dash-val" id="res-over">0h00</span></div>
                 </div>
             </div>
@@ -157,13 +157,23 @@
 
         <div id="section-admin" class="page-block" style="display:none;">
             <div class="glass-card">
-                <h3>Gestion Équipe</h3>
-                <input type="text" id="ad-id" placeholder="Login">
+                <h3>Gestion Équipe & Profils</h3>
+                <input type="text" id="ad-id" placeholder="Login (ex: p.nom)">
                 <input type="text" id="ad-pre" placeholder="Prénom">
                 <input type="text" id="ad-nom" placeholder="Nom">
-                <input type="password" id="ad-pin" placeholder="PIN" maxlength="4">
+                <input type="password" id="ad-pin" placeholder="Code PIN (4 chiffres)" maxlength="4">
+                
+                <label class="field-label">Heures contractuelles / semaine (heures)</label>
+                <input type="number" id="ad-contract" placeholder="Ex: 39 ou 38" value="39">
+
+                <label class="field-label">Jours de congés annuels</label>
+                <input type="number" id="ad-vacation" placeholder="Ex: 28" value="28">
+
+                <label class="field-label">Temps de pause standard (minutes)</label>
+                <input type="number" id="ad-break" placeholder="Ex: 30 ou 45" value="30">
+
                 <select id="ad-role"><option value="user">User</option><option value="admin">Admin</option></select>
-                <button class="cta-button" onclick="adminCreate()" style="background:var(--state-success);">Ajouter</button>
+                <button class="cta-button" onclick="adminCreate()" style="background:var(--state-success);">Enregistrer / Ajouter</button>
             </div>
             <div class="glass-card"><div id="admin-list"></div></div>
         </div>
@@ -177,8 +187,7 @@
     </nav>
 
     <script>
-        /** LOGIQUE RSS v5.1 **/
-        // ATTENTION : Vérifie bien que cette URL est la tienne !
+        /** LOGIQUE RSS v5.2 **/
         const FB_CONF = { 
             apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
             authDomain: "worklog-fc54b.firebaseapp.com", 
@@ -225,7 +234,6 @@
             document.getElementById('v-end').value = n;
         }
 
-        /** DIAGNOSTIC LOGIN **/
         async function handleAuth() {
             const btn = document.getElementById('btn-login-main');
             const diag = document.getElementById('diag-msg');
@@ -242,13 +250,18 @@
             }
 
             try {
-                // On tente de lire l'utilisateur
                 db.ref('users/'+u).once('value', s => {
                     const d = s.val();
                     if(d) {
                         diag.innerText = "Utilisateur trouvé. Vérification PIN...";
                         if(d.pin === p) {
-                            me = {id:u, ...d};
+                            me = {
+                                id: u, 
+                                contractHours: d.contractHours || 39, 
+                                vacationTotal: d.vacationTotal || 28, 
+                                customBreak: d.customBreak || 30, 
+                                ...d
+                            };
                             document.getElementById('login-screen').style.display='none';
                             document.getElementById('app-ui').style.display='block';
                             document.getElementById('txt-hi').innerText = "Bonjour " + me.prenom;
@@ -262,11 +275,11 @@
                             btn.innerText = "Connexion";
                         }
                     } else {
-                        alert("Utilisateur '" + u + "' non trouvé. Vérifie l'orthographe (minuscules).");
+                        alert("Utilisateur '" + u + "' non trouvé.");
                         btn.innerText = "Connexion";
                     }
                 }, err => {
-                    alert("Erreur de permission Firebase : " + err.message);
+                    alert("Erreur de permission : " + err.message);
                     btn.innerText = "Connexion";
                 });
             } catch(e) {
@@ -290,7 +303,9 @@
             let sm = toM(s), em = toM(e);
             if(document.getElementById('c-home-s').checked) sm+=30;
             if(document.getElementById('c-home-e').checked) em-=30;
-            const pause = (l === "Wemmel Office") ? 45 : 30;
+            
+            // Utilise la pause personnalisée de l'utilisateur ou par défaut
+            const pause = me.customBreak !== undefined ? parseInt(me.customBreak) : 30;
             const net = em - sm - pause;
             await db.ref('users/'+me.id+'/entries/'+dt.replace(/-/g,'')).set({date:dt, location:l, minutes:net, start:s, end:e, isVac:false});
             alert("Sauvé.");
@@ -327,7 +342,11 @@
                 body.appendChild(tr);
             }
             document.getElementById('res-total').innerText = toF(tMin);
-            document.getElementById('res-vac').innerText = (28 - vUsed) + " j";
+            
+            const totalVacation = me.vacationTotal !== undefined ? parseInt(me.vacationTotal) : 28;
+            document.getElementById('res-vac').innerText = (totalVacation - vUsed) + " j";
+            document.getElementById('val-vac-top').innerText = (totalVacation - vUsed) + " j";
+
             document.getElementById('res-over').innerText = toF(tDiff);
             calcWeekly();
         }
@@ -341,7 +360,13 @@
                 const ed = new Date(e.date);
                 if(ed >= start) done += e.minutes;
             });
-            document.getElementById('val-weekly').innerText = toF(2340 - done);
+            
+            // Objectif hebdomadaire basé sur le profil utilisateur (ex: 39h -> 39 * 60 = 2340 minutes)
+            const contractH = me.contractHours !== undefined ? parseInt(me.contractHours) : 39;
+            const targetWeeklyMinutes = contractH * 60;
+
+            document.getElementById('lbl-weekly-target').innerText = `HEURES RESTANTES (OBJECTIF ${contractH}H)`;
+            document.getElementById('val-weekly').innerText = toF(targetWeeklyMinutes - done);
         }
 
         function setMode(m) {
@@ -369,19 +394,36 @@
                 for(let id in us) {
                     const u = us[id], div = document.createElement('div');
                     div.style.padding="10px"; div.style.borderBottom="1px solid #ddd"; div.style.display="flex"; div.style.justifyContent="space-between";
-                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} (${u.role})</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;">X</button>`;
+                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause: ${u.customBreak||30}m</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;">X</button>`;
                     c.appendChild(div);
                 }
             });
         }
 
         async function adminCreate() {
-            const id = document.getElementById('ad-id').value.toLowerCase(), pin = document.getElementById('ad-pin').value, p = document.getElementById('ad-pre').value, n = document.getElementById('ad-nom').value, r = document.getElementById('ad-role').value;
-            if(!id || pin.length < 4) return alert("Données incomplètes.");
-            await db.ref('users/'+id).set({prenom:p, nom:n, pin:pin, role:r});
-            alert("Ajouté.");
+            const id = document.getElementById('ad-id').value.toLowerCase();
+            const pin = document.getElementById('ad-pin').value;
+            const p = document.getElementById('ad-pre').value;
+            const n = document.getElementById('ad-nom').value;
+            const r = document.getElementById('ad-role').value;
+            const contractHours = document.getElementById('ad-contract').value || 39;
+            const vacationTotal = document.getElementById('ad-vacation').value || 28;
+            const customBreak = document.getElementById('ad-break').value || 30;
+
+            if(!id || pin.length < 4) return alert("ID manquant ou PIN de 4 chiffres requis.");
+            
+            await db.ref('users/'+id).set({
+                prenom: p, 
+                nom: n, 
+                pin: pin, 
+                role: r, 
+                contractHours: parseInt(contractHours), 
+                vacationTotal: parseInt(vacationTotal), 
+                customBreak: parseInt(customBreak)
+            });
+            alert("Profil enregistré avec succès.");
         }
-        function admDel(id) { if(confirm("Supprimer ?")) db.ref('users/'+id).remove(); }
+        function admDel(id) { if(confirm("Supprimer ce profil ?")) db.ref('users/'+id).remove(); }
     </script>
 </body>
 </html>

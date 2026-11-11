@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dräger WorkLog v5.2</title>
+    <title>Dräger WorkLog v5.3</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -65,8 +65,8 @@
 
     <div id="login-screen">
         <div class="glass-card" style="width: 90%; max-width: 400px; text-align: center;">
-            <h1 style="font-size: 3em;">DRÄGER</h1>
-            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px;">WORKLOG RSS v5.2</p>
+            <h1 style="font-size: 2.5em; color:var(--drager-navy);">Bienvenu</h1>
+            <p style="font-weight: 800; font-size: 9px; letter-spacing: 2px; margin-bottom: 30px; color:var(--text-secondary);">DRÄGER WORKLOG v5.3</p>
             <div style="text-align: left;">
                 <label class="field-label">Utilisateur (minuscules)</label>
                 <input type="text" id="auth-u" placeholder="p.nom" autocomplete="off">
@@ -104,7 +104,10 @@
                         <div style="flex:1;"><label class="field-label">Début</label><input type="time" id="f-start" value="08:00"></div>
                         <div style="flex:1;"><label class="field-label">Fin</label><input type="time" id="f-end" value="16:30"></div>
                     </div>
-                    <label class="field-label">Lieu</label><select id="f-loc"></select>
+                    
+                    <label class="field-label">Temps de pause (minutes)</label>
+                    <input type="number" id="f-break" value="30" inputmode="numeric" placeholder="Ex: 30">
+
                     <div style="background:var(--drager-bg-soft); padding:20px; border-radius:20px; margin-bottom:20px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                             <span style="font-weight:700; font-size:13px;">Départ Domicile (-30m)</span>
@@ -143,7 +146,7 @@
                 </div>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>DATE</th><th>LIEU</th><th>HEURES</th><th>DURÉE</th><th>+/-</th><th class="no-print"></th></tr></thead>
+                        <thead><tr><th>DATE</th><th>HEURES</th><th>PAUSE</th><th>DURÉE NETTE</th><th>+/-</th><th class="no-print"></th></tr></thead>
                         <tbody id="log-body"></tbody>
                     </table>
                 </div>
@@ -169,8 +172,8 @@
                 <label class="field-label">Jours de congés annuels</label>
                 <input type="number" id="ad-vacation" placeholder="Ex: 28" value="28">
 
-                <label class="field-label">Temps de pause standard (minutes)</label>
-                <input type="number" id="ad-break" placeholder="Ex: 30 ou 45" value="30">
+                <label class="field-label">Temps de pause par défaut (minutes)</label>
+                <input type="number" id="ad-break" placeholder="Ex: 30" value="30">
 
                 <select id="ad-role"><option value="user">User</option><option value="admin">Admin</option></select>
                 <button class="cta-button" onclick="adminCreate()" style="background:var(--state-success);">Enregistrer / Ajouter</button>
@@ -187,7 +190,7 @@
     </nav>
 
     <script>
-        /** LOGIQUE RSS v5.2 **/
+        /** LOGIQUE RSS v5.3 **/
         const FB_CONF = { 
             apiKey: "AIzaSyBPC6cJgFwBrSOppxE_kQDA2gs1ioEvGCw", 
             authDomain: "worklog-fc54b.firebaseapp.com", 
@@ -220,10 +223,6 @@
             for(let i=y-1; i<=y+1; i++) { let o = document.createElement('option'); o.value=i; o.text=i; if(i===y) o.selected=true; sy.appendChild(o); }
             MONTHS.forEach((m,i) => { let o = document.createElement('option'); o.value=i; o.text=m; if(i===new Date().getMonth()) o.selected=true; sm.appendChild(o); });
             
-            const locs = ["Wemmel Office", "Client Mission", "Esso Antwerpen", "Projet INEOS", "Technopolis"];
-            const fl = document.getElementById('f-loc');
-            locs.forEach(l => { let o = document.createElement('option'); o.value=l; o.text=l; fl.appendChild(o); });
-
             const vts = ["Congés légaux", "Maladie", "Récupération", "Férié"];
             const vt = document.getElementById('v-type');
             vts.forEach(v => { let o = document.createElement('option'); o.value=v; o.text=v; vt.appendChild(o); });
@@ -265,6 +264,10 @@
                             document.getElementById('login-screen').style.display='none';
                             document.getElementById('app-ui').style.display='block';
                             document.getElementById('txt-hi').innerText = "Bonjour " + me.prenom;
+                            
+                            // Applique la pause par défaut de l'utilisateur dans le champ de saisie
+                            document.getElementById('f-break').value = me.customBreak;
+
                             if(me.role === 'admin') { 
                                 document.getElementById('btn-adm').style.display='flex'; 
                                 adminSync(); 
@@ -299,15 +302,24 @@
         const toF = m => { const n=m<0, a=Math.abs(m), h=Math.floor(a/60), min=Math.round(a%60); return (n?'-':'')+h+'h'+min.toString().padStart(2,'0'); };
 
         async function saveWork() {
-            const dt = document.getElementById('f-date').value, s = document.getElementById('f-start').value, e = document.getElementById('f-end').value, l = document.getElementById('f-loc').value;
+            const dt = document.getElementById('f-date').value;
+            const s = document.getElementById('f-start').value;
+            const e = document.getElementById('f-end').value;
+            const manualBreak = parseInt(document.getElementById('f-break').value) || 0;
+
             let sm = toM(s), em = toM(e);
             if(document.getElementById('c-home-s').checked) sm+=30;
             if(document.getElementById('c-home-e').checked) em-=30;
             
-            // Utilise la pause personnalisée de l'utilisateur ou par défaut
-            const pause = me.customBreak !== undefined ? parseInt(me.customBreak) : 30;
-            const net = em - sm - pause;
-            await db.ref('users/'+me.id+'/entries/'+dt.replace(/-/g,'')).set({date:dt, location:l, minutes:net, start:s, end:e, isVac:false});
+            const net = em - sm - manualBreak;
+            await db.ref('users/'+me.id+'/entries/'+dt.replace(/-/g,'')).set({
+                date: dt, 
+                minutes: net, 
+                start: s, 
+                end: e, 
+                breakTime: manualBreak,
+                isVac: false
+            });
             alert("Sauvé.");
         }
 
@@ -317,7 +329,13 @@
                 const dw = cur.getDay();
                 if(dw !== 0 && dw !== 6) {
                     const iso = cur.toISOString().split('T')[0], g = (dw === 5) ? 420 : 480;
-                    await db.ref('users/'+me.id+'/entries/'+iso.replace(/-/g,'')).set({date:iso, location:type, minutes:g, isVac:true});
+                    await db.ref('users/'+me.id+'/entries/'+iso.replace(/-/g,'')).set({
+                        date: iso, 
+                        location: type, 
+                        minutes: g, 
+                        breakTime: 0,
+                        isVac: true
+                    });
                 }
                 cur.setDate(cur.getDate()+1);
             }
@@ -338,7 +356,19 @@
                 if(e) { if(!e.isVac) tMin += e.minutes; tDiff += diff; }
                 const tr = document.createElement('tr');
                 if(dw===0||dw===6) tr.style.background = "var(--drager-bg-soft)";
-                tr.innerHTML = `<td><b>${d}/${m+1}</b></td><td>${e?e.location:''}</td><td>${e&&!e.isVac?e.start+'-'+e.end:''}</td><td>${e?toF(e.minutes):''}</td><td style="color:${diff>=0?'var(--state-success)':'var(--state-error)'}; font-weight:900">${e?toF(diff):''}</td><td class="no-print">${e?`<button onclick="delE('${e.date}')" style="background:none;border:none;">🗑️</button>`:''}</td>`;
+                
+                let colContent = '';
+                if(e) {
+                    if(e.isVac) {
+                        colContent = `<td colspan="3"><b>${e.location}</b></td>`;
+                    } else {
+                        colContent = `<td>${e.start}-${e.end}</td><td>${e.breakTime || 0}m</td><td>${toF(e.minutes)}</td>`;
+                    }
+                } else {
+                    colContent = `<td></td><td></td><td></td>`;
+                }
+
+                tr.innerHTML = `<td><b>${d}/${m+1}</b></td>${colContent}<td style="color:${diff>=0?'var(--state-success)':'var(--state-error)'}; font-weight:900">${e?toF(diff):''}</td><td class="no-print">${e?`<button onclick="delE('${e.date}')" style="background:none;border:none;">🗑️</button>`:''}</td>`;
                 body.appendChild(tr);
             }
             document.getElementById('res-total').innerText = toF(tMin);
@@ -361,7 +391,6 @@
                 if(ed >= start) done += e.minutes;
             });
             
-            // Objectif hebdomadaire basé sur le profil utilisateur (ex: 39h -> 39 * 60 = 2340 minutes)
             const contractH = me.contractHours !== undefined ? parseInt(me.contractHours) : 39;
             const targetWeeklyMinutes = contractH * 60;
 
@@ -394,7 +423,7 @@
                 for(let id in us) {
                     const u = us[id], div = document.createElement('div');
                     div.style.padding="10px"; div.style.borderBottom="1px solid #ddd"; div.style.display="flex"; div.style.justifyContent="space-between";
-                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause: ${u.customBreak||30}m</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;">X</button>`;
+                    div.innerHTML = `<div><b>${u.prenom} ${u.nom}</b><br><small>${id} | Contrat: ${u.contractHours||39}h | Congés: ${u.vacationTotal||28}j | Pause déf: ${u.customBreak||30}m</small></div><button onclick="admDel('${id}')" style="color:red;border:none;background:none;">X</button>`;
                     c.appendChild(div);
                 }
             });
